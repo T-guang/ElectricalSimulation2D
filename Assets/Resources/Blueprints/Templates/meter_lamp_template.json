@@ -1,4 +1,4 @@
-{
+﻿{
     "templateId": "meter_lamp_template",
     "templateName": "单相电能表照明电路",
     "category": "家庭电路",
@@ -13,8 +13,7 @@
             "isClosed": true,
             "parameters": [
                 {
-                    "key": "voltage",
-                    "displayName": "????",
+                    "key": "voltage", "displayName": "输出电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -31,8 +30,7 @@
             "isClosed": true,
             "parameters": [
                 {
-                    "key": "ratedVoltage",
-                    "displayName": "????",
+                    "key": "ratedVoltage", "displayName": "额定电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -58,8 +56,7 @@
             "isClosed": true,
             "parameters": [
                 {
-                    "key": "ratedVoltage",
-                    "displayName": "????",
+                    "key": "ratedVoltage", "displayName": "额定电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -82,11 +79,10 @@
             "definitionName": "Single_Control_Switch",
             "x": 48.0,
             "y": 168.0,
-            "isClosed": false,
+            "isClosed": true,
             "parameters": [
                 {
-                    "key": "switchType",
-                    "displayName": "????",
+                    "key": "switchType", "displayName": "开关类型",
                     "value": 1.0,
                     "unit": "",
                     "min": 0.0,
@@ -103,8 +99,7 @@
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "ratedVoltage",
-                    "displayName": "????",
+                    "key": "ratedVoltage", "displayName": "额定电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -112,8 +107,7 @@
                     "editable": false
                 },
                 {
-                    "key": "power",
-                    "displayName": "??",
+                    "key": "power", "displayName": "功率",
                     "value": 40.0,
                     "unit": "W",
                     "min": 1.0,
@@ -203,9 +197,34 @@
             "endTerminalId": "P1_IN",
             "color": "#F21F1F",
             "style": "Orthogonal",
-            "manualRoutePoints": [],
+            "manualRoutePoints": [
+                {
+                    "x": -445.20001220703127,
+                    "y": 103.0
+                },
+                {
+                    "x": -445.20001220703127,
+                    "y": 75.0
+                },
+                {
+                    "x": -276.0,
+                    "y": 75.0
+                },
+                {
+                    "x": -276.0,
+                    "y": 261.0000305175781
+                },
+                {
+                    "x": -186.33334350585938,
+                    "y": 261.0000305175781
+                },
+                {
+                    "x": -186.33334350585938,
+                    "y": 233.00003051757813
+                }
+            ],
             "manualRouteHorizontal": false,
-            "manualRouteAxis": 0.0
+            "manualRouteAxis": -276.0
         },
         {
             "startComponentId": "meter_1",
@@ -216,32 +235,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -396.79998779296877,
-                    "y": 103.00003051757813
+                    "x": -396.7999572753906,
+                    "y": 103.0
                 },
                 {
-                    "x": -396.79998779296877,
-                    "y": 75.00003051757813
+                    "x": -396.7999572753906,
+                    "y": 75.0
                 },
                 {
-                    "x": -96.0,
-                    "y": 75.00003051757813
+                    "x": -60.0,
+                    "y": 75.0
                 },
                 {
-                    "x": -96.0,
-                    "y": 261.0
+                    "x": -60.0,
+                    "y": 261.0000305175781
                 },
                 {
-                    "x": -149.6666259765625,
-                    "y": 261.0
+                    "x": -149.66668701171876,
+                    "y": 261.0000305175781
                 },
                 {
-                    "x": -149.6666259765625,
-                    "y": 232.99998474121095
+                    "x": -149.66668701171876,
+                    "y": 233.00003051757813
                 }
             ],
             "manualRouteHorizontal": false,
-            "manualRouteAxis": -96.0
+            "manualRouteAxis": -60.0
         },
         {
             "startComponentId": "breaker_1",
