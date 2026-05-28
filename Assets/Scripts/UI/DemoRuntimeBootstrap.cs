@@ -1,0 +1,80 @@
+using System.Collections.Generic;
+using ElectricalSim.Core;
+using UnityEngine;
+
+namespace ElectricalSim.UI
+{
+    public sealed class DemoRuntimeBootstrap : MonoBehaviour
+    {
+        [SerializeField] private WorkspaceController workspace;
+        [SerializeField] private List<ComponentDefinition> catalog = new List<ComponentDefinition>();
+        [SerializeField] private bool buildStarterCircuit = true;
+
+        private void Start()
+        {
+            if (!buildStarterCircuit || workspace == null || catalog.Count == 0)
+            {
+                return;
+            }
+
+            BuildHomeLightingCircuit();
+        }
+
+        private void BuildHomeLightingCircuit()
+        {
+            workspace.ClearDrawing();
+
+            var power = Find("AC_220V_Power");
+            var meter = Find("Single_Phase_Meter");
+            var breaker = Find("Breaker_2P");
+            var switchOne = Find("Single_Control_Switch");
+            var lamp = Find("Lamp_220V");
+            var fan = Find("Fan_220V");
+
+            if (power == null || meter == null || breaker == null || switchOne == null || lamp == null || fan == null)
+            {
+                workspace.SetStatus("演示元件数据缺失，请重新执行 Tools/Electrical Demo/Build Demo Scene。");
+                return;
+            }
+
+            var powerView = workspace.SpawnComponent(power, new Vector2(-700f, 180f), "demo_power");
+            var meterView = workspace.SpawnComponent(meter, new Vector2(-470f, 180f), "demo_meter");
+            var breakerView = workspace.SpawnComponent(breaker, new Vector2(-220f, 180f), "demo_breaker_2p");
+            var switchView = workspace.SpawnComponent(switchOne, new Vector2(60f, 180f), "demo_single_switch");
+            var lampView = workspace.SpawnComponent(lamp, new Vector2(340f, 180f), "demo_lamp");
+            var fanView = workspace.SpawnComponent(fan, new Vector2(340f, -80f), "demo_fan");
+
+            breakerView.SetClosed(true);
+            switchView.SetClosed(true);
+
+            CreateWire(powerView, "L", meterView, "L_IN", new Color(0.95f, 0.1f, 0.1f));
+            CreateWire(powerView, "N", meterView, "N_IN", new Color(0.1f, 0.35f, 0.95f));
+            CreateWire(meterView, "L_OUT", breakerView, "P1_IN", new Color(0.95f, 0.1f, 0.1f));
+            CreateWire(meterView, "N_OUT", breakerView, "P2_IN", new Color(0.1f, 0.35f, 0.95f));
+            CreateWire(breakerView, "P1_OUT", switchView, "L", new Color(0.95f, 0.1f, 0.1f));
+            CreateWire(switchView, "L1", lampView, "L", new Color(0.95f, 0.1f, 0.1f));
+            CreateWire(switchView, "L1", fanView, "L", new Color(0.08f, 0.65f, 0.25f));
+            CreateWire(lampView, "N", breakerView, "P2_OUT", new Color(0.1f, 0.35f, 0.95f));
+            CreateWire(fanView, "N", breakerView, "P2_OUT", new Color(0.1f, 0.35f, 0.95f));
+
+            workspace.WireManager.RefreshAll();
+            workspace.MarkSimulationDirty();
+            workspace.ClearHistory();
+            workspace.SetStatus("默认家庭照明示例：电能表经过 2P 空开和单开开关控制灯泡/风扇。双击开关或空开可切换通断。");
+        }
+
+        private ComponentDefinition Find(string assetName)
+        {
+            return catalog.Find(item => item != null && item.name == assetName);
+        }
+
+        private void CreateWire(CircuitComponent startComponent, string startTerminal, CircuitComponent endComponent, string endTerminal, Color color)
+        {
+            workspace.WireManager.CreateWire(
+                startComponent.GetTerminal(startTerminal),
+                endComponent.GetTerminal(endTerminal),
+                color,
+                WireStyle.Orthogonal);
+        }
+    }
+}

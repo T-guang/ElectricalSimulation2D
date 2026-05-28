@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
+  m_Name: Button_Compound_SB
+  m_EditorClassIdentifier: 
+  displayName: "\u590D\u5408\u5F00\u5173(SB)"
+  category: 1
+  kind: 3
+  bodyColor: {r: 0.2, g: 0.22, b: 0.24, a: 1}
+  accentColor: {r: 1, g: 0.28, b: 0.24, a: 1}
+  sprite: {fileID: 0}
+  size: {x: 110, y: 130}
+  startsClosed: 0
+  togglable: 1
+  controlledByTag: 
+  outputTag: 
+  sourceVoltage: 0
+  sourceLineVoltage: 0
+  sourcePhaseCount: 0
+  ratedVoltage: 220
+  ratedPower: 0
+  ratedCurrent: 5
+  maxVoltage: 0
+  maxCurrent: 10
+  canBurnOut: 0
+  canTrip: 0
+  parameterNote: "\u5F00\u5173/\u6309\u94AE\uFF1A\u7528\u4E8E\u63A7\u5236\u901A\u65AD\uFF0C\u540E\u7EED\u53EF\u53C2\u4E0E\u8FC7\u6D41\u89E6\u70B9\u635F\u574F\u5224\u65AD\u3002"
+  terminals:
+  - id: 11
+    label: 11
+    role: 4
+    normalizedPosition: {x: 0, y: 0.65}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: 12
+    label: 12
+    role: 5
+    normalizedPosition: {x: 1, y: 0.65}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: 23
+    label: 23
+    role: 4
+    normalizedPosition: {x: 0, y: 0.25}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}
+  - id: 24
+    label: 24
+    role: 5
+    normalizedPosition: {x: 1, y: 0.25}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}

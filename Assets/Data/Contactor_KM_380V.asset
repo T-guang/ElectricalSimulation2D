@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
+  m_Name: Contactor_KM_380V
+  m_EditorClassIdentifier: 
+  displayName: "\u4EA4\u6D41\u63A5\u89E6\u5668(KM)\n(380V)"
+  category: 1
+  kind: 10
+  bodyColor: {r: 0.82, g: 0.86, b: 0.9, a: 1}
+  accentColor: {r: 0.2, g: 0.45, b: 1, a: 1}
+  sprite: {fileID: 0}
+  size: {x: 110, y: 130}
+  startsClosed: 0
+  togglable: 0
+  controlledByTag: 
+  outputTag: 
+  sourceVoltage: 0
+  sourceLineVoltage: 0
+  sourcePhaseCount: 0
+  ratedVoltage: 380
+  ratedPower: 18
+  ratedCurrent: 0.05
+  maxVoltage: 430
+  maxCurrent: 0.12
+  canBurnOut: 1
+  canTrip: 0
+  parameterNote: "380V \u7EBF\u5708/\u7EE7\u7535\u5668\uFF1A\u7535\u538B\u5339\u914D\u65F6\u5438\u5408\u3002"
+  terminals:
+  - id: L1
+    label: 1/L1
+    role: 4
+    normalizedPosition: {x: 0.18, y: 1}
+    color: {r: 0.95, g: 0.78, b: 0.12, a: 1}
+  - id: T1
+    label: 2/T1
+    role: 5
+    normalizedPosition: {x: 0.18, y: 0}
+    color: {r: 0.95, g: 0.78, b: 0.12, a: 1}
+  - id: L2
+    label: 3/L2
+    role: 4
+    normalizedPosition: {x: 0.5, y: 1}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}
+  - id: T2
+    label: 4/T2
+    role: 5
+    normalizedPosition: {x: 0.5, y: 0}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}
+  - id: L3
+    label: 5/L3
+    role: 4
+    normalizedPosition: {x: 0.82, y: 1}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: T3
+    label: 6/T3
+    role: 5
+    normalizedPosition: {x: 0.82, y: 0}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: A1
+    label: A1
+    role: 6
+    normalizedPosition: {x: 0, y: 0.68}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: A2
+    label: A2
+    role: 7
+    normalizedPosition: {x: 1, y: 0.68}
+    color: {r: 0.1, g: 0.35, b: 0.95, a: 1}

@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
+  m_Name: Indicator_Green_380V
+  m_EditorClassIdentifier: 
+  displayName: "\u7EFF\u8272\u6307\u793A\u706F\n(380V)"
+  category: 1
+  kind: 11
+  bodyColor: {r: 0.135, g: 0.435, b: 0.21000001, a: 1}
+  accentColor: {r: 0.18, g: 0.58, b: 0.28, a: 1}
+  sprite: {fileID: 0}
+  size: {x: 110, y: 130}
+  startsClosed: 0
+  togglable: 0
+  controlledByTag: 
+  outputTag: 
+  sourceVoltage: 0
+  sourceLineVoltage: 0
+  sourcePhaseCount: 0
+  ratedVoltage: 380
+  ratedPower: 3
+  ratedCurrent: 0.01
+  maxVoltage: 430
+  maxCurrent: 0.05
+  canBurnOut: 1
+  canTrip: 0
+  parameterNote: "380V \u6307\u793A\u706F\uFF1A\u7528\u4E8E\u5DE5\u4E1A\u56DE\u8DEF\u72B6\u6001\u6307\u793A\u3002"
+  terminals:
+  - id: L
+    label: L
+    role: 4
+    normalizedPosition: {x: 0, y: 0.45}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: N
+    label: N
+    role: 2
+    normalizedPosition: {x: 1, y: 0.45}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}

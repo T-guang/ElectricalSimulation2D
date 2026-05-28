@@ -1,0 +1,20 @@
+{
+  "templates": [
+    {
+      "templateId": "single_lamp_template",
+      "templateName": "单开单控照明电路",
+      "category": "家庭电路",
+      "difficulty": "初级",
+      "description": "220V电源经过单开单控开关控制灯泡。",
+      "resourcePath": "Blueprints/Templates/single_lamp_template"
+    },
+    {
+      "templateId": "double_control_lamp_template",
+      "templateName": "双控照明电路",
+      "category": "家庭电路",
+      "difficulty": "初级",
+      "description": "两个单开双控开关控制同一个灯泡，适合演示楼梯双控灯逻辑。",
+      "resourcePath": "Blueprints/Templates/double_control_lamp_template"
+    }
+  ]
+}
