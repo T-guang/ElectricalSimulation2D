@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ElectricalSim.Core;
 using UnityEngine;
 
@@ -6,6 +6,11 @@ namespace ElectricalSim.Templates
 {
     public static class CircuitTemplateSpawnService
     {
+        private sealed class TemplateValidationResult
+        {
+            public readonly Dictionary<string, ComponentDefinition> DefinitionsByInstanceId = new Dictionary<string, ComponentDefinition>();
+        }
+
         public static bool Spawn(
             CircuitTemplateDto template,
             WorkspaceController workspace,
@@ -13,11 +18,6 @@ namespace ElectricalSim.Templates
             out string message)
         {
             message = string.Empty;
-            if (template == null)
-            {
-                message = "模板为空。";
-                return false;
-            }
 
             if (workspace == null)
             {
@@ -25,9 +25,9 @@ namespace ElectricalSim.Templates
                 return false;
             }
 
-            if (catalog == null || catalog.Count == 0)
+            if (!ValidateTemplate(template, catalog, out var validation, out message))
             {
-                message = "模板加载失败：元件库为空。";
+                workspace.SetStatus(message);
                 return false;
             }
 
@@ -37,18 +37,13 @@ namespace ElectricalSim.Templates
             var spawned = new Dictionary<string, CircuitComponent>();
             foreach (var item in template.components)
             {
-                var definition = FindDefinition(catalog, item.definitionName);
-                if (definition == null)
-                {
-                    workspace.SetStatus("模板缺少元件定义：" + item.definitionName);
-                    continue;
-                }
-
+                var definition = validation.DefinitionsByInstanceId[item.instanceId];
                 var component = workspace.SpawnComponent(definition, new Vector2(item.x, item.y), item.instanceId, false);
                 if (component == null)
                 {
-                    workspace.SetStatus("模板元件生成失败：" + item.instanceId);
-                    continue;
+                    message = "模板元件生成失败：" + item.instanceId;
+                    workspace.SetStatus(message);
+                    return false;
                 }
 
                 component.SetClosed(item.isClosed);
@@ -58,25 +53,24 @@ namespace ElectricalSim.Templates
 
             foreach (var item in template.wires)
             {
-                if (!spawned.TryGetValue(item.startComponentId, out var startComponent) ||
-                    !spawned.TryGetValue(item.endComponentId, out var endComponent))
-                {
-                    workspace.SetStatus("模板导线生成失败：找不到元件 " + item.startComponentId + " -> " + item.endComponentId);
-                    continue;
-                }
-
+                var startComponent = spawned[item.startComponentId];
+                var endComponent = spawned[item.endComponentId];
                 var start = startComponent.GetTerminal(item.startTerminalId);
                 var end = endComponent.GetTerminal(item.endTerminalId);
-                if (start == null || end == null)
+
+                if (!TryParseColor(item.color, out var wireColor))
                 {
-                    workspace.SetStatus("模板导线生成失败：找不到端子 " + item.startComponentId + "." + item.startTerminalId + " -> " + item.endComponentId + "." + item.endTerminalId);
-                    continue;
+                    message = "模板导线颜色无效：" + item.color;
+                    workspace.SetStatus(message);
+                    return false;
                 }
 
-                var wire = workspace.WireManager.CreateWire(start, end, ParseColor(item.color), ParseStyle(item.style));
+                var wire = workspace.WireManager.CreateWire(start, end, wireColor, ParseStyle(item.style));
                 if (wire == null)
                 {
-                    continue;
+                    message = $"导线连接失败：{item.startComponentId}.{item.startTerminalId} -> {item.endComponentId}.{item.endTerminalId}";
+                    workspace.SetStatus(message);
+                    return false;
                 }
 
                 if (item.manualRoutePoints != null && item.manualRoutePoints.Count >= 2)
@@ -93,6 +87,125 @@ namespace ElectricalSim.Templates
             workspace.MarkSimulationDirty();
             message = "已加载模板：" + template.templateName;
             workspace.SetStatus(message);
+            return true;
+        }
+
+        private static bool ValidateTemplate(
+            CircuitTemplateDto template,
+            IReadOnlyList<ComponentDefinition> catalog,
+            out TemplateValidationResult result,
+            out string error)
+        {
+            result = null;
+            error = null;
+
+            if (template == null)
+            {
+                error = "模板为空。";
+                return false;
+            }
+
+            if (template.components == null || template.components.Count == 0)
+            {
+                error = "模板 components 为空。";
+                return false;
+            }
+
+            if (template.wires == null)
+            {
+                error = "模板 wires 为空。";
+                return false;
+            }
+
+            if (catalog == null || catalog.Count == 0)
+            {
+                error = "模板加载失败：元件库为空。";
+                return false;
+            }
+
+            result = new TemplateValidationResult();
+            var instanceIds = new HashSet<string>();
+            foreach (var component in template.components)
+            {
+                if (component == null)
+                {
+                    error = "模板 components 中存在空元件。";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(component.instanceId))
+                {
+                    error = "模板中存在空元件 ID。";
+                    return false;
+                }
+
+                if (!instanceIds.Add(component.instanceId))
+                {
+                    error = "模板中存在重复元件 ID：" + component.instanceId;
+                    return false;
+                }
+
+                var definition = FindDefinition(catalog, component.definitionName);
+                if (definition == null)
+                {
+                    error = "找不到元件定义：" + component.definitionName;
+                    return false;
+                }
+
+                result.DefinitionsByInstanceId[component.instanceId] = definition;
+            }
+
+            foreach (var wire in template.wires)
+            {
+                if (wire == null)
+                {
+                    error = "模板 wires 中存在空导线。";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(wire.startComponentId) || string.IsNullOrWhiteSpace(wire.endComponentId))
+                {
+                    error = "模板导线引用的组件 ID 为空。";
+                    return false;
+                }
+
+                if (!result.DefinitionsByInstanceId.TryGetValue(wire.startComponentId, out var startDefinition))
+                {
+                    error = "模板导线引用了不存在的起点组件：" + wire.startComponentId;
+                    return false;
+                }
+
+                if (!result.DefinitionsByInstanceId.TryGetValue(wire.endComponentId, out var endDefinition))
+                {
+                    error = "模板导线引用了不存在的终点组件：" + wire.endComponentId;
+                    return false;
+                }
+
+                if (!HasTerminal(startDefinition, wire.startTerminalId))
+                {
+                    error = $"找不到组件 {wire.startComponentId} 的端子：{wire.startTerminalId}";
+                    return false;
+                }
+
+                if (!HasTerminal(endDefinition, wire.endTerminalId))
+                {
+                    error = $"找不到组件 {wire.endComponentId} 的端子：{wire.endTerminalId}";
+                    return false;
+                }
+
+                if (!TryParseColor(wire.color, out _))
+                {
+                    error = "模板导线颜色无效：" + wire.color;
+                    return false;
+                }
+
+                if (!ValidateManualRoutePoints(wire.manualRoutePoints, out var routeError))
+                {
+                    error = $"导线手动路径无效：{wire.startComponentId}.{wire.startTerminalId} -> {wire.endComponentId}.{wire.endTerminalId}，{routeError}";
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -115,6 +228,66 @@ namespace ElectricalSim.Templates
             return null;
         }
 
+        private static bool HasTerminal(ComponentDefinition definition, string terminalId)
+        {
+            if (definition == null || definition.terminals == null || string.IsNullOrWhiteSpace(terminalId))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < definition.terminals.Count; i++)
+            {
+                if (definition.terminals[i] != null && definition.terminals[i].id == terminalId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ValidateManualRoutePoints(IReadOnlyList<Vector2> points, out string error)
+        {
+            error = null;
+            if (points == null || points.Count == 0)
+            {
+                return true;
+            }
+
+            if (points.Count < 2)
+            {
+                error = "manualRoutePoints 至少需要 2 个点。";
+                return false;
+            }
+
+            for (var i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                if (!IsFinite(point.x) || !IsFinite(point.y))
+                {
+                    error = "manualRoutePoints 存在非法坐标。";
+                    return false;
+                }
+
+                if (i > 0)
+                {
+                    var previous = points[i - 1];
+                    if (!Mathf.Approximately(previous.x, point.x) && !Mathf.Approximately(previous.y, point.y))
+                    {
+                        error = "manualRoutePoints 必须为水平/垂直折线。";
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
         private static WireStyle ParseStyle(string style)
         {
             if (!string.IsNullOrWhiteSpace(style) && System.Enum.TryParse(style, out WireStyle parsed))
@@ -125,31 +298,31 @@ namespace ElectricalSim.Templates
             return WireStyle.Orthogonal;
         }
 
-        private static Color ParseColor(string value)
+        private static bool TryParseColor(string value, out Color color)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                return new Color(0.95f, 0.12f, 0.12f);
+                color = default;
+                return false;
             }
 
             switch (value.Trim().ToLowerInvariant())
             {
                 case "blue":
-                    return new Color(0.1f, 0.35f, 0.95f);
+                    color = new Color(0.1f, 0.35f, 0.95f);
+                    return true;
                 case "green":
-                    return new Color(0.08f, 0.65f, 0.25f);
+                    color = new Color(0.08f, 0.65f, 0.25f);
+                    return true;
                 case "yellow":
-                    return new Color(0.95f, 0.78f, 0.12f);
+                    color = new Color(0.95f, 0.78f, 0.12f);
+                    return true;
                 case "red":
-                    return new Color(0.95f, 0.12f, 0.12f);
+                    color = new Color(0.95f, 0.12f, 0.12f);
+                    return true;
             }
 
-            if (ColorUtility.TryParseHtmlString(value.StartsWith("#") ? value : "#" + value, out var color))
-            {
-                return color;
-            }
-
-            return new Color(0.95f, 0.12f, 0.12f);
+            return ColorUtility.TryParseHtmlString(value.StartsWith("#") ? value : "#" + value, out color);
         }
     }
 }

@@ -12,6 +12,7 @@ namespace ElectricalSim.Templates
         public string templateName;
         public string category;
         public string difficulty;
+        public string description;
         public List<TemplateComponentDto> components = new List<TemplateComponentDto>();
         public List<TemplateWireDto> wires = new List<TemplateWireDto>();
     }

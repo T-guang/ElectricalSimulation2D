@@ -2,7 +2,8 @@
     "templateId": "single_lamp_template",
     "templateName": "单开单控照明电路",
     "category": "家庭电路",
-    "difficulty": "初级",
+    "difficulty": "入门",
+    "description": "基础的220V单开单控照明电路，包含电源、开关和灯泡。",
     "components": [
         {
             "instanceId": "power_1",
@@ -105,7 +106,7 @@
                 },
                 {
                     "x": -335.8000183105469,
-                    "y": 27.000019073486329
+                    "y": 27.000019073486328
                 },
                 {
                     "x": -335.8000183105469,
@@ -117,7 +118,7 @@
                 },
                 {
                     "x": 315.5,
-                    "y": 27.000019073486329
+                    "y": 27.000019073486328
                 },
                 {
                     "x": 315.5,
@@ -127,5 +128,6 @@
             "manualRouteHorizontal": true,
             "manualRouteAxis": -72.0
         }
-    ]
+    ],
+    "description": "220V?????????????????????????????????"
 }

@@ -10,11 +10,13 @@ namespace ElectricalSim.AI
         private const float PanelWidth = 340f;
         private const float PanelMargin = 12f;
         private const float HeaderHeight = 42f;
-        private const float QuickActionsHeight = 118f;
+        private const float QuickActionsHeight = 168f;
         private const float InputAreaHeight = 58f;
 
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text titleText;
+        [SerializeField] private Text modeText;
+        [SerializeField] private Button switchModeButton;
         [SerializeField] private Button explainButton;
         [SerializeField] private Button checkButton;
         [SerializeField] private Button clearChatButton;
@@ -24,6 +26,7 @@ namespace ElectricalSim.AI
         [SerializeField] private Button sendButton;
 
         private IAIAssistantService assistantService;
+        private AIAssistantMode currentMode = AIAssistantMode.LocalMock;
         private CircuitSummaryBuilder summaryBuilder;
 
         public static AIAssistantPanel Create(RectTransform parent, WorkspaceController workspace)
@@ -68,9 +71,10 @@ namespace ElectricalSim.AI
         {
             workspace = workspaceController;
             summaryBuilder = new CircuitSummaryBuilder(workspace);
-            assistantService = new MockAIAssistantService();
+            SetAssistantMode(AIAssistantMode.LocalMock, false);
 
             BindButton(sendButton, SendQuestion);
+            BindButton(switchModeButton, ToggleAssistantMode);
             BindButton(explainButton, ExplainCurrentCircuit);
             BindButton(checkButton, CheckCurrentCircuit);
             BindButton(clearChatButton, ClearChat);
@@ -117,9 +121,11 @@ namespace ElectricalSim.AI
             actionLayout.childForceExpandWidth = true;
             actionLayout.childForceExpandHeight = false;
 
-            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.16f, 0.45f, 0.95f), Color.white, 34f);
-            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 34f);
-            clearChatButton = CreateButton("ClearChatButton", quickActions, "清空对话", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 34f);
+            modeText = CreateLayoutText("ModeText", quickActions, "当前模式：本地助教", 13, TextAnchor.MiddleLeft, 22f);
+            switchModeButton = CreateButton("SwitchModeButton", quickActions, "切换AI模式", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
+            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.16f, 0.45f, 0.95f), Color.white, 30f);
+            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
+            clearChatButton = CreateButton("ClearChatButton", quickActions, "清空对话", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
 
             var chatRoot = CreatePanelSection("ChatScrollView", root, 0f, 1f, new Color(0.94f, 0.97f, 1f, 1f));
             chatScrollRect = chatRoot.gameObject.AddComponent<ScrollRect>();
@@ -201,6 +207,62 @@ namespace ElectricalSim.AI
             }
         }
 
+        private void ToggleAssistantMode()
+        {
+            if (currentMode == AIAssistantMode.LocalMock)
+            {
+                SetAssistantMode(AIAssistantMode.RemoteApi, true);
+            }
+            else
+            {
+                SetAssistantMode(AIAssistantMode.LocalMock, true);
+            }
+        }
+
+        private void SetAssistantMode(AIAssistantMode mode, bool notify)
+        {
+            if (mode == AIAssistantMode.RemoteApi)
+            {
+                var remoteService = new RealAIAssistantService(AIAssistantConfig.LoadDefault(), this);
+                if (!remoteService.IsConfigured)
+                {
+                    currentMode = AIAssistantMode.LocalMock;
+                    assistantService = new MockAIAssistantService();
+                    RefreshModeLabel();
+                    if (notify)
+                    {
+                        AddAssistantMessage("真实 AI API 尚未配置，已继续使用本地 Mock 助教。");
+                    }
+                    return;
+                }
+
+                currentMode = AIAssistantMode.RemoteApi;
+                assistantService = remoteService;
+                RefreshModeLabel();
+                if (notify)
+                {
+                    AddAssistantMessage("已切换到真实 AI 助教。当前版本仅保留远程服务结构，真实请求将在后续接入后端。");
+                }
+                return;
+            }
+
+            currentMode = AIAssistantMode.LocalMock;
+            assistantService = new MockAIAssistantService();
+            RefreshModeLabel();
+            if (notify)
+            {
+                AddAssistantMessage("已切换到本地 Mock 助教。");
+            }
+        }
+
+        private void RefreshModeLabel()
+        {
+            if (modeText != null)
+            {
+                modeText.text = currentMode == AIAssistantMode.RemoteApi ? "当前模式：真实AI" : "当前模式：本地助教";
+            }
+        }
+
         private void SendQuestion()
         {
             var question = questionInput != null ? questionInput.text.Trim() : string.Empty;
@@ -232,7 +294,8 @@ namespace ElectricalSim.AI
         private void AskAssistant(string question)
         {
             var summary = summaryBuilder != null ? summaryBuilder.BuildDetailedSummary() : "当前画布为空，请先搭建或加载一个电路。";
-            assistantService.Ask(question, summary, AddAssistantMessage, error => AddAssistantMessage("AI 助教暂时不可用，请稍后再试。"));
+            var service = assistantService ?? new MockAIAssistantService();
+            service.Ask(question, summary, AddAssistantMessage, error => AddAssistantMessage(string.IsNullOrWhiteSpace(error) ? "AI 助教暂时不可用，请稍后再试。" : error));
         }
 
         private void ClearChat()
@@ -328,6 +391,18 @@ namespace ElectricalSim.AI
             rect.anchorMax = Vector2.one;
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
+            return label;
+        }
+
+        private static Text CreateLayoutText(string name, Transform parent, string text, int fontSize, TextAnchor alignment, float preferredHeight)
+        {
+            var label = CreateText(name, parent, text, fontSize, alignment);
+            label.rectTransform.offsetMin = new Vector2(8f, 0f);
+            label.rectTransform.offsetMax = new Vector2(-8f, 0f);
+            var layout = label.gameObject.AddComponent<LayoutElement>();
+            layout.minHeight = preferredHeight;
+            layout.preferredHeight = preferredHeight;
+            layout.flexibleWidth = 1f;
             return label;
         }
 
