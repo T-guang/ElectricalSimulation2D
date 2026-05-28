@@ -30,6 +30,7 @@ namespace ElectricalSim.Core
         public WireStyle CurrentWireStyle { get; set; } = WireStyle.Orthogonal;
         public bool IsInteractionLocked { get; private set; }
         public bool IsSimulationRunning { get; private set; }
+        public CircuitComponent SelectedComponent => selectedComponent;
 
         private readonly List<CircuitComponent> components = new List<CircuitComponent>();
         private readonly List<MeasurementPanel> measurementPanels = new List<MeasurementPanel>();
@@ -1102,4 +1103,3 @@ namespace ElectricalSim.Core
         }
     }
 }
-

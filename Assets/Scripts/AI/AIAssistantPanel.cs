@@ -1,0 +1,385 @@
+using System;
+using ElectricalSim.Core;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace ElectricalSim.AI
+{
+    public sealed class AIAssistantPanel : MonoBehaviour
+    {
+        private const float PanelWidth = 340f;
+        private const float PanelMargin = 12f;
+        private const float HeaderHeight = 42f;
+        private const float QuickActionsHeight = 118f;
+        private const float InputAreaHeight = 58f;
+
+        [SerializeField] private WorkspaceController workspace;
+        [SerializeField] private Text titleText;
+        [SerializeField] private Button explainButton;
+        [SerializeField] private Button checkButton;
+        [SerializeField] private Button clearChatButton;
+        [SerializeField] private ScrollRect chatScrollRect;
+        [SerializeField] private RectTransform chatContent;
+        [SerializeField] private InputField questionInput;
+        [SerializeField] private Button sendButton;
+
+        private IAIAssistantService assistantService;
+        private CircuitSummaryBuilder summaryBuilder;
+
+        public static AIAssistantPanel Create(RectTransform parent, WorkspaceController workspace)
+        {
+            if (parent == null)
+            {
+                return null;
+            }
+
+            var existing = parent.Find("AIAssistantPanel");
+            AIAssistantPanel panel;
+            RectTransform rect;
+            Image image;
+
+            if (existing != null)
+            {
+                panel = existing.GetComponent<AIAssistantPanel>() ?? existing.gameObject.AddComponent<AIAssistantPanel>();
+                rect = existing.GetComponent<RectTransform>();
+                image = existing.GetComponent<Image>() ?? existing.gameObject.AddComponent<Image>();
+                panel.ClearGeneratedChildren();
+            }
+            else
+            {
+                var root = new GameObject("AIAssistantPanel", typeof(RectTransform), typeof(Image), typeof(AIAssistantPanel));
+                root.transform.SetParent(parent, false);
+                rect = root.GetComponent<RectTransform>();
+                image = root.GetComponent<Image>();
+                panel = root.GetComponent<AIAssistantPanel>();
+            }
+
+            image.color = new Color(0.97f, 0.98f, 1f, 1f);
+            image.raycastTarget = true;
+
+            panel.BuildUi(rect);
+            panel.Initialize(workspace);
+            panel.AdjustWorkspaceForPanel(parent, workspace);
+            panel.transform.SetAsLastSibling();
+            return panel;
+        }
+
+        public void Initialize(WorkspaceController workspaceController)
+        {
+            workspace = workspaceController;
+            summaryBuilder = new CircuitSummaryBuilder(workspace);
+            assistantService = new MockAIAssistantService();
+
+            BindButton(sendButton, SendQuestion);
+            BindButton(explainButton, ExplainCurrentCircuit);
+            BindButton(checkButton, CheckCurrentCircuit);
+            BindButton(clearChatButton, ClearChat);
+        }
+
+        private void ClearGeneratedChildren()
+        {
+            for (var i = transform.childCount - 1; i >= 0; i--)
+            {
+                Destroy(transform.GetChild(i).gameObject);
+            }
+        }
+
+        private void BuildUi(RectTransform root)
+        {
+            root.anchorMin = new Vector2(1f, 0f);
+            root.anchorMax = new Vector2(1f, 1f);
+            root.pivot = new Vector2(1f, 0.5f);
+            root.offsetMin = new Vector2(-PanelWidth - PanelMargin, PanelMargin);
+            root.offsetMax = new Vector2(-PanelMargin, -PanelMargin);
+
+            var rootLayout = root.GetComponent<VerticalLayoutGroup>() ?? root.gameObject.AddComponent<VerticalLayoutGroup>();
+            rootLayout.padding = new RectOffset(12, 12, 12, 12);
+            rootLayout.spacing = 10f;
+            rootLayout.childAlignment = TextAnchor.UpperCenter;
+            rootLayout.childControlWidth = true;
+            rootLayout.childControlHeight = true;
+            rootLayout.childForceExpandWidth = true;
+            rootLayout.childForceExpandHeight = false;
+
+            var header = CreatePanelSection("Header", root, HeaderHeight, 0f, new Color(0.90f, 0.94f, 1f, 1f));
+            titleText = CreateText("Title", header, "AI 助教", 18, TextAnchor.MiddleLeft);
+            titleText.fontStyle = FontStyle.Bold;
+            titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
+            titleText.rectTransform.offsetMax = new Vector2(-14f, 0f);
+
+            var quickActions = CreatePanelSection("QuickActions", root, QuickActionsHeight, 0f, new Color(0.97f, 0.98f, 1f, 1f));
+            var actionLayout = quickActions.gameObject.AddComponent<VerticalLayoutGroup>();
+            actionLayout.padding = new RectOffset(0, 0, 0, 0);
+            actionLayout.spacing = 7f;
+            actionLayout.childAlignment = TextAnchor.UpperCenter;
+            actionLayout.childControlWidth = true;
+            actionLayout.childControlHeight = true;
+            actionLayout.childForceExpandWidth = true;
+            actionLayout.childForceExpandHeight = false;
+
+            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.16f, 0.45f, 0.95f), Color.white, 34f);
+            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 34f);
+            clearChatButton = CreateButton("ClearChatButton", quickActions, "清空对话", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 34f);
+
+            var chatRoot = CreatePanelSection("ChatScrollView", root, 0f, 1f, new Color(0.94f, 0.97f, 1f, 1f));
+            chatScrollRect = chatRoot.gameObject.AddComponent<ScrollRect>();
+            chatScrollRect.horizontal = false;
+            chatScrollRect.vertical = true;
+            chatScrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+            var viewport = CreateRect("Viewport", chatRoot);
+            viewport.anchorMin = Vector2.zero;
+            viewport.anchorMax = Vector2.one;
+            viewport.offsetMin = Vector2.zero;
+            viewport.offsetMax = Vector2.zero;
+            var viewportImage = viewport.gameObject.AddComponent<Image>();
+            viewportImage.color = new Color(0.94f, 0.97f, 1f, 1f);
+            var mask = viewport.gameObject.AddComponent<Mask>();
+            mask.showMaskGraphic = true;
+
+            chatContent = CreateRect("Content", viewport);
+            chatContent.anchorMin = new Vector2(0f, 1f);
+            chatContent.anchorMax = new Vector2(1f, 1f);
+            chatContent.pivot = new Vector2(0.5f, 1f);
+            chatContent.offsetMin = new Vector2(8f, 0f);
+            chatContent.offsetMax = new Vector2(-8f, 0f);
+            var contentLayout = chatContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            contentLayout.padding = new RectOffset(0, 0, 8, 8);
+            contentLayout.spacing = 8f;
+            contentLayout.childAlignment = TextAnchor.UpperCenter;
+            contentLayout.childControlWidth = true;
+            contentLayout.childControlHeight = true;
+            contentLayout.childForceExpandWidth = true;
+            contentLayout.childForceExpandHeight = false;
+            var fitter = chatContent.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            chatScrollRect.viewport = viewport;
+            chatScrollRect.content = chatContent;
+
+            var inputArea = CreatePanelSection("InputArea", root, InputAreaHeight, 0f, new Color(0.97f, 0.98f, 1f, 1f));
+            var inputLayout = inputArea.gameObject.AddComponent<HorizontalLayoutGroup>();
+            inputLayout.padding = new RectOffset(0, 0, 0, 0);
+            inputLayout.spacing = 8f;
+            inputLayout.childAlignment = TextAnchor.MiddleCenter;
+            inputLayout.childControlWidth = true;
+            inputLayout.childControlHeight = true;
+            inputLayout.childForceExpandWidth = false;
+            inputLayout.childForceExpandHeight = true;
+
+            questionInput = CreateInputField("QuestionInputField", inputArea);
+            var inputLayoutElement = questionInput.gameObject.AddComponent<LayoutElement>();
+            inputLayoutElement.flexibleWidth = 1f;
+            inputLayoutElement.minHeight = 46f;
+            inputLayoutElement.preferredHeight = 46f;
+
+            sendButton = CreateButton("SendButton", inputArea, "发送", new Color(0.16f, 0.45f, 0.95f), Color.white, 46f);
+            var sendLayout = sendButton.GetComponent<LayoutElement>();
+            sendLayout.minWidth = 68f;
+            sendLayout.preferredWidth = 68f;
+        }
+
+        private void AdjustWorkspaceForPanel(RectTransform parent, WorkspaceController workspaceController)
+        {
+            var workspaceRect = workspaceController != null ? workspaceController.WorkspaceRect : null;
+            if (workspaceRect == null || workspaceRect.parent != parent)
+            {
+                return;
+            }
+
+            var rect = GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, workspaceRect.anchorMin.y);
+            rect.anchorMax = new Vector2(1f, workspaceRect.anchorMax.y);
+            rect.pivot = new Vector2(1f, 0.5f);
+            rect.offsetMin = new Vector2(-PanelWidth - PanelMargin, workspaceRect.offsetMin.y + PanelMargin);
+            rect.offsetMax = new Vector2(-PanelMargin, workspaceRect.offsetMax.y - PanelMargin);
+
+            var targetRight = -(PanelWidth + PanelMargin * 2f);
+            if (workspaceRect.anchorMax.x > 0.98f && workspaceRect.offsetMax.x > targetRight)
+            {
+                workspaceRect.offsetMax = new Vector2(targetRight, workspaceRect.offsetMax.y);
+            }
+        }
+
+        private void SendQuestion()
+        {
+            var question = questionInput != null ? questionInput.text.Trim() : string.Empty;
+            if (string.IsNullOrEmpty(question))
+            {
+                AddAssistantMessage("请输入问题。");
+                return;
+            }
+
+            if (questionInput != null)
+            {
+                questionInput.text = string.Empty;
+            }
+
+            AddUserMessage(question);
+            AskAssistant(question);
+        }
+
+        private void ExplainCurrentCircuit()
+        {
+            AskAssistant("当前电路解释");
+        }
+
+        private void CheckCurrentCircuit()
+        {
+            AskAssistant("检查当前电路");
+        }
+
+        private void AskAssistant(string question)
+        {
+            var summary = summaryBuilder != null ? summaryBuilder.BuildDetailedSummary() : "当前画布为空，请先搭建或加载一个电路。";
+            assistantService.Ask(question, summary, AddAssistantMessage, error => AddAssistantMessage("AI 助教暂时不可用，请稍后再试。"));
+        }
+
+        private void ClearChat()
+        {
+            if (chatContent == null)
+            {
+                return;
+            }
+
+            for (var i = chatContent.childCount - 1; i >= 0; i--)
+            {
+                Destroy(chatContent.GetChild(i).gameObject);
+            }
+        }
+
+        private void AddUserMessage(string message)
+        {
+            AddMessage("我", message, true);
+        }
+
+        private void AddAssistantMessage(string message)
+        {
+            AddMessage("AI 助教", message, false);
+        }
+
+        private void AddMessage(string sender, string message, bool fromUser)
+        {
+            if (chatContent == null)
+            {
+                return;
+            }
+
+            var item = AIAssistantMessageItem.Create(chatContent);
+            item.SetMessage(sender, message, fromUser);
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(chatContent);
+            Canvas.ForceUpdateCanvases();
+            if (chatScrollRect != null)
+            {
+                chatScrollRect.verticalNormalizedPosition = 0f;
+            }
+        }
+
+        private static void BindButton(Button button, UnityEngine.Events.UnityAction action)
+        {
+            if (button == null || action == null)
+            {
+                return;
+            }
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(action);
+        }
+
+        private static RectTransform CreatePanelSection(string name, Transform parent, float preferredHeight, float flexibleHeight, Color backgroundColor)
+        {
+            var rect = CreateRect(name, parent);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = backgroundColor;
+            image.raycastTarget = true;
+            var layout = rect.gameObject.AddComponent<LayoutElement>();
+            if (preferredHeight > 0f)
+            {
+                layout.minHeight = preferredHeight;
+                layout.preferredHeight = preferredHeight;
+            }
+
+            layout.flexibleHeight = flexibleHeight;
+            return rect;
+        }
+
+        private static RectTransform CreateRect(string name, Transform parent)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            return go.GetComponent<RectTransform>();
+        }
+
+        private static Text CreateText(string name, Transform parent, string text, int fontSize, TextAnchor alignment)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Text));
+            go.transform.SetParent(parent, false);
+            var label = go.GetComponent<Text>();
+            label.text = text;
+            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.fontSize = fontSize;
+            label.alignment = alignment;
+            label.color = new Color(0.05f, 0.08f, 0.14f);
+            label.raycastTarget = false;
+
+            var rect = label.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            return label;
+        }
+
+        private static Button CreateButton(string name, Transform parent, string label, Color backgroundColor, Color textColor, float preferredHeight)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+            go.transform.SetParent(parent, false);
+            var image = go.GetComponent<Image>();
+            image.color = backgroundColor;
+            var button = go.GetComponent<Button>();
+            button.targetGraphic = image;
+
+            var layout = go.GetComponent<LayoutElement>();
+            layout.minHeight = preferredHeight;
+            layout.preferredHeight = preferredHeight;
+            layout.flexibleWidth = 1f;
+
+            var text = CreateText("Text", go.transform, label, 14, TextAnchor.MiddleCenter);
+            text.color = textColor;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 10;
+            text.resizeTextMaxSize = 14;
+            text.rectTransform.offsetMin = new Vector2(8f, 0f);
+            text.rectTransform.offsetMax = new Vector2(-8f, 0f);
+            return button;
+        }
+
+        private static InputField CreateInputField(string name, Transform parent)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(InputField));
+            go.transform.SetParent(parent, false);
+            var image = go.GetComponent<Image>();
+            image.color = Color.white;
+            image.raycastTarget = true;
+
+            var input = go.GetComponent<InputField>();
+            var text = CreateText("Text", go.transform, string.Empty, 14, TextAnchor.UpperLeft);
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.raycastTarget = true;
+            text.rectTransform.offsetMin = new Vector2(10f, 7f);
+            text.rectTransform.offsetMax = new Vector2(-10f, -7f);
+
+            var placeholder = CreateText("Placeholder", go.transform, "请输入问题", 14, TextAnchor.MiddleLeft);
+            placeholder.color = new Color(0.45f, 0.52f, 0.62f, 0.8f);
+            placeholder.rectTransform.offsetMin = new Vector2(10f, 6f);
+            placeholder.rectTransform.offsetMax = new Vector2(-10f, -6f);
+
+            input.textComponent = text;
+            input.placeholder = placeholder;
+            input.lineType = InputField.LineType.MultiLineNewline;
+            return input;
+        }
+    }
+}
