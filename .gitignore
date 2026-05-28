@@ -1,0 +1,33 @@
+﻿# Unity 自动生成缓存目录，不需要提交到 Git
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Unity 构建输出目录
+/[Bb]uild/
+/[Bb]uilds/
+
+# Visual Studio / Rider / IDE 自动生成文件
+.vs/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+
+# 日志和临时文件
+*.log
+*.tmp
+*.pidb
+*.booproj
+*.svd
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 系统模板自动备份文件
+/Assets/Resources/Blueprints/Templates/Backups/
