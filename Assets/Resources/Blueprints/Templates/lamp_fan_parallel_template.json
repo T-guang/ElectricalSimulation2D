@@ -1,4 +1,4 @@
-﻿{
+{
     "templateId": "lamp_fan_parallel_template",
     "templateName": "电灯泡与电风扇并联控制电路",
     "category": "家庭电路",
@@ -8,12 +8,13 @@
         {
             "instanceId": "power_1",
             "definitionName": "AC_220V_Power",
-            "x": -520.0,
-            "y": 120.0,
+            "x": -552.0,
+            "y": 96.0,
             "isClosed": true,
             "parameters": [
                 {
-                    "key": "voltage", "displayName": "输出电压",
+                    "key": "voltage",
+                    "displayName": "输出电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -25,12 +26,13 @@
         {
             "instanceId": "switch_lamp",
             "definitionName": "Single_Control_Switch",
-            "x": -140.0,
-            "y": 220.0,
+            "x": -144.0,
+            "y": 288.0,
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "switchType", "displayName": "开关类型",
+                    "key": "switchType",
+                    "displayName": "开关类型",
                     "value": 1.0,
                     "unit": "",
                     "min": 0.0,
@@ -42,12 +44,13 @@
         {
             "instanceId": "lamp_1",
             "definitionName": "Lamp_220V",
-            "x": 260.0,
-            "y": 220.0,
+            "x": 192.0,
+            "y": 288.0,
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "ratedVoltage", "displayName": "额定电压",
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -55,7 +58,8 @@
                     "editable": false
                 },
                 {
-                    "key": "power", "displayName": "功率",
+                    "key": "power",
+                    "displayName": "功率",
                     "value": 40.0,
                     "unit": "W",
                     "min": 1.0,
@@ -67,12 +71,13 @@
         {
             "instanceId": "switch_fan",
             "definitionName": "Single_Control_Switch",
-            "x": -140.0,
-            "y": 20.0,
+            "x": -144.0,
+            "y": 0.0,
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "switchType", "displayName": "开关类型",
+                    "key": "switchType",
+                    "displayName": "开关类型",
                     "value": 1.0,
                     "unit": "",
                     "min": 0.0,
@@ -84,12 +89,13 @@
         {
             "instanceId": "fan_1",
             "definitionName": "Fan_220V",
-            "x": 260.0,
-            "y": 20.0,
+            "x": 288.0,
+            "y": 72.0,
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "ratedVoltage", "displayName": "额定电压",
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -97,7 +103,8 @@
                     "editable": false
                 },
                 {
-                    "key": "power", "displayName": "功率",
+                    "key": "power",
+                    "displayName": "功率",
                     "value": 45.0,
                     "unit": "W",
                     "min": 1.0,
@@ -117,24 +124,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -544.2,
-                    "y": 55.0
+                    "x": -576.2000122070313,
+                    "y": 30.999998092651368
                 },
                 {
-                    "x": -544.2,
-                    "y": 320.0
+                    "x": -576.2000122070313,
+                    "y": 2.999998092651367
                 },
                 {
-                    "x": -140.0,
-                    "y": 320.0
+                    "x": -576.2000122070313,
+                    "y": 384.0
                 },
                 {
-                    "x": -140.0,
-                    "y": 285.0
+                    "x": -144.0,
+                    "y": 384.0
+                },
+                {
+                    "x": -144.0,
+                    "y": 381.0
+                },
+                {
+                    "x": -144.0,
+                    "y": 353.0
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 320.0
+            "manualRouteAxis": 384.0
         },
         {
             "startComponentId": "switch_lamp",
@@ -145,20 +160,28 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -140.0,
-                    "y": 155.0
+                    "x": -144.0,
+                    "y": 222.99998474121095
                 },
                 {
-                    "x": -140.0,
+                    "x": -144.0,
+                    "y": 194.99998474121095
+                },
+                {
+                    "x": -144.0,
                     "y": 132.0
                 },
                 {
-                    "x": 232.5,
+                    "x": 164.50009155273438,
                     "y": 132.0
                 },
                 {
-                    "x": 232.5,
-                    "y": 155.0
+                    "x": 164.50009155273438,
+                    "y": 194.99998474121095
+                },
+                {
+                    "x": 164.50009155273438,
+                    "y": 222.99998474121095
                 }
             ],
             "manualRouteHorizontal": true,
@@ -173,24 +196,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -495.8,
-                    "y": 55.0
+                    "x": -527.7999877929688,
+                    "y": 30.999998092651368
                 },
                 {
-                    "x": -495.8,
-                    "y": 82.0
+                    "x": -527.7999877929688,
+                    "y": 2.999998092651367
                 },
                 {
-                    "x": 287.5,
-                    "y": 82.0
+                    "x": -527.7999877929688,
+                    "y": -24.0
                 },
                 {
-                    "x": 287.5,
-                    "y": 155.0
+                    "x": 219.5000457763672,
+                    "y": -24.0
+                },
+                {
+                    "x": 219.5000457763672,
+                    "y": 194.99998474121095
+                },
+                {
+                    "x": 219.5000457763672,
+                    "y": 222.99998474121095
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 82.0
+            "manualRouteAxis": -24.0
         },
         {
             "startComponentId": "power_1",
@@ -201,20 +232,28 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -544.2,
-                    "y": 55.0
+                    "x": -576.2000122070313,
+                    "y": 30.999998092651368
                 },
                 {
-                    "x": -544.2,
+                    "x": -576.2000122070313,
+                    "y": 2.999998092651367
+                },
+                {
+                    "x": -576.2000122070313,
                     "y": 120.0
                 },
                 {
-                    "x": -140.0,
+                    "x": -144.0,
                     "y": 120.0
                 },
                 {
-                    "x": -140.0,
-                    "y": 85.0
+                    "x": -144.0,
+                    "y": 93.00001525878906
+                },
+                {
+                    "x": -144.0,
+                    "y": 65.00001525878906
                 }
             ],
             "manualRouteHorizontal": true,
@@ -229,24 +268,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -140.0,
-                    "y": -45.0
+                    "x": -144.0,
+                    "y": -65.00001525878906
                 },
                 {
-                    "x": -140.0,
-                    "y": -86.0
+                    "x": -144.0,
+                    "y": -93.00001525878906
                 },
                 {
-                    "x": 232.5,
-                    "y": -86.0
+                    "x": -144.0,
+                    "y": -96.0
                 },
                 {
-                    "x": 232.5,
-                    "y": -45.0
+                    "x": 260.5000305175781,
+                    "y": -96.0
+                },
+                {
+                    "x": 260.5000305175781,
+                    "y": -21.00002098083496
+                },
+                {
+                    "x": 260.5000305175781,
+                    "y": 6.999978542327881
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": -86.0
+            "manualRouteAxis": -96.0
         },
         {
             "startComponentId": "power_1",
@@ -257,25 +304,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -495.8,
-                    "y": 55.0
+                    "x": -527.7999877929688,
+                    "y": 30.999998092651368
                 },
                 {
-                    "x": -495.8,
-                    "y": -118.0
+                    "x": -527.7999877929688,
+                    "y": 2.999998092651367
                 },
                 {
-                    "x": 287.5,
-                    "y": -118.0
+                    "x": -527.7999877929688,
+                    "y": -132.0
                 },
                 {
-                    "x": 287.5,
-                    "y": -45.0
+                    "x": 315.5,
+                    "y": -132.0
+                },
+                {
+                    "x": 315.5,
+                    "y": -21.00002098083496
+                },
+                {
+                    "x": 315.5,
+                    "y": 6.999978542327881
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": -118.0
+            "manualRouteAxis": -132.0
         }
     ]
 }
-
