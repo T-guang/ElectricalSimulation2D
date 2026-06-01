@@ -1,5 +1,6 @@
 using System;
 using ElectricalSim.Core;
+using ElectricalSim.Rules;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -288,7 +289,24 @@ namespace ElectricalSim.AI
 
         private void CheckCurrentCircuit()
         {
-            AskAssistant("检查当前电路");
+            if (workspace == null)
+            {
+                AddAssistantMessage("电路检查失败：未能读取当前画布。");
+                return;
+            }
+
+            try
+            {
+                var checker = new CircuitRuleChecker(workspace);
+                var result = checker.Check();
+                AddAssistantMessage(CircuitRuleCheckFormatter.Format(result));
+                workspace.SetStatus("电路检查完成：" + result.ErrorCount + " 个严重问题，" + result.WarningCount + " 个提醒。");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                AddAssistantMessage("电路检查暂时不可用，请稍后再试。");
+            }
         }
 
         private void AskAssistant(string question)

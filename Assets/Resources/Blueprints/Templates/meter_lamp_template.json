@@ -1,4 +1,4 @@
-{
+﻿{
     "templateId": "meter_lamp_template",
     "templateName": "单相电能表照明电路",
     "category": "家庭电路",
@@ -40,8 +40,7 @@
                     "editable": false
                 },
                 {
-                    "key": "ratedCurrent",
-                    "displayName": "????",
+                    "key": "ratedCurrent", "displayName": "额定电流",
                     "value": 10.0,
                     "unit": "A",
                     "min": 1.0,
@@ -67,8 +66,7 @@
                     "editable": false
                 },
                 {
-                    "key": "ratedCurrent",
-                    "displayName": "????",
+                    "key": "ratedCurrent", "displayName": "额定电流",
                     "value": 16.0,
                     "unit": "A",
                     "min": 1.0,
