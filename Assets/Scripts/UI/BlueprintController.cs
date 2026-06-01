@@ -66,7 +66,7 @@ namespace ElectricalSim.UI
                             var texts = newCard.GetComponentsInChildren<Text>(true);
                             foreach (var t in texts)
                             {
-                                if (t.GetComponentInParent<Button>() != null)
+                                if (t.text.Contains("练习"))
                                 {
                                     t.text = "进入练习";
                                     continue;
