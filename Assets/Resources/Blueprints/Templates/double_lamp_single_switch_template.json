@@ -8,7 +8,7 @@
         {
             "instanceId": "power_1",
             "definitionName": "AC_220V_Power",
-            "x": -520.0,
+            "x": -600.0,
             "y": 120.0,
             "isClosed": true,
             "parameters": [
@@ -26,7 +26,7 @@
         {
             "instanceId": "breaker_1",
             "definitionName": "Breaker_2P",
-            "x": -340.0,
+            "x": -312.0,
             "y": 120.0,
             "isClosed": false,
             "parameters": []
@@ -34,7 +34,7 @@
         {
             "instanceId": "switch_1",
             "definitionName": "Single_Control_Switch",
-            "x": -140.0,
+            "x": -120.0,
             "y": 120.0,
             "isClosed": false,
             "parameters": [
@@ -52,8 +52,8 @@
         {
             "instanceId": "lamp_1",
             "definitionName": "Lamp_220V",
-            "x": 140.0,
-            "y": 220.0,
+            "x": 144.0,
+            "y": 264.0,
             "isClosed": false,
             "parameters": [
                 {
@@ -79,8 +79,8 @@
         {
             "instanceId": "lamp_2",
             "definitionName": "Lamp_220V",
-            "x": 140.0,
-            "y": 20.0,
+            "x": 168.0,
+            "y": 24.0,
             "isClosed": false,
             "parameters": [
                 {
@@ -111,7 +111,10 @@
             "endComponentId": "breaker_1",
             "endTerminalId": "P1_IN",
             "color": "#F21F1F",
-            "manualRoutePoints": []
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
         },
         {
             "startComponentId": "power_1",
@@ -119,7 +122,35 @@
             "endComponentId": "breaker_1",
             "endTerminalId": "P2_IN",
             "color": "#1A59F2",
-            "manualRoutePoints": []
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -575.800048828125,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -575.800048828125,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -575.800048828125,
+                    "y": 252.0
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 252.0
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 213.00001525878907
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 185.00001525878907
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 252.0
         },
         {
             "startComponentId": "breaker_1",
@@ -127,7 +158,35 @@
             "endComponentId": "switch_1",
             "endTerminalId": "L",
             "color": "#F21F1F",
-            "manualRoutePoints": []
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -330.3333740234375,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -330.3333740234375,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -216.0,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -216.0,
+                    "y": 213.00001525878907
+                },
+                {
+                    "x": -119.99999237060547,
+                    "y": 213.00001525878907
+                },
+                {
+                    "x": -119.99999237060547,
+                    "y": 185.00001525878907
+                }
+            ],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": -216.0
         },
         {
             "startComponentId": "switch_1",
@@ -135,12 +194,10 @@
             "endComponentId": "lamp_1",
             "endTerminalId": "L",
             "color": "#F21F1F",
-            "manualRoutePoints": [
-                { "x": -140.0, "y": 155.0 },
-                { "x": -140.0, "y": 220.0 },
-                { "x": 112.5, "y": 220.0 },
-                { "x": 112.5, "y": 220.0 }
-            ]
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
         },
         {
             "startComponentId": "switch_1",
@@ -148,12 +205,10 @@
             "endComponentId": "lamp_2",
             "endTerminalId": "L",
             "color": "#F21F1F",
-            "manualRoutePoints": [
-                { "x": -140.0, "y": 155.0 },
-                { "x": -140.0, "y": 20.0 },
-                { "x": 112.5, "y": 20.0 },
-                { "x": 112.5, "y": 20.0 }
-            ]
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
         },
         {
             "startComponentId": "breaker_1",
@@ -161,12 +216,35 @@
             "endComponentId": "lamp_1",
             "endTerminalId": "N",
             "color": "#1A59F2",
+            "style": "",
             "manualRoutePoints": [
-                { "x": -315.8, "y": 85.0 },
-                { "x": -315.8, "y": 280.0 },
-                { "x": 167.5, "y": 280.0 },
-                { "x": 167.5, "y": 220.0 }
-            ]
+                {
+                    "x": -293.6667175292969,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": -132.0
+                },
+                {
+                    "x": 171.5,
+                    "y": -132.0
+                },
+                {
+                    "x": 171.5,
+                    "y": 171.00003051757813
+                },
+                {
+                    "x": 171.5,
+                    "y": 199.00003051757813
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -132.0
         },
         {
             "startComponentId": "breaker_1",
@@ -174,12 +252,35 @@
             "endComponentId": "lamp_2",
             "endTerminalId": "N",
             "color": "#1A59F2",
+            "style": "",
             "manualRoutePoints": [
-                { "x": -315.8, "y": 85.0 },
-                { "x": -315.8, "y": -40.0 },
-                { "x": 167.5, "y": -40.0 },
-                { "x": 167.5, "y": 20.0 }
-            ]
+                {
+                    "x": -293.6667175292969,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": -168.0
+                },
+                {
+                    "x": 195.5,
+                    "y": -168.0
+                },
+                {
+                    "x": 195.5,
+                    "y": -69.00000762939453
+                },
+                {
+                    "x": 195.5,
+                    "y": -41.00000762939453
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -168.0
         }
     ]
 }

@@ -8,8 +8,8 @@
         {
             "instanceId": "power_1",
             "definitionName": "AC_220V_Power",
-            "x": -520.0,
-            "y": 120.0,
+            "x": -696.0,
+            "y": 144.0,
             "isClosed": true,
             "parameters": [
                 {
@@ -26,16 +26,16 @@
         {
             "instanceId": "breaker_1",
             "definitionName": "Breaker_2P",
-            "x": -340.0,
-            "y": 120.0,
+            "x": -456.0,
+            "y": 144.0,
             "isClosed": false,
             "parameters": []
         },
         {
             "instanceId": "switch_1",
             "definitionName": "Single_Control_Switch",
-            "x": -140.0,
-            "y": 220.0,
+            "x": -216.0,
+            "y": 336.0,
             "isClosed": false,
             "parameters": [
                 {
@@ -52,8 +52,8 @@
         {
             "instanceId": "switch_2",
             "definitionName": "Single_Control_Switch",
-            "x": -140.0,
-            "y": 20.0,
+            "x": -192.0,
+            "y": -48.0,
             "isClosed": false,
             "parameters": [
                 {
@@ -70,8 +70,8 @@
         {
             "instanceId": "lamp_1",
             "definitionName": "Lamp_220V",
-            "x": 140.0,
-            "y": 220.0,
+            "x": 48.0,
+            "y": 336.0,
             "isClosed": false,
             "parameters": [
                 {
@@ -97,8 +97,8 @@
         {
             "instanceId": "lamp_2",
             "definitionName": "Lamp_220V",
-            "x": 140.0,
-            "y": 20.0,
+            "x": 48.0,
+            "y": -48.0,
             "isClosed": false,
             "parameters": [
                 {
@@ -129,7 +129,10 @@
             "endComponentId": "breaker_1",
             "endTerminalId": "P1_IN",
             "color": "#F21F1F",
-            "manualRoutePoints": []
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
         },
         {
             "startComponentId": "power_1",
@@ -137,7 +140,35 @@
             "endComponentId": "breaker_1",
             "endTerminalId": "P2_IN",
             "color": "#1A59F2",
-            "manualRoutePoints": []
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -671.7998657226563,
+                    "y": 79.00001525878906
+                },
+                {
+                    "x": -671.7998657226563,
+                    "y": 51.00001525878906
+                },
+                {
+                    "x": -671.7998657226563,
+                    "y": 276.0
+                },
+                {
+                    "x": -437.6666564941406,
+                    "y": 276.0
+                },
+                {
+                    "x": -437.6666564941406,
+                    "y": 237.00003051757813
+                },
+                {
+                    "x": -437.6666564941406,
+                    "y": 209.00003051757813
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 276.0
         },
         {
             "startComponentId": "breaker_1",
@@ -145,12 +176,10 @@
             "endComponentId": "switch_1",
             "endTerminalId": "L",
             "color": "#F21F1F",
-            "manualRoutePoints": [
-                { "x": -315.8, "y": 155.0 },
-                { "x": -315.8, "y": 220.0 },
-                { "x": -167.5, "y": 220.0 },
-                { "x": -167.5, "y": 220.0 }
-            ]
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
         },
         {
             "startComponentId": "breaker_1",
@@ -158,12 +187,35 @@
             "endComponentId": "switch_2",
             "endTerminalId": "L",
             "color": "#F21F1F",
+            "style": "",
             "manualRoutePoints": [
-                { "x": -315.8, "y": 155.0 },
-                { "x": -315.8, "y": 20.0 },
-                { "x": -167.5, "y": 20.0 },
-                { "x": -167.5, "y": 20.0 }
-            ]
+                {
+                    "x": -474.33331298828127,
+                    "y": 79.00001525878906
+                },
+                {
+                    "x": -474.33331298828127,
+                    "y": 51.00001525878906
+                },
+                {
+                    "x": -474.33331298828127,
+                    "y": 48.0
+                },
+                {
+                    "x": -192.0,
+                    "y": 48.0
+                },
+                {
+                    "x": -192.0,
+                    "y": 44.99998474121094
+                },
+                {
+                    "x": -192.0,
+                    "y": 16.999984741210939
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 48.0
         },
         {
             "startComponentId": "switch_1",
@@ -171,7 +223,10 @@
             "endComponentId": "lamp_1",
             "endTerminalId": "L",
             "color": "#F21F1F",
-            "manualRoutePoints": []
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
         },
         {
             "startComponentId": "switch_2",
@@ -179,7 +234,10 @@
             "endComponentId": "lamp_2",
             "endTerminalId": "L",
             "color": "#F21F1F",
-            "manualRoutePoints": []
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
         },
         {
             "startComponentId": "breaker_1",
@@ -187,12 +245,35 @@
             "endComponentId": "lamp_1",
             "endTerminalId": "N",
             "color": "#1A59F2",
+            "style": "",
             "manualRoutePoints": [
-                { "x": -315.8, "y": 85.0 },
-                { "x": -315.8, "y": 280.0 },
-                { "x": 167.5, "y": 280.0 },
-                { "x": 167.5, "y": 220.0 }
-            ]
+                {
+                    "x": -437.6666564941406,
+                    "y": 79.00001525878906
+                },
+                {
+                    "x": -437.6666564941406,
+                    "y": 51.00001525878906
+                },
+                {
+                    "x": 72.0,
+                    "y": 51.00001525878906
+                },
+                {
+                    "x": 72.0,
+                    "y": 243.0
+                },
+                {
+                    "x": 75.49996948242188,
+                    "y": 243.0
+                },
+                {
+                    "x": 75.49996948242188,
+                    "y": 271.0
+                }
+            ],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 72.0
         },
         {
             "startComponentId": "breaker_1",
@@ -200,12 +281,35 @@
             "endComponentId": "lamp_2",
             "endTerminalId": "N",
             "color": "#1A59F2",
+            "style": "",
             "manualRoutePoints": [
-                { "x": -315.8, "y": 85.0 },
-                { "x": -315.8, "y": -40.0 },
-                { "x": 167.5, "y": -40.0 },
-                { "x": 167.5, "y": 20.0 }
-            ]
+                {
+                    "x": -437.6666564941406,
+                    "y": 79.00001525878906
+                },
+                {
+                    "x": -437.6666564941406,
+                    "y": 51.00001525878906
+                },
+                {
+                    "x": -437.6666564941406,
+                    "y": -180.0
+                },
+                {
+                    "x": 75.49996948242188,
+                    "y": -180.0
+                },
+                {
+                    "x": 75.49996948242188,
+                    "y": -140.99998474121095
+                },
+                {
+                    "x": 75.49996948242188,
+                    "y": -112.99998474121094
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -180.0
         }
     ]
 }

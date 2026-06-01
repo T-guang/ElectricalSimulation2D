@@ -7,11 +7,18 @@ namespace ElectricalSim.UI
 {
     public sealed class TemplateSelectionPanel : MonoBehaviour
     {
+        private const string FamilyCategory = "家庭电路";
+        private const string IndustrialCategory = "工业电路";
+
         [SerializeField] private RectTransform content;
         [SerializeField] private Button closeButton;
         [SerializeField] private Text emptyText;
+        [SerializeField] private Button familyButton;
+        [SerializeField] private Button industrialButton;
 
+        private readonly List<CircuitTemplateCatalogItemDto> allTemplates = new List<CircuitTemplateCatalogItemDto>();
         private System.Action<CircuitTemplateCatalogItemDto> onSelected;
+        private string currentCategory = FamilyCategory;
 
         public static TemplateSelectionPanel Create(RectTransform parent, System.Action<CircuitTemplateCatalogItemDto> selectedCallback)
         {
@@ -38,8 +45,15 @@ namespace ElectricalSim.UI
 
         public void Show(IReadOnlyList<CircuitTemplateCatalogItemDto> templates)
         {
+            allTemplates.Clear();
+            if (templates != null)
+            {
+                allTemplates.AddRange(templates);
+            }
+
+            currentCategory = FamilyCategory;
             gameObject.SetActive(true);
-            RebuildList(templates);
+            RefreshTemplateListByCategory(currentCategory);
             transform.SetAsLastSibling();
         }
 
@@ -65,12 +79,30 @@ namespace ElectricalSim.UI
             closeRect.sizeDelta = new Vector2(68f, 34f);
             closeButton.onClick.AddListener(Hide);
 
+            familyButton = CreateButton(parent, FamilyCategory, new Color(0.12f, 0.45f, 1f), Color.white);
+            var familyRect = familyButton.GetComponent<RectTransform>();
+            familyRect.anchorMin = new Vector2(0f, 1f);
+            familyRect.anchorMax = new Vector2(0f, 1f);
+            familyRect.pivot = new Vector2(0f, 1f);
+            familyRect.anchoredPosition = new Vector2(24f, -58f);
+            familyRect.sizeDelta = new Vector2(112f, 34f);
+            familyButton.onClick.AddListener(ShowFamilyTemplates);
+
+            industrialButton = CreateButton(parent, IndustrialCategory, new Color(0.94f, 0.96f, 0.98f), new Color(0.26f, 0.34f, 0.45f));
+            var industrialRect = industrialButton.GetComponent<RectTransform>();
+            industrialRect.anchorMin = new Vector2(0f, 1f);
+            industrialRect.anchorMax = new Vector2(0f, 1f);
+            industrialRect.pivot = new Vector2(0f, 1f);
+            industrialRect.anchoredPosition = new Vector2(148f, -58f);
+            industrialRect.sizeDelta = new Vector2(112f, 34f);
+            industrialButton.onClick.AddListener(ShowIndustrialTemplates);
+
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask)).GetComponent<RectTransform>();
             viewport.SetParent(parent, false);
             viewport.anchorMin = new Vector2(0f, 0f);
             viewport.anchorMax = new Vector2(1f, 1f);
             viewport.offsetMin = new Vector2(24f, 24f);
-            viewport.offsetMax = new Vector2(-24f, -70f);
+            viewport.offsetMax = new Vector2(-24f, -110f);
             viewport.GetComponent<Image>().color = new Color(0.98f, 0.99f, 1f, 1f);
             viewport.GetComponent<Mask>().showMaskGraphic = true;
 
@@ -87,7 +119,7 @@ namespace ElectricalSim.UI
             emptyText.rectTransform.anchorMin = new Vector2(0f, 0f);
             emptyText.rectTransform.anchorMax = new Vector2(1f, 1f);
             emptyText.rectTransform.offsetMin = new Vector2(24f, 24f);
-            emptyText.rectTransform.offsetMax = new Vector2(-24f, -70f);
+            emptyText.rectTransform.offsetMax = new Vector2(-24f, -110f);
             emptyText.gameObject.SetActive(false);
 
             var scrollRect = parent.gameObject.AddComponent<ScrollRect>();
@@ -96,6 +128,63 @@ namespace ElectricalSim.UI
             scrollRect.horizontal = false;
             scrollRect.vertical = true;
             scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        }
+
+        private void ShowFamilyTemplates()
+        {
+            RefreshTemplateListByCategory(FamilyCategory);
+        }
+
+        private void ShowIndustrialTemplates()
+        {
+            RefreshTemplateListByCategory(IndustrialCategory);
+        }
+
+        private void RefreshTemplateListByCategory(string category)
+        {
+            currentCategory = category;
+            UpdateCategoryButtonState();
+
+            var filteredTemplates = new List<CircuitTemplateCatalogItemDto>();
+            foreach (var template in allTemplates)
+            {
+                if (template != null && template.category == category)
+                {
+                    filteredTemplates.Add(template);
+                }
+            }
+
+            RebuildList(filteredTemplates);
+            if (emptyText != null && filteredTemplates.Count == 0)
+            {
+                emptyText.text = category == IndustrialCategory ? "暂无工业电路模板。" : "暂无该分类模板。";
+            }
+        }
+
+        private void UpdateCategoryButtonState()
+        {
+            ApplyCategoryButtonStyle(familyButton, currentCategory == FamilyCategory);
+            ApplyCategoryButtonStyle(industrialButton, currentCategory == IndustrialCategory);
+        }
+
+        private static void ApplyCategoryButtonStyle(Button button, bool selected)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = selected ? new Color(0.12f, 0.45f, 1f) : new Color(0.94f, 0.96f, 0.98f);
+            }
+
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.color = selected ? Color.white : new Color(0.26f, 0.34f, 0.45f);
+            }
         }
 
         private void RebuildList(IReadOnlyList<CircuitTemplateCatalogItemDto> templates)
