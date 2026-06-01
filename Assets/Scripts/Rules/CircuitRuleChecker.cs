@@ -39,6 +39,7 @@ namespace ElectricalSim.Rules
             CheckIsolatedComponents();
             CheckOpenDevicesAffectLoads();
             CheckBypassedDevices();
+            CheckSingleSwitchTerminals();
             return result;
         }
 
@@ -288,6 +289,112 @@ namespace ElectricalSim.Rules
                 if (l != null && CanReachAnyPowerTerminal(l, TerminalRole.Neutral, structuralGraph))
                 {
                     AddIssue(CircuitIssueSeverity.Warning, "SwitchOnNeutralPath", "单开单控开关疑似接在零线支路上。", "开关如果切断的是零线，灯可能会熄灭，但灯具火线端仍可能带电，维护时存在安全隐患。", "请将开关改接到火线路径中，让电源 L 经过开关后再进入灯泡 L 端。", sw);
+                }
+            }
+        }
+
+        private Dictionary<string, HashSet<string>> BuildExternalSwitchGraph()
+        {
+            var graph = new Dictionary<string, HashSet<string>>();
+            var components = workspace.Components;
+            if (components != null)
+            {
+                foreach (var component in components)
+                {
+                    if (component == null || component.Terminals == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var terminal in component.Terminals)
+                    {
+                        AddNode(graph, Node(terminal));
+                    }
+
+                    if (component.Definition != null)
+                    {
+                        if (component.Definition.kind == ComponentKind.Switch || 
+                            component.Definition.kind == ComponentKind.TwoWaySwitch || 
+                            component.Definition.kind == ComponentKind.PushButton)
+                        {
+                            // Do not add internal edges for switches
+                        }
+                        else
+                        {
+                            AddInternalEdges(component, graph, true);
+                        }
+                    }
+                }
+            }
+
+            var wires = workspace.WireManager != null ? workspace.WireManager.Wires : null;
+            if (wires != null)
+            {
+                foreach (var wire in wires)
+                {
+                    if (wire == null || wire.StartTerminal == null || wire.EndTerminal == null)
+                    {
+                        continue;
+                    }
+
+                    AddEdge(graph, Node(wire.StartTerminal), Node(wire.EndTerminal));
+                }
+            }
+
+            return graph;
+        }
+
+        private void CheckSingleSwitchTerminals()
+        {
+            var switchExternalGraph = BuildExternalSwitchGraph();
+
+            foreach (var sw in switches)
+            {
+                if (sw.Definition == null || sw.GetTerminal("L") == null || sw.GetTerminal("L1") == null || sw.GetTerminal("L2") != null)
+                {
+                    continue;
+                }
+
+                var l = sw.GetTerminal("L");
+                var l1 = sw.GetTerminal("L1");
+
+                bool hasLWire = HasAnyWire(l);
+                bool hasL1Wire = HasAnyWire(l1);
+
+                if (!hasLWire || !hasL1Wire)
+                {
+                    AddIssue(CircuitIssueSeverity.Warning, "SingleSwitchTerminalIncomplete", 
+                        "单开单控开关进线或出线不完整。", 
+                        "单控开关需要 L 端进线，L1 端出线。当前 L 或 L1 缺少连接。", 
+                        "请检查开关接线，确保有进有出。", sw);
+                    continue;
+                }
+
+                bool l1ReachesLoadL = false;
+                bool lReachesLoadL = false;
+                foreach (var load in loads)
+                {
+                    var loadL = FindPhaseTerminal(load);
+                    if (loadL != null)
+                    {
+                        if (AreConnected(l1, loadL, switchExternalGraph)) l1ReachesLoadL = true;
+                        if (AreConnected(l, loadL, switchExternalGraph)) lReachesLoadL = true;
+                    }
+                }
+
+                if (!l1ReachesLoadL)
+                {
+                    AddIssue(CircuitIssueSeverity.Warning, "SingleSwitchTerminalMiswired", 
+                        "单开单控开关的 L1 输出端未检测到受控负载。", 
+                        "单控开关应通过 L 端接入火线，L1 端输出到负载。当前 L1 未连接到任何负载 L 端。", 
+                        "请检查接线顺序是否为“电源 L → 空开 → 开关 L → 开关 L1 → 负载 L”。", sw);
+                }
+                else if (lReachesLoadL)
+                {
+                    AddIssue(CircuitIssueSeverity.Warning, "SingleSwitchTerminalMiswired", 
+                        "负载火线可能接在单控开关的进线侧（L端）。", 
+                        "开关未按 L → L1 顺序控制负载。如果负载直接接在开关 L 侧，开关断开时无法切断负载电源。", 
+                        "请检查接线顺序是否为“电源 L → 空开 → 开关 L → 开关 L1 → 负载 L”。", sw);
                 }
             }
         }
@@ -667,6 +774,7 @@ namespace ElectricalSim.Rules
         }
     }
 }
+
 
 
 

@@ -163,6 +163,11 @@ namespace ElectricalSim.Rules
                     explanation.Reason = "并联电路中每个负载都需要按设计接入对应控制支路。如果某个负载绕过开关，它可能无法被正确控制。";
                     explanation.Suggestion = "请检查该负载 L 端是否接在对应开关输出端，而不是直接接到电源或空开输出端。";
                     break;
+                case "SingleSwitchTerminalMiswired":
+                case "SingleSwitchTerminalIncomplete":
+                    explanation.Reason = "单控开关不是只要接上线就可以起控制作用，它需要让火线从 L 端进入，再从 L1 端输出到灯泡。这样开关断开时，才能真正切断灯泡火线。";
+                    explanation.Suggestion = "请检查接线顺序是否为“电源 L → 空开 → 开关 L → 开关 L1 → 灯泡 L”。如果灯泡火线接在开关 L 侧，或者 L1 没有接到灯泡，开关就可能无法正确控制灯泡。";
+                    break;
                 case "OPEN_DEVICE":
                     if (issue.title != null && issue.title.Contains("以下控制元件"))
                     {
@@ -195,4 +200,5 @@ namespace ElectricalSim.Rules
         }
     }
 }
+
 
