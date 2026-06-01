@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ElectricalSim.Core;
 using ElectricalSim.Rules;
 using UnityEngine;
@@ -299,13 +299,23 @@ namespace ElectricalSim.AI
             {
                 var checker = new CircuitRuleChecker(workspace);
                 var result = checker.Check();
-                AddAssistantMessage(CircuitRuleCheckFormatter.Format(result));
-                workspace.SetStatus("电路检查完成：" + result.ErrorCount + " 个严重问题，" + result.WarningCount + " 个提醒。");
+                AddAssistantMessage(CircuitRuleCheckTeacherFormatter.FormatForTeaching(result));
+                
+                string summary = "电路检查完成：";
+                if (result.ErrorCount > 0 || result.WarningCount > 0)
+                {
+                    summary += $"发现 {result.ErrorCount} 个严重问题，{result.WarningCount} 个提醒。";
+                }
+                else
+                {
+                    summary += "未发现明显接线错误。";
+                }
+                workspace.SetStatus(summary);
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
-                AddAssistantMessage("电路检查暂时不可用，请稍后再试。");
+                AddAssistantMessage("电路检查时出错，请稍后重试。");
             }
         }
 
@@ -476,3 +486,4 @@ namespace ElectricalSim.AI
         }
     }
 }
+
