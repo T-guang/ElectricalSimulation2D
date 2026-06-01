@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using ElectricalSim.Core;
 
 namespace ElectricalSim.Rules
@@ -399,16 +399,7 @@ namespace ElectricalSim.Rules
             }
         }
 
-                var structuralOk = CanReachAnyPowerTerminal(loadL, TerminalRole.Phase, structuralGraph) &&
-                    CanReachAnyPowerTerminal(loadN, TerminalRole.Neutral, structuralGraph);
-                var liveOk = CanReachAnyPowerTerminal(loadL, TerminalRole.Phase, liveGraph) &&
-                    CanReachAnyPowerTerminal(loadN, TerminalRole.Neutral, liveGraph);
-                if (structuralOk && !liveOk)
-                {
-                    AddIssue(CircuitIssueSeverity.Info, "OPEN_DEVICE", LoadName(load) + "当前可能因开关或空开断开而未通电。", "接线结构基本存在，但实时开关状态让回路断开。", "双击开关或空开切换 ON/OFF 后，再运行仿真观察负载状态。", load);
-                }
-            }
-        }
+
 
         private bool CanReachAnyPowerTerminal(TerminalView from, TerminalRole powerRole, Dictionary<string, HashSet<string>> graph)
         {
