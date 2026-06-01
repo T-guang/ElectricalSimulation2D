@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ElectricalSim.Core;
 
 namespace ElectricalSim.Rules
@@ -38,6 +38,7 @@ namespace ElectricalSim.Rules
             CheckMeters();
             CheckIsolatedComponents();
             CheckOpenDevicesAffectLoads();
+            CheckBypassedDevices();
             return result;
         }
 
@@ -235,20 +236,27 @@ namespace ElectricalSim.Rules
                     continue;
                 }
 
-                if (switches.Count == 0)
+                if (switches.Count == 0 && breakers.Count == 0)
                 {
-                    AddIssue(CircuitIssueSeverity.Warning, "NO_SWITCH", LoadName(load) + "火线支路可能未经过开关控制。", "当前电路没有检测到家庭照明开关。", "家庭照明中通常应让开关控制火线。", load);
+                    AddIssue(CircuitIssueSeverity.Info, "LoadConnectedDirectlyToPower", 
+                        "当前负载可能直接接在电源两端。", 
+                        "这样虽然可以形成回路，但缺少空气开关保护或开关控制，不符合常见家庭照明教学接线习惯。", 
+                        "建议加入空气开关和单控开关，使电路具备保护和控制功能。", load);
+                    continue;
+                }
+                else if (switches.Count == 0)
+                {
+                    AddIssue(CircuitIssueSeverity.Warning, "LoadLivePathWithoutSwitch", 
+                        LoadName(load) + "的火线路径可能没有经过控制开关。", 
+                        "当前负载 L 端可以直接获得火线，但未检测到火线路径中存在单开单控开关。这样负载可能一直通电，无法通过开关控制。", 
+                        "请将开关串联到火线路径中，推荐接法为“电源 L → 空开 → 开关 L → 开关 L1 → 负载 L”。", load);
                     continue;
                 }
 
                 var switchOnPhasePath = false;
                 foreach (var sw in switches)
                 {
-                    var input = sw.GetTerminal("L");
-                    var output = sw.GetTerminal("L1") ?? sw.GetTerminal("L2");
-                    if (input != null && output != null &&
-                        CanReachAnyPowerTerminal(input, TerminalRole.Phase, structuralGraph) &&
-                        AreConnected(output, loadL, structuralGraph))
+                    if (IsSwitchOnPhasePath(sw, loadL))
                     {
                         switchOnPhasePath = true;
                         break;
@@ -257,7 +265,20 @@ namespace ElectricalSim.Rules
 
                 if (!switchOnPhasePath)
                 {
-                    AddIssue(CircuitIssueSeverity.Warning, "SWITCH_NOT_ON_PHASE", LoadName(load) + "火线支路可能未经过开关控制。", "未检测到开关位于电源 L 到负载 L 的控制路径上。", "请确认开关串联在火线支路，而不是只接在旁路或零线支路。", load);
+                    if (loads.Count > 1)
+                    {
+                        AddIssue(CircuitIssueSeverity.Warning, "ParallelLoadBypassedControl", 
+                            "多个负载中，" + LoadName(load) + "可能没有经过控制开关。", 
+                            "并联电路中每个负载都需要按设计接入对应控制支路。如果某个负载绕过开关，它可能无法被正确控制。", 
+                            "请检查该负载 L 端是否接在对应开关输出端，而不是直接接到电源或空开输出端。", load);
+                    }
+                    else
+                    {
+                        AddIssue(CircuitIssueSeverity.Warning, "LoadLivePathWithoutSwitch", 
+                            LoadName(load) + "的火线路径可能没有经过控制开关。", 
+                            "当前负载 L 端可以直接获得火线，但未检测到火线路径中存在单开单控开关。这样负载可能一直通电，无法通过开关控制。", 
+                            "请将开关串联到火线路径中，推荐接法为“电源 L → 空开 → 开关 L → 开关 L1 → 负载 L”。", load);
+                    }
                 }
             }
 
@@ -266,9 +287,76 @@ namespace ElectricalSim.Rules
                 var l = sw.GetTerminal("L");
                 if (l != null && CanReachAnyPowerTerminal(l, TerminalRole.Neutral, structuralGraph))
                 {
-                    AddIssue(CircuitIssueSeverity.Warning, "SWITCH_ON_NEUTRAL", "开关疑似接在零线支路上。", sw.Definition.displayName + " 的 L 端与电源 N 连通。", "家庭照明中通常应优先控制火线。", sw);
+                    AddIssue(CircuitIssueSeverity.Warning, "SwitchOnNeutralPath", "单开单控开关疑似接在零线支路上。", "开关如果切断的是零线，灯可能会熄灭，但灯具火线端仍可能带电，维护时存在安全隐患。", "请将开关改接到火线路径中，让电源 L 经过开关后再进入灯泡 L 端。", sw);
                 }
             }
+        }
+
+        private void CheckBypassedDevices()
+        {
+            foreach (var load in loads)
+            {
+                var loadL = FindPhaseTerminal(load);
+                var loadN = FindNeutralTerminal(load);
+                if (loadL == null || loadN == null)
+                {
+                    continue;
+                }
+
+                var liveOk = CanReachAnyPowerTerminal(loadL, TerminalRole.Phase, liveGraph) &&
+                             CanReachAnyPowerTerminal(loadN, TerminalRole.Neutral, liveGraph);
+
+                if (liveOk)
+                {
+                    foreach (var sw in switches)
+                    {
+                        if (!sw.IsClosed && IsSwitchOnPhasePath(sw, loadL))
+                        {
+                            AddIssue(CircuitIssueSeverity.Warning, "SwitchBypassed", 
+                                LoadName(load) + "在" + sw.Definition.displayName + " OFF 时仍然处于通电状态。", 
+                                "这通常说明负载火线没有真正经过该开关，或者存在绕过开关的旁路。开关虽然画在电路中，但没有实际控制负载。", 
+                                "请检查火线是否按照“电源 L → 空开 → 开关 L → 开关 L1 → 负载 L”的顺序连接。", sw);
+                        }
+                    }
+
+                    foreach (var br in breakers)
+                    {
+                        if (!br.IsClosed && IsBreakerOnPhasePath(br, loadL))
+                        {
+                            AddIssue(CircuitIssueSeverity.Error, "BreakerBypassed", 
+                                br.Definition.displayName + "处于 OFF，但后级" + LoadName(load) + "仍然通电。", 
+                                "这说明负载可能绕过了空气开关，直接从电源或其它路径获得火线，空开没有起到保护和断电作用。", 
+                                "请检查电源 L/N 是否先进入空气开关输入端，再由空气开关输出端连接到后级开关和负载。", br);
+                        }
+                    }
+                }
+            }
+        }
+
+        private bool IsSwitchOnPhasePath(CircuitComponent sw, TerminalView loadL)
+        {
+            var input = sw.GetTerminal("L");
+            var output = sw.GetTerminal("L1") ?? sw.GetTerminal("L2");
+            return input != null && output != null &&
+                   CanReachAnyPowerTerminal(input, TerminalRole.Phase, structuralGraph) &&
+                   AreConnected(output, loadL, structuralGraph);
+        }
+
+        private bool IsBreakerOnPhasePath(CircuitComponent breaker, TerminalView loadL)
+        {
+            var p1In = breaker.GetTerminal("P1_IN");
+            var p2In = breaker.GetTerminal("P2_IN");
+            var p1Out = breaker.GetTerminal("P1_OUT");
+            var p2Out = breaker.GetTerminal("P2_OUT");
+
+            bool p1Path = p1In != null && p1Out != null && 
+                          CanReachAnyPowerTerminal(p1In, TerminalRole.Phase, structuralGraph) && 
+                          AreConnected(p1Out, loadL, structuralGraph);
+            bool p2Path = p2In != null && p2Out != null && 
+                          CanReachAnyPowerTerminal(p2In, TerminalRole.Phase, structuralGraph) && 
+                          AreConnected(p2Out, loadL, structuralGraph);
+
+            return p1Path || p2Path;
         }
 
         private void CheckBreakers()
@@ -579,4 +667,6 @@ namespace ElectricalSim.Rules
         }
     }
 }
+
+
 

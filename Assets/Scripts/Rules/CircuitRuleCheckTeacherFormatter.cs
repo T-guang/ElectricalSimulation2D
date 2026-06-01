@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using System.Collections.Generic;
 
 namespace ElectricalSim.Rules
@@ -139,6 +139,30 @@ namespace ElectricalSim.Rules
                     explanation.Reason = "孤立元件没有任何导线连接，当前不会参与电路工作。";
                     explanation.Suggestion = "如果该元件是本次练习需要的，请将它接入电路；如果不是需要的元件，可以删除以保持画布清晰。";
                     break;
+                case "SwitchBypassed":
+                    explanation.Reason = "这通常说明灯泡火线没有真正经过该开关，或者存在绕过开关的旁路。开关虽然画在电路中，但没有实际控制灯泡。";
+                    explanation.Suggestion = "请检查火线是否按照“电源 L → 空开 → 开关 L → 开关 L1 → 灯泡 L”的顺序连接。";
+                    break;
+                case "BreakerBypassed":
+                    explanation.Reason = "这说明负载可能绕过了空气开关，直接从电源或其它路径获得火线，空开没有起到保护和断电作用。";
+                    explanation.Suggestion = "请检查电源 L/N 是否先进入空气开关输入端，再由空气开关输出端连接到后级开关和负载。";
+                    break;
+                case "LoadLivePathWithoutSwitch":
+                    explanation.Reason = "当前负载 L 端可以直接获得火线，但未检测到火线路径中存在单开单控开关。这样负载可能一直通电，无法通过开关控制。";
+                    explanation.Suggestion = "请将开关串联到火线路径中，推荐接法为“电源 L → 空开 → 开关 L → 开关 L1 → 负载 L”。";
+                    break;
+                case "SwitchOnNeutralPath":
+                    explanation.Reason = "开关如果切断的是零线，灯可能会熄灭，但灯具火线端仍可能带电，维护时存在安全隐患。";
+                    explanation.Suggestion = "请将开关改接到火线路径中，让电源 L 经过开关后再进入灯泡 L 端。";
+                    break;
+                case "LoadConnectedDirectlyToPower":
+                    explanation.Reason = "这样虽然可以形成回路，但缺少空气开关保护或开关控制，不符合常见家庭照明教学接线习惯。";
+                    explanation.Suggestion = "建议加入空气开关和单控开关，使电路具备保护和控制功能。";
+                    break;
+                case "ParallelLoadBypassedControl":
+                    explanation.Reason = "并联电路中每个负载都需要按设计接入对应控制支路。如果某个负载绕过开关，它可能无法被正确控制。";
+                    explanation.Suggestion = "请检查该负载 L 端是否接在对应开关输出端，而不是直接接到电源或空开输出端。";
+                    break;
                 case "OPEN_DEVICE":
                     if (issue.title != null && issue.title.Contains("以下控制元件"))
                     {
@@ -171,3 +195,4 @@ namespace ElectricalSim.Rules
         }
     }
 }
+
