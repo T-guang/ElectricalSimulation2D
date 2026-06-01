@@ -1,4 +1,4 @@
-﻿{
+{
   "templates": [
     {
       "templateId": "single_lamp_template",
@@ -39,6 +39,30 @@
       "difficulty": "进阶",
       "description": "电灯和风扇并联，由各自的开关独立控制的家用电路。",
       "resourcePath": "Blueprints/Templates/lamp_fan_parallel_template"
+    },
+    {
+      "templateId": "double_lamp_single_switch",
+      "templateName": "单开控制双灯电路",
+      "category": "家庭电路",
+      "difficulty": "初级",
+      "description": "一个单控开关同时控制两盏灯，讲解多个照明负载并联接入同一控制回路的接线方式。",
+      "resourcePath": "Blueprints/Templates/double_lamp_single_switch_template"
+    },
+    {
+      "templateId": "two_switch_two_lamp",
+      "templateName": "双开分别控制双灯电路",
+      "category": "家庭电路",
+      "difficulty": "中级",
+      "description": "两个单控开关分别控制两盏灯，讲解家庭照明中多支路独立控制的接线方式。",
+      "resourcePath": "Blueprints/Templates/two_switch_two_lamp_template"
+    },
+    {
+      "templateId": "breaker_lamp_fan_parallel",
+      "templateName": "空开控制灯泡与风扇并联电路",
+      "category": "家庭电路",
+      "difficulty": "中级",
+      "description": "空气开关控制一个灯泡和一个电风扇并联回路，讲解不同负载并联接入家庭电路的方式。",
+      "resourcePath": "Blueprints/Templates/breaker_lamp_fan_parallel_template"
     }
   ]
 }
