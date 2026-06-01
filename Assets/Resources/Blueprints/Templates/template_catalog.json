@@ -4,7 +4,7 @@
       "templateId": "single_lamp_template",
       "templateName": "单开单控照明电路",
       "category": "家庭电路",
-      "difficulty": "入门",
+      "difficulty": "初级",
       "description": "基础的220V单开单控照明电路，包含电源、开关和灯泡。",
       "resourcePath": "Blueprints/Templates/single_lamp_template",
       "thumbnailPath": "Blueprints/Thumbnails/family_placeholder"
@@ -13,7 +13,7 @@
       "templateId": "double_control_lamp_template",
       "templateName": "双控照明电路",
       "category": "家庭电路",
-      "difficulty": "进阶",
+      "difficulty": "中级",
       "description": "使用两个单开双控开关控制同一盏灯的楼梯照明电路。",
       "resourcePath": "Blueprints/Templates/double_control_lamp_template",
       "thumbnailPath": "Blueprints/Thumbnails/family_placeholder"
@@ -22,7 +22,7 @@
       "templateId": "breaker_lamp_template",
       "templateName": "空气开关控制照明电路",
       "category": "家庭电路",
-      "difficulty": "入门",
+      "difficulty": "初级",
       "description": "带有2P空气开关作为主闸保护的基础照明电路。",
       "resourcePath": "Blueprints/Templates/breaker_lamp_template",
       "thumbnailPath": "Blueprints/Thumbnails/family_placeholder"
@@ -31,7 +31,7 @@
       "templateId": "meter_lamp_template",
       "templateName": "单相电能表照明电路",
       "category": "家庭电路",
-      "difficulty": "进阶",
+      "difficulty": "中级",
       "description": "包含单相电能表进行电量计量的完整家庭进户照明电路。",
       "resourcePath": "Blueprints/Templates/meter_lamp_template",
       "thumbnailPath": "Blueprints/Thumbnails/family_placeholder"
@@ -40,7 +40,7 @@
       "templateId": "lamp_fan_parallel_template",
       "templateName": "电灯泡与电风扇并联控制电路",
       "category": "家庭电路",
-      "difficulty": "进阶",
+      "difficulty": "中级",
       "description": "电灯和风扇并联，由各自的开关独立控制的家用电路。",
       "resourcePath": "Blueprints/Templates/lamp_fan_parallel_template",
       "thumbnailPath": "Blueprints/Thumbnails/family_placeholder"
@@ -74,5 +74,6 @@
     }
   ]
 }
+
 
 

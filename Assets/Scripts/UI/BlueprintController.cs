@@ -66,7 +66,11 @@ namespace ElectricalSim.UI
                             var texts = newCard.GetComponentsInChildren<Text>(true);
                             foreach (var t in texts)
                             {
-                                if (t.transform.parent.GetComponent<Button>() != null) continue;
+                                if (t.GetComponentInParent<Button>() != null)
+                                {
+                                    t.text = "进入练习";
+                                    continue;
+                                }
                                 if (t.text.Contains("工业") || t.text.Contains("家庭") || t.text.Contains("电路")) t.text = "家庭电路";
                                 else if (t.text.Contains("初") || t.text.Contains("中") || t.text.Contains("高") || t.text.Contains("入门") || t.text.Contains("进阶")) t.text = item.difficulty;
                                 else t.text = item.templateName;
@@ -131,6 +135,26 @@ namespace ElectricalSim.UI
             {
                 var difficulty = i - 1;
                 difficultyButtons[i].onClick.AddListener(() => SetDifficulty(difficulty));
+            }
+
+            if (categoryButtons != null)
+            {
+                int cat0Count = 0;
+                int cat1Count = 0;
+                for (int i = 0; i < blueprintCategories.Count; i++)
+                {
+                    if (blueprintCategories[i] == 0) cat0Count++;
+                    if (blueprintCategories[i] == 1) cat1Count++;
+                }
+                
+                if (categoryButtons.Count > 0)
+                {
+                    SetButtonText(categoryButtons[0], $"工业电路图纸({cat0Count})");
+                }
+                if (categoryButtons.Count > 1)
+                {
+                    SetButtonText(categoryButtons[1], $"家庭电路图纸({cat1Count})");
+                }
             }
 
             searchInput?.onValueChanged.AddListener(_ => ApplyFilter());
