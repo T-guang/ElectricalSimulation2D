@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -37,12 +37,19 @@ namespace ElectricalSim.Core
             var shorted = powered.Overlaps(neutral);
             var energizedCount = 0;
 
+            var systemVoltage = 220f;
+            var powerSource = components.FirstOrDefault(c => c.Definition.kind == ComponentKind.PowerSource);
+            if (powerSource != null)
+            {
+                systemVoltage = ResolveVoltage(powerSource, powerSource.Definition);
+            }
+
             foreach (var component in components)
             {
                 var energized = IsLoadEnergized(component, powered, neutral);
                 var active = !shorted && energized;
                 component.SetEnergized(active);
-                ApplyMeasurement(component, active);
+                ApplyMeasurement(component, active, systemVoltage);
                 if (active)
                 {
                     energizedCount++;
@@ -62,7 +69,7 @@ namespace ElectricalSim.Core
             return energizedCount > 0 ? $"仿真完成：{energizedCount} 个负载/线圈已动作。" : "线路未形成完整回路。";
         }
 
-        private static void ApplyMeasurement(CircuitComponent component, bool active)
+        private static void ApplyMeasurement(CircuitComponent component, bool active, float systemVoltage)
         {
             if (component == null)
             {
@@ -76,7 +83,7 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            var voltage = ResolveVoltage(component, definition);
+            var voltage = definition.kind == ComponentKind.PowerSource ? ResolveVoltage(component, definition) : (systemVoltage > 0f ? systemVoltage : ResolveVoltage(component, definition));
             var power = ResolvePower(component, definition);
             var current = ResolveCurrent(component, definition);
 

@@ -21,7 +21,7 @@ namespace ElectricalSim.UI
             var definition = component.Definition;
             var isSource = definition.kind == ComponentKind.PowerSource;
             var active = simulationRunning && (component.IsEnergized || isSource);
-            var voltage = active ? GetDisplayVoltage(definition, component.MeasuredVoltage) : 0f;
+            var voltage = active ? GetDisplayVoltage(component, definition, component.MeasuredVoltage) : 0f;
             var current = active && !isSource ? component.MeasuredCurrent : 0f;
             var power = active && !isSource ? component.MeasuredPower : 0f;
 
@@ -37,7 +37,7 @@ namespace ElectricalSim.UI
                     $"额定参数：{BuildRatedLine(component)}";
             }
 
-            var signalVoltage = active ? GetSignalVoltage(definition, voltage) : 0f;
+            var signalVoltage = active ? GetSignalVoltage(component, definition, voltage) : 0f;
             if (oscilloscopeText != null)
             {
                 oscilloscopeText.text =
@@ -174,21 +174,23 @@ namespace ElectricalSim.UI
             return true;
         }
 
-        private static float GetDisplayVoltage(ComponentDefinition definition, float measuredVoltage)
+        private static float GetDisplayVoltage(CircuitComponent component, ComponentDefinition definition, float measuredVoltage)
         {
             if (definition.kind == ComponentKind.PowerSource)
             {
-                return definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : definition.sourceVoltage;
+                var v = ResolveVoltage(component, definition);
+                return definition.sourcePhaseCount >= 3 && definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : v;
             }
 
             return measuredVoltage;
         }
 
-        private static float GetSignalVoltage(ComponentDefinition definition, float measuredVoltage)
+        private static float GetSignalVoltage(CircuitComponent component, ComponentDefinition definition, float measuredVoltage)
         {
             if (definition.kind == ComponentKind.PowerSource)
             {
-                return definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : definition.sourceVoltage;
+                var v = ResolveVoltage(component, definition);
+                return definition.sourcePhaseCount >= 3 && definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : v;
             }
 
             return measuredVoltage;
