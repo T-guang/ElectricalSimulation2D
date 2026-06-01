@@ -79,7 +79,15 @@ namespace ElectricalSim.UI
             selectionPanel.Show(catalog.templates);
         }
 
-        private void LoadTemplate(CircuitTemplateCatalogItemDto item)
+        public void RequestLoadTemplateFromGallery(ElectricalSim.Templates.CircuitTemplateCatalogItemDto item)
+        {
+            if (item != null)
+            {
+                LoadTemplate(item);
+            }
+        }
+
+        private void LoadTemplate(ElectricalSim.Templates.CircuitTemplateCatalogItemDto item)
         {
             if (workspace == null || item == null)
             {
@@ -399,3 +407,4 @@ namespace ElectricalSim.UI
         }
     }
 }
+

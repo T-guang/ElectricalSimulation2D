@@ -30,12 +30,87 @@ namespace ElectricalSim.UI
         [SerializeField] private Text referenceRecommendations;
         [SerializeField] private Button referenceCloseButton;
 
+        private List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto> dynamicTemplates = new List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto>();
+
         private int selectedIndex;
         private int activeCategory;
         private int activeDifficulty = -1;
 
         private void Awake()
         {
+            // Initialize dynamicTemplates with nulls for static items
+            for (var i = 0; i < blueprintButtons.Count; i++)
+            {
+                dynamicTemplates.Add(null);
+                if (i < blueprintCategories.Count && blueprintCategories[i] == 1)
+                {
+                    blueprintCategories[i] = -1; // Hide existing static family circuits
+                    if (blueprintCards[i] != null) blueprintCards[i].SetActive(false);
+                }
+            }
+
+            var catalogJson = Resources.Load<TextAsset>("Blueprints/Templates/template_catalog");
+            if (catalogJson != null)
+            {
+                var catalog = JsonUtility.FromJson<ElectricalSim.Templates.CircuitTemplateCatalogDto>(catalogJson.text);
+                if (catalog != null && catalog.templates != null && blueprintCards.Count > 0)
+                {
+                    var templateCard = blueprintCards[0];
+                    foreach (var item in catalog.templates)
+                    {
+                        if (item.category == "家庭电路")
+                        {
+                            var newCard = Instantiate(templateCard, cardContent);
+                            var newIndex = blueprintButtons.Count;
+                            
+                            var texts = newCard.GetComponentsInChildren<Text>(true);
+                            foreach (var t in texts)
+                            {
+                                if (t.transform.parent.GetComponent<Button>() != null) continue;
+                                if (t.text.Contains("工业") || t.text.Contains("家庭") || t.text.Contains("电路")) t.text = "家庭电路";
+                                else if (t.text.Contains("初") || t.text.Contains("中") || t.text.Contains("高") || t.text.Contains("入门") || t.text.Contains("进阶")) t.text = item.difficulty;
+                                else t.text = item.templateName;
+                            }
+
+                            Sprite sprite = null;
+                            if (!string.IsNullOrEmpty(item.thumbnailPath))
+                            {
+                                sprite = Resources.Load<Sprite>(item.thumbnailPath);
+                            }
+
+                            if (sprite != null && blueprintSprites.Count > 0)
+                            {
+                                var images = newCard.GetComponentsInChildren<Image>(true);
+                                foreach (var img in images)
+                                {
+                                    if (img.sprite == blueprintSprites[0])
+                                    {
+                                        img.sprite = sprite;
+                                    }
+                                }
+                            }
+
+                            var btn = newCard.GetComponentInChildren<Button>(true);
+                            btn.onClick.RemoveAllListeners();
+                            btn.onClick.AddListener(() => OpenPreview(newIndex));
+
+                            blueprintButtons.Add(btn);
+                            blueprintCards.Add(newCard);
+                            blueprintNames.Add(item.templateName);
+                            blueprintSprites.Add(sprite);
+                            blueprintCategories.Add(1);
+
+                            int diff = 0;
+                            if (item.difficulty.Contains("中") || item.difficulty.Contains("进阶")) diff = 1;
+                            if (item.difficulty.Contains("高")) diff = 2;
+                            blueprintDifficulties.Add(diff);
+                            blueprintRecommendations.Add(item.description);
+                            dynamicTemplates.Add(item);
+                        }
+                    }
+                }
+            }
+
             for (var i = 0; i < blueprintButtons.Count; i++)
             {
                 var index = i;
@@ -86,6 +161,16 @@ namespace ElectricalSim.UI
         private void EnterConfiguration()
         {
             ClosePreview();
+            
+            if (selectedIndex >= 0 && selectedIndex < dynamicTemplates.Count && dynamicTemplates[selectedIndex] != null)
+            {
+                var templateController = FindObjectOfType<TemplateLoadController>();
+                if (templateController != null)
+                {
+                    templateController.RequestLoadTemplateFromGallery(dynamicTemplates[selectedIndex]);
+                }
+            }
+            
             navigation?.SelectTab(0);
 
             if (referencePanel != null)

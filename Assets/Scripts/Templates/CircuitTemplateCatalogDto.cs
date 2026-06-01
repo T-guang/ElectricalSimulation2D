@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace ElectricalSim.Templates
@@ -18,5 +18,8 @@ namespace ElectricalSim.Templates
         public string difficulty;
         public string description;
         public string resourcePath;
+        public string thumbnailPath;
+        public int sortOrder;
     }
 }
+
