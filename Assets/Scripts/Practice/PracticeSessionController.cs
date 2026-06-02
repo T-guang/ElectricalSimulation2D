@@ -4,7 +4,6 @@ using ElectricalSim.Templates;
 using ElectricalSim.Core;
 using ElectricalSim.UI;
 using ElectricalSim.AI;
-using System.Linq;
 
 namespace ElectricalSim.Practice
 {
@@ -24,6 +23,7 @@ namespace ElectricalSim.Practice
                         _instance = go.AddComponent<PracticeSessionController>();
                     }
                 }
+
                 return _instance;
             }
         }
@@ -95,13 +95,12 @@ namespace ElectricalSim.Practice
                         onEntered?.Invoke();
                     }
                 });
+                return;
             }
-            else
+
+            if (EnterPracticeMode(templateItem))
             {
-                if (EnterPracticeMode(templateItem))
-                {
-                    onEntered?.Invoke();
-                }
+                onEntered?.Invoke();
             }
         }
 
@@ -109,25 +108,26 @@ namespace ElectricalSim.Practice
         {
             EnsureReferences();
 
-            if (!CircuitTemplateLoader.TryLoad(templateItem.resourcePath, out var templateDto, out _))
+            CircuitTemplateDto templateDto = null;
+            string loadError = null;
+            var loaded = templateItem != null && CircuitTemplateLoader.TryLoad(templateItem.resourcePath, out templateDto, out loadError);
+            if (!loaded)
             {
-                workspace?.SetStatus($"练习模板 {templateItem.templateId} 加载失败！");
+                var templateId = templateItem != null ? templateItem.templateId : "未知模板";
+                var message = string.IsNullOrWhiteSpace(loadError)
+                    ? $"练习模板 {templateId} 加载失败。"
+                    : $"练习模板 {templateId} 加载失败：{loadError}";
+                workspace?.SetStatus(message);
                 return false;
             }
 
-            if (workspace != null)
-            {
-                workspace.ClearDrawing(true);
-            }
+            workspace?.ClearDrawing(true);
 
             IsPracticeActive = true;
             CurrentTemplateItem = templateItem;
             CurrentTemplateData = templateDto;
 
-            if (navigation != null)
-            {
-                navigation.SelectTab(0);
-            }
+            navigation?.SelectTab(0);
 
             if (referencePanel != null)
             {
@@ -135,11 +135,7 @@ namespace ElectricalSim.Practice
                 UpdateReferencePanel(templateItem);
             }
 
-            if (aiPanel != null)
-            {
-                aiPanel.RefreshPracticeState();
-            }
-
+            aiPanel?.RefreshPracticeState();
             return true;
         }
 
@@ -151,10 +147,7 @@ namespace ElectricalSim.Practice
             CurrentTemplateItem = null;
             CurrentTemplateData = null;
 
-            if (aiPanel != null)
-            {
-                aiPanel.RefreshPracticeState();
-            }
+            aiPanel?.RefreshPracticeState();
 
             if (referencePanel != null)
             {
@@ -165,28 +158,23 @@ namespace ElectricalSim.Practice
         public void EndPractice()
         {
             ClearPracticeState();
-
-            if (workspace != null)
-            {
-                workspace.ClearDrawing(true);
-            }
-
-            if (navigation != null)
-            {
-                navigation.SelectTab(0); // Assuming 0 is the gallery tab
-            }
+            workspace?.ClearDrawing(true);
+            navigation?.SelectTab(0);
         }
 
         public void UpdateReferencePanel(CircuitTemplateCatalogItemDto item)
         {
             EnsureReferences();
 
-            if (referencePanel == null || item == null) return;
-            var texts = referencePanel.GetComponentsInChildren<Text>(true);
-            var titleText = texts.FirstOrDefault(t => t.name.Contains("Recommendation") || (t.text != null && t.text.Contains("推荐")));
-            if (titleText != null)
+            if (referencePanel == null || item == null)
             {
-                titleText.text = item.templateName;
+                return;
+            }
+
+            var targetText = FindReferenceTitleText(referencePanel);
+            if (targetText != null)
+            {
+                targetText.text = item.templateName;
             }
         }
 
@@ -209,12 +197,8 @@ namespace ElectricalSim.Practice
             var connectionResult = ElectricalSim.Practice.Netlist.PracticeConnectionChecker.Check(workspace, CurrentTemplateData);
             var summary = PracticeFeedbackFormatter.Format(CurrentTemplateItem, connectionResult);
 
-            if (aiPanel != null)
-            {
-                aiPanel.AddAssistantMessage(summary);
-            }
-
-            workspace.SetStatus(connectionResult.Passed ? "\u7ec3\u4e60\u68c0\u6d4b\u5df2\u63d0\u4ea4\uff1a\u63a5\u7ebf\u901a\u8fc7\u3002" : "\u7ec3\u4e60\u68c0\u6d4b\u5df2\u63d0\u4ea4\uff1a\u63a5\u7ebf\u9700\u8981\u4fee\u6539\u3002");
+            aiPanel?.AddAssistantMessage(summary);
+            workspace.SetStatus(connectionResult.Passed ? "练习检测已提交：接线通过。" : "练习检测已提交：接线需要修改。");
         }
 
         private bool HasWorkspaceContent()
@@ -226,19 +210,20 @@ namespace ElectricalSim.Practice
             return hasComponents || hasWires;
         }
 
-        private string GetRecommendedComponents(string templateName)
+        private static Text FindReferenceTitleText(BlueprintReferencePanel panel)
         {
-            if (string.IsNullOrEmpty(templateName)) return "暂无";
-            if (templateName.Contains("单开单控")) return "220V电源、单开单控开关、电灯泡(220V)";
-            if (templateName.Contains("双控")) return "220V电源、双控开关 ×2、电灯泡(220V)";
-            if (templateName.Contains("空气开关控制照明")) return "220V电源、空气开关2P、单开单控开关、电灯泡(220V)";
-            if (templateName.Contains("单相电能表")) return "220V电源、单相电能表、空气开关2P、单开单控开关、电灯泡(220V)";
-            if (templateName.Contains("电灯泡与电风扇并联")) return "220V电源、单开单控开关 ×2、电灯泡(220V)、电风扇(220V)";
-            if (templateName.Contains("单开控制双灯")) return "220V电源、空气开关2P、单开单控开关、电灯泡(220V) ×2";
-            if (templateName.Contains("双开分别控制双灯")) return "220V电源、空气开关2P、单开单控开关 ×2、电灯泡(220V) ×2";
-            if (templateName.Contains("空开控制灯泡与风扇")) return "220V电源、空气开关2P、单开单控开关 ×2、电灯泡(220V)、电风扇(220V)";
-            return "220V电源、相关负载及开关";
+            var texts = panel.GetComponentsInChildren<Text>(true);
+            foreach (var text in texts)
+            {
+                if (text != null && (text.name.Contains("Title") || text.name.Contains("Recommendation")))
+                {
+                    return text;
+                }
+            }
+
+            return texts.Length > 0 ? texts[0] : null;
         }
+
         private void ShowPracticeConfirm(CircuitTemplateCatalogItemDto item, System.Action onConfirm)
         {
             var canvas = FindObjectOfType<Canvas>();
@@ -294,7 +279,8 @@ namespace ElectricalSim.Practice
             var msgObj = new GameObject("Message", typeof(RectTransform), typeof(Text));
             msgObj.transform.SetParent(panel.transform, false);
             var msgText = msgObj.GetComponent<Text>();
-            msgText.text = "开始练习将清空当前画布，并只显示参考图纸。是否继续？";
+            var templateName = item != null && !string.IsNullOrWhiteSpace(item.templateName) ? item.templateName : "当前练习";
+            msgText.text = $"进入练习会清空当前画布，并显示参考图纸“{templateName}”。是否继续？";
             msgText.font = font;
             msgText.fontSize = 16;
             msgText.alignment = TextAnchor.MiddleCenter;
@@ -305,57 +291,8 @@ namespace ElectricalSim.Practice
             msgRect.offsetMin = new Vector2(30f, 70f);
             msgRect.offsetMax = new Vector2(-30f, -50f);
 
-            var cancelBtnObj = new GameObject("CancelButton", typeof(RectTransform), typeof(Image), typeof(Button));
-            cancelBtnObj.transform.SetParent(panel.transform, false);
-            var cancelBtnImage = cancelBtnObj.GetComponent<Image>();
-            cancelBtnImage.color = new Color(0.9f, 0.9f, 0.9f);
-            var cancelBtn = cancelBtnObj.GetComponent<Button>();
-            cancelBtn.targetGraphic = cancelBtnImage;
-            var cancelRect = cancelBtnObj.GetComponent<RectTransform>();
-            cancelRect.anchorMin = new Vector2(0.5f, 0f);
-            cancelRect.anchorMax = new Vector2(0.5f, 0f);
-            cancelRect.sizeDelta = new Vector2(120f, 40f);
-            cancelRect.anchoredPosition = new Vector2(-80f, 40f);
-
-            var cancelTextObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
-            cancelTextObj.transform.SetParent(cancelBtnObj.transform, false);
-            var cancelText = cancelTextObj.GetComponent<Text>();
-            cancelText.text = "取消";
-            cancelText.font = font;
-            cancelText.fontSize = 16;
-            cancelText.alignment = TextAnchor.MiddleCenter;
-            cancelText.color = new Color(0.3f, 0.3f, 0.3f);
-            var cancelTextRect = cancelTextObj.GetComponent<RectTransform>();
-            cancelTextRect.anchorMin = Vector2.zero;
-            cancelTextRect.anchorMax = Vector2.one;
-            cancelTextRect.offsetMin = Vector2.zero;
-            cancelTextRect.offsetMax = Vector2.zero;
-
-            var confirmBtnObj = new GameObject("ConfirmButton", typeof(RectTransform), typeof(Image), typeof(Button));
-            confirmBtnObj.transform.SetParent(panel.transform, false);
-            var confirmBtnImage = confirmBtnObj.GetComponent<Image>();
-            confirmBtnImage.color = new Color(0.12f, 0.45f, 0.95f);
-            var confirmBtn = confirmBtnObj.GetComponent<Button>();
-            confirmBtn.targetGraphic = confirmBtnImage;
-            var confirmRect = confirmBtnObj.GetComponent<RectTransform>();
-            confirmRect.anchorMin = new Vector2(0.5f, 0f);
-            confirmRect.anchorMax = new Vector2(0.5f, 0f);
-            confirmRect.sizeDelta = new Vector2(120f, 40f);
-            confirmRect.anchoredPosition = new Vector2(80f, 40f);
-
-            var confirmTextObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
-            confirmTextObj.transform.SetParent(confirmBtnObj.transform, false);
-            var confirmText = confirmTextObj.GetComponent<Text>();
-            confirmText.text = "开始练习";
-            confirmText.font = font;
-            confirmText.fontSize = 16;
-            confirmText.alignment = TextAnchor.MiddleCenter;
-            confirmText.color = Color.white;
-            var confirmTextRect = confirmTextObj.GetComponent<RectTransform>();
-            confirmTextRect.anchorMin = Vector2.zero;
-            confirmTextRect.anchorMax = Vector2.one;
-            confirmTextRect.offsetMin = Vector2.zero;
-            confirmTextRect.offsetMax = Vector2.zero;
+            var cancelBtn = CreateDialogButton(panel.transform, "CancelButton", "取消", new Color(0.9f, 0.9f, 0.9f), new Color(0.3f, 0.3f, 0.3f), new Vector2(-80f, 40f));
+            var confirmBtn = CreateDialogButton(panel.transform, "ConfirmButton", "开始练习", new Color(0.12f, 0.45f, 0.95f), Color.white, new Vector2(80f, 40f));
 
             cancelBtn.onClick.AddListener(() => Destroy(overlay));
             confirmBtn.onClick.AddListener(() =>
@@ -364,5 +301,41 @@ namespace ElectricalSim.Practice
                 onConfirm?.Invoke();
             });
         }
+
+        private static Button CreateDialogButton(Transform parent, string name, string label, Color background, Color textColor, Vector2 anchoredPosition)
+        {
+            var buttonObj = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            buttonObj.transform.SetParent(parent, false);
+
+            var buttonImage = buttonObj.GetComponent<Image>();
+            buttonImage.color = background;
+
+            var button = buttonObj.GetComponent<Button>();
+            button.targetGraphic = buttonImage;
+
+            var buttonRect = buttonObj.GetComponent<RectTransform>();
+            buttonRect.anchorMin = new Vector2(0.5f, 0f);
+            buttonRect.anchorMax = new Vector2(0.5f, 0f);
+            buttonRect.sizeDelta = new Vector2(120f, 40f);
+            buttonRect.anchoredPosition = anchoredPosition;
+
+            var textObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            textObj.transform.SetParent(buttonObj.transform, false);
+            var text = textObj.GetComponent<Text>();
+            text.text = label;
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 16;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = textColor;
+
+            var textRect = textObj.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            return button;
+        }
     }
 }
+
