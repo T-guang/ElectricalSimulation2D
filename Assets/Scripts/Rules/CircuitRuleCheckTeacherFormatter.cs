@@ -98,8 +98,16 @@ namespace ElectricalSim.Rules
                     explanation.Suggestion = "请从左侧元件池拖入 220V 电源，再连接火线 L 和零线 N。";
                     break;
                 case "NO_LOAD":
-                    explanation.Reason = "负载是消耗电能并产生效果的元件，例如灯泡或电风扇。没有负载时，电路没有实际工作对象。";
-                    explanation.Suggestion = "请添加电灯泡或电风扇等负载元件。";
+                    explanation.Reason = "负载是消耗电能并产生效果的元件，例如灯泡、电风扇或三相电动机。没有负载时，电路没有实际工作对象。";
+                    explanation.Suggestion = "请添加电灯泡、电风扇或三相电动机等负载元件。";
+                    break;
+                case "MOTOR_PHASE_MISSING":
+                    explanation.Reason = "三相电机不能只接一根线或两根线，U/V/W 三个相线端子都需要接入主回路。";
+                    explanation.Suggestion = "请检查电机 U/V/W 是否分别接到接触器、熔断器、空开后的三相输出端。";
+                    break;
+                case "MOTOR_PHASE_PATH_MISSING":
+                    explanation.Reason = "当前电机端子虽然可能接了导线，但该相没有通过主回路连回三相电源。";
+                    explanation.Suggestion = "请沿该相导线从三相电源开始，依次检查空开、熔断器、接触器和电机端子是否连通。";
                     break;
                 case "NO_WIRE":
                     explanation.Reason = "元件必须通过导线连接成回路，电流才能流动。";

@@ -58,7 +58,7 @@ namespace ElectricalSim.UI
                     var templateCard = blueprintCards[0];
                     foreach (var item in catalog.templates)
                     {
-                        if (item.category == "家庭电路")
+                        if (item.category == "\u5bb6\u5ead\u7535\u8def")
                         {
                             var newCard = Instantiate(templateCard, cardContent);
                             var newIndex = blueprintButtons.Count;
@@ -66,14 +66,23 @@ namespace ElectricalSim.UI
                             var texts = newCard.GetComponentsInChildren<Text>(true);
                             foreach (var t in texts)
                             {
-                                if (t.text.Contains("练习"))
+                                if (t.text.Contains("\u7ec3\u4e60") || t.text.Contains("\u8fdb\u5165"))
                                 {
-                                    t.text = "进入练习";
+                                    t.text = "\u8fdb\u5165\u7ec3\u4e60";
                                     continue;
                                 }
-                                if (t.text.Contains("工业") || t.text.Contains("家庭") || t.text.Contains("电路")) t.text = "家庭电路";
-                                else if (t.text.Contains("初") || t.text.Contains("中") || t.text.Contains("高") || t.text.Contains("入门") || t.text.Contains("进阶")) t.text = item.difficulty;
-                                else t.text = item.templateName;
+                                if (t.text.Contains("\u5de5\u4e1a") || t.text.Contains("\u5bb6\u5ead") || t.text.Contains("\u7535\u8def"))
+                                {
+                                    t.text = "\u5bb6\u5ead\u7535\u8def";
+                                }
+                                else if (t.text.Contains("\u521d") || t.text.Contains("\u4e2d") || t.text.Contains("\u9ad8") || t.text.Contains("\u5165\u95e8") || t.text.Contains("\u8fdb\u9636"))
+                                {
+                                    t.text = item.difficulty;
+                                }
+                                else
+                                {
+                                    t.text = item.templateName;
+                                }
                             }
 
                             Sprite sprite = null;
@@ -105,8 +114,8 @@ namespace ElectricalSim.UI
                             blueprintCategories.Add(1);
 
                             int diff = 0;
-                            if (item.difficulty.Contains("中") || item.difficulty.Contains("进阶")) diff = 1;
-                            if (item.difficulty.Contains("高")) diff = 2;
+                            if (!string.IsNullOrEmpty(item.difficulty) && (item.difficulty.Contains("\u4e2d") || item.difficulty.Contains("\u8fdb\u9636"))) diff = 1;
+                            if (!string.IsNullOrEmpty(item.difficulty) && item.difficulty.Contains("\u9ad8")) diff = 2;
                             blueprintDifficulties.Add(diff);
                             blueprintRecommendations.Add(item.description);
                             dynamicTemplates.Add(item);
@@ -149,11 +158,11 @@ namespace ElectricalSim.UI
                 
                 if (categoryButtons.Count > 0)
                 {
-                    SetButtonText(categoryButtons[0], $"工业电路图纸({cat0Count})");
+                    SetButtonText(categoryButtons[0], $"\u5de5\u4e1a\u7535\u8def\u56fe\u7eb8({cat0Count})");
                 }
                 if (categoryButtons.Count > 1)
                 {
-                    SetButtonText(categoryButtons[1], $"家庭电路图纸({cat1Count})");
+                    SetButtonText(categoryButtons[1], $"\u5bb6\u5ead\u7535\u8def\u56fe\u7eb8({cat1Count})");
                 }
             }
 
@@ -184,17 +193,22 @@ namespace ElectricalSim.UI
 
         private void EnterConfiguration()
         {
-            ClosePreview();
-            
             if (selectedIndex >= 0 && selectedIndex < dynamicTemplates.Count && dynamicTemplates[selectedIndex] != null)
             {
-                var templateController = FindObjectOfType<TemplateLoadController>();
-                if (templateController != null)
+                var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
+                if (practiceController != null)
                 {
-                    templateController.RequestLoadTemplateFromGallery(dynamicTemplates[selectedIndex]);
+                    practiceController.StartPractice(dynamicTemplates[selectedIndex], ClosePreview);
+                    return;
                 }
             }
-            
+
+            EnterConfigurationInternal();
+        }
+
+        private void EnterConfigurationInternal()
+        {
+            ClosePreview();
             navigation?.SelectTab(0);
 
             if (referencePanel != null)
@@ -383,3 +397,5 @@ namespace ElectricalSim.UI
         }
     }
 }
+
+

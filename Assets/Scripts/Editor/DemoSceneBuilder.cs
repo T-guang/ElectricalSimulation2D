@@ -453,6 +453,15 @@ namespace ElectricalSim.EditorTools
             definitions.Add(CreateIndustrial("Button_SelfLock_SB", "\u81ea\u9501\u5f00\u5173(SB)", ComponentKind.Switch, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.28f, 0.24f), false, true, ControlTerminals()));
             definitions.Add(CreateIndustrial("Button_Compound_Green_SB", "\u590d\u5408\u5f00\u5173(SB)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true, ControlTerminals()));
             definitions.Add(CreateIndustrial("Button_SelfLock_Green_SB", "\u81ea\u9501\u5f00\u5173(SB)", ComponentKind.Switch, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true, ControlTerminals()));
+            definitions.Add(CreateIndustrial("Button_Start_NO", "\u542f\u52a8\u6309\u94ae(NO)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true,
+                T("23", "23", TerminalRole.Input, 0f, 0.45f, Green()),
+                T("24", "24", TerminalRole.Output, 1f, 0.45f, Green())));
+            definitions.Add(CreateIndustrial("Button_Stop_NC", "\u505c\u6b62\u6309\u94ae(NC)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.28f, 0.24f), true, true,
+                T("11", "11", TerminalRole.Input, 0f, 0.45f, Red()),
+                T("12", "12", TerminalRole.Output, 1f, 0.45f, Red())));
+            definitions.Add(CreateIndustrial("EmergencyStop_NC", "\u6025\u505c\u6309\u94ae(NC)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.18f, 0.14f), true, true,
+                T("11", "11", TerminalRole.Input, 0f, 0.45f, Red()),
+                T("12", "12", TerminalRole.Output, 1f, 0.45f, Red())));
             definitions.Add(CreateIndustrial("LimitSwitch_Compound", "\u9650\u4f4d\u5f00\u5173(\u590d\u5408)", ComponentKind.PushButton, new Color(0.18f, 0.2f, 0.22f), new Color(0.74f, 0.62f, 0.42f), false, true, ControlTerminals()));
             definitions.Add(CreateIndustrial("LimitSwitch_SelfLock", "\u9650\u4f4d\u5f00\u5173(\u81ea\u9501)", ComponentKind.Switch, new Color(0.18f, 0.2f, 0.22f), new Color(0.74f, 0.62f, 0.42f), false, true, ControlTerminals()));
             definitions.Add(CreateIndustrial("KnifeSwitch_QS", "\u5200\u5f00\u5173(QS)", ComponentKind.Breaker, new Color(0.5f, 0.53f, 0.6f), new Color(0.18f, 0.34f, 0.7f), true, true,
@@ -463,7 +472,7 @@ namespace ElectricalSim.EditorTools
                 T("U", "U", TerminalRole.Input, 0.88f, 0.78f, Yellow()), T("V", "V", TerminalRole.Input, 0.88f, 0.55f, Green()), T("W", "W", TerminalRole.Input, 0.88f, 0.32f, Red()), T("PE", "PE", TerminalRole.ProtectiveEarth, 1f, 0.08f, Green())));
             definitions.Add(CreateIndustrial("Motor_StarDelta_380V", "\u661f\u4e09\u89d2\u7535\u673a\n(380V)", ComponentKind.Motor, new Color(0.74f, 0.88f, 1f), new Color(0.18f, 0.56f, 1f), false, false,
                 T("U1", "U1", TerminalRole.Input, 0.88f, 0.8f, Yellow()), T("V1", "V1", TerminalRole.Input, 0.88f, 0.6f, Green()), T("W1", "W1", TerminalRole.Input, 0.88f, 0.4f, Red()), T("U2", "U2", TerminalRole.Output, 0.88f, 0.2f, Blue())));
-            definitions.Add(CreateIndustrial("ThermalRelay_FR_380V", "\u70ed\u7ee7\u7535\u5668(FR)\n(380V)", ComponentKind.Breaker, new Color(0.28f, 0.3f, 0.32f), new Color(0.85f, 0.18f, 0.16f), true, true, ThreePhasePairTerminals()));
+            definitions.Add(CreateIndustrial("ThermalRelay_FR_380V", "\u70ed\u7ee7\u7535\u5668(FR)\n(380V)", ComponentKind.Breaker, new Color(0.28f, 0.3f, 0.32f), new Color(0.85f, 0.18f, 0.16f), true, true, ThermalRelayTerminals()));
             definitions.Add(CreateIndustrial("SolenoidValve_24V", "\u7535\u78c1\u9600\n(24V)", ComponentKind.Indicator, new Color(0.86f, 0.9f, 0.94f), new Color(0.16f, 0.5f, 0.95f), false, false, CoilTerminals()));
             definitions.Add(CreateIndustrial("Timer_OnDelay_220V", "\u901a\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(220V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, false, CoilTerminals()));
             definitions.Add(CreateIndustrial("Timer_OnDelay_380V", "\u901a\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(380V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, false, CoilTerminals()));
@@ -596,7 +605,23 @@ namespace ElectricalSim.EditorTools
                 T("L3", "5/L3", TerminalRole.Input, 0.82f, 1f, Red()),
                 T("T3", "6/T3", TerminalRole.Output, 0.82f, 0f, Red()),
                 T("A1", "A1", TerminalRole.CoilA1, 0f, 0.68f, Red()),
-                T("A2", "A2", TerminalRole.CoilA2, 1f, 0.68f, Blue())
+                T("A2", "A2", TerminalRole.CoilA2, 1f, 0.68f, Blue()),
+                T("13", "13", TerminalRole.Input, 0f, 0.42f, Green()),
+                T("14", "14", TerminalRole.Output, 1f, 0.42f, Green()),
+                T("21", "21", TerminalRole.Input, 0f, 0.22f, Red()),
+                T("22", "22", TerminalRole.Output, 1f, 0.22f, Red())
+            };
+        }
+
+        private static TerminalDefinition[] ThermalRelayTerminals()
+        {
+            return new[]
+            {
+                T("L1", "L1", TerminalRole.Input, 0.2f, 1f, Yellow()), T("T1", "T1", TerminalRole.Output, 0.2f, 0f, Yellow()),
+                T("L2", "L2", TerminalRole.Input, 0.5f, 1f, Green()), T("T2", "T2", TerminalRole.Output, 0.5f, 0f, Green()),
+                T("L3", "L3", TerminalRole.Input, 0.8f, 1f, Red()), T("T3", "T3", TerminalRole.Output, 0.8f, 0f, Red()),
+                T("95", "95", TerminalRole.Input, 0f, 0.62f, Red()), T("96", "96", TerminalRole.Output, 1f, 0.62f, Red()),
+                T("97", "97", TerminalRole.Input, 0f, 0.34f, Green()), T("98", "98", TerminalRole.Output, 1f, 0.34f, Green())
             };
         }
 

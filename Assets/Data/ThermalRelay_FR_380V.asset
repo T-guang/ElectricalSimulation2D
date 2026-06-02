@@ -65,3 +65,23 @@ MonoBehaviour:
     role: 5
     normalizedPosition: {x: 0.8, y: 0}
     color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: 95
+    label: 95
+    role: 4
+    normalizedPosition: {x: 0, y: 0.62}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: 96
+    label: 96
+    role: 5
+    normalizedPosition: {x: 1, y: 0.62}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: 97
+    label: 97
+    role: 4
+    normalizedPosition: {x: 0, y: 0.34}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}
+  - id: 98
+    label: 98
+    role: 5
+    normalizedPosition: {x: 1, y: 0.34}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}

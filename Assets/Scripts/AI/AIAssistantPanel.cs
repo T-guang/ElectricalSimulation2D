@@ -11,7 +11,7 @@ namespace ElectricalSim.AI
         private const float PanelWidth = 340f;
         private const float PanelMargin = 12f;
         private const float HeaderHeight = 42f;
-        private const float QuickActionsHeight = 168f;
+        private const float QuickActionsHeight = 208f;
         private const float InputAreaHeight = 58f;
 
         [SerializeField] private WorkspaceController workspace;
@@ -20,6 +20,8 @@ namespace ElectricalSim.AI
         [SerializeField] private Button switchModeButton;
         [SerializeField] private Button explainButton;
         [SerializeField] private Button checkButton;
+        [SerializeField] private Button submitPracticeButton;
+        [SerializeField] private Button exitPracticeButton;
         [SerializeField] private Button clearChatButton;
         [SerializeField] private ScrollRect chatScrollRect;
         [SerializeField] private RectTransform chatContent;
@@ -78,6 +80,8 @@ namespace ElectricalSim.AI
             BindButton(switchModeButton, ToggleAssistantMode);
             BindButton(explainButton, ExplainCurrentCircuit);
             BindButton(checkButton, CheckCurrentCircuit);
+            BindButton(submitPracticeButton, SubmitPracticeCheck);
+            BindButton(exitPracticeButton, ExitPractice);
             BindButton(clearChatButton, ClearChat);
         }
 
@@ -126,6 +130,10 @@ namespace ElectricalSim.AI
             switchModeButton = CreateButton("SwitchModeButton", quickActions, "切换AI模式", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
             explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.16f, 0.45f, 0.95f), Color.white, 30f);
             checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
+            submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", new Color(0.12f, 0.65f, 0.25f), Color.white, 30f);
+            submitPracticeButton.gameObject.SetActive(false);
+            exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", new Color(0.85f, 0.18f, 0.16f), Color.white, 30f);
+            exitPracticeButton.gameObject.SetActive(false);
             clearChatButton = CreateButton("ClearChatButton", quickActions, "清空对话", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
 
             var chatRoot = CreatePanelSection("ChatScrollView", root, 0f, 1f, new Color(0.94f, 0.97f, 1f, 1f));
@@ -304,7 +312,7 @@ namespace ElectricalSim.AI
                 string summary = "电路检查完成：";
                 if (result.ErrorCount > 0 || result.WarningCount > 0)
                 {
-                    summary += $"发现 {result.ErrorCount} 个严重问题，{result.WarningCount} 个提醒。";
+                    summary += "发现 " + result.ErrorCount + " 个严重问题，" + result.WarningCount + " 个提醒。";
                 }
                 else
                 {
@@ -316,6 +324,42 @@ namespace ElectricalSim.AI
             {
                 Debug.LogException(exception);
                 AddAssistantMessage("电路检查时出错，请稍后重试。");
+            }
+        }
+
+        private void SubmitPracticeCheck()
+        {
+            var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
+            if (practiceController != null && practiceController.IsPracticeActive)
+            {
+                practiceController.SubmitPractice();
+            }
+            else
+            {
+                AddAssistantMessage("当前未处于练习模式。");
+            }
+        }
+
+        private void ExitPractice()
+        {
+            var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
+            if (practiceController != null && practiceController.IsPracticeActive)
+            {
+                practiceController.EndPractice();
+            }
+        }
+
+        public void RefreshPracticeState()
+        {
+            var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
+            bool isPractice = practiceController != null && practiceController.IsPracticeActive;
+            if (submitPracticeButton != null)
+            {
+                submitPracticeButton.gameObject.SetActive(isPractice);
+            }
+            if (exitPracticeButton != null)
+            {
+                exitPracticeButton.gameObject.SetActive(isPractice);
             }
         }
 
@@ -344,7 +388,7 @@ namespace ElectricalSim.AI
             AddMessage("我", message, true);
         }
 
-        private void AddAssistantMessage(string message)
+        public void AddAssistantMessage(string message)
         {
             AddMessage("AI 助教", message, false);
         }
@@ -486,4 +530,3 @@ namespace ElectricalSim.AI
         }
     }
 }
-

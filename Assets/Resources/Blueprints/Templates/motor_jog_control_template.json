@@ -1,0 +1,350 @@
+{
+  "templateId": "motor_jog_control",
+  "templateName": "\u7535\u52a8\u673a\u70b9\u52a8\u63a7\u5236\u7535\u8def",
+  "category": "\u5de5\u4e1a\u7535\u8def",
+  "difficulty": "\u521d\u7ea7",
+  "description": "\u4e09\u76f8\u7535\u6e90\u7ecf\u8fc7\u65ad\u8def\u5668\u3001\u7194\u65ad\u5668\u548c\u63a5\u89e6\u5668\u4e3b\u56de\u8def\u63a5\u5165\u4e09\u76f8\u5f02\u6b65\u7535\u52a8\u673a\uff1b\u63a7\u5236\u56de\u8def\u91c7\u7528\u6025\u505c\u3001\u505c\u6b62\u548c\u542f\u52a8\u6309\u94ae\u63a7\u5236\u63a5\u89e6\u5668\u7ebf\u5708\u3002\u7b2c\u4e00\u7248\u7528\u4e8e\u6559\u5b66\u63a5\u7ebf\u6f14\u793a\uff0c\u4e0d\u505a\u771f\u5b9e\u63a5\u89e6\u5668\u8054\u52a8\u4eff\u771f\u3002",
+  "components": [
+    {
+      "instanceId": "power_3p_1",
+      "definitionName": "AC_ThreePhase_Power",
+      "x": -500.0,
+      "y": 260.0,
+      "isClosed": true,
+      "parameters": [
+        {
+          "key": "phaseVoltage",
+          "displayName": "\u76f8\u7535\u538b",
+          "value": 220.0,
+          "unit": "V",
+          "min": 0.0,
+          "max": 250.0,
+          "editable": false
+        },
+        {
+          "key": "lineVoltage",
+          "displayName": "\u7ebf\u7535\u538b",
+          "value": 380.0,
+          "unit": "V",
+          "min": 0.0,
+          "max": 430.0,
+          "editable": false
+        }
+      ]
+    },
+    {
+      "instanceId": "breaker_3p_1",
+      "definitionName": "Breaker_3P",
+      "x": -500.0,
+      "y": 70.0,
+      "isClosed": true,
+      "parameters": [
+        {
+          "key": "ratedCurrent",
+          "displayName": "\u989d\u5b9a\u7535\u6d41",
+          "value": 16.0,
+          "unit": "A",
+          "min": 1.0,
+          "max": 63.0,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "fuse_3p_1",
+      "definitionName": "Fuse_3P",
+      "x": -280.0,
+      "y": 70.0,
+      "isClosed": true,
+      "parameters": [
+        {
+          "key": "ratedCurrent",
+          "displayName": "\u7194\u65ad\u5668\u989d\u5b9a\u7535\u6d41",
+          "value": 10.0,
+          "unit": "A",
+          "min": 1.0,
+          "max": 32.0,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "km_1",
+      "definitionName": "Contactor_KM_380V",
+      "x": -40.0,
+      "y": 70.0,
+      "isClosed": false,
+      "parameters": [
+        {
+          "key": "ratedVoltage",
+          "displayName": "\u7ebf\u5708\u7535\u538b",
+          "value": 380.0,
+          "unit": "V",
+          "min": 0.0,
+          "max": 430.0,
+          "editable": false
+        },
+        {
+          "key": "power",
+          "displayName": "\u7ebf\u5708\u529f\u7387",
+          "value": 18.0,
+          "unit": "W",
+          "min": 1.0,
+          "max": 80.0,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "motor_1",
+      "definitionName": "Motor_ThreePhase_380V",
+      "x": 260.0,
+      "y": -150.0,
+      "isClosed": false,
+      "parameters": [
+        {
+          "key": "ratedVoltage",
+          "displayName": "\u989d\u5b9a\u7535\u538b",
+          "value": 380.0,
+          "unit": "V",
+          "min": 0.0,
+          "max": 430.0,
+          "editable": false
+        },
+        {
+          "key": "power",
+          "displayName": "\u7535\u673a\u529f\u7387",
+          "value": 750.0,
+          "unit": "W",
+          "min": 100.0,
+          "max": 3000.0,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "emergency_1",
+      "definitionName": "EmergencyStop_NC",
+      "x": -500.0,
+      "y": -230.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "stop_1",
+      "definitionName": "Button_Stop_NC",
+      "x": -280.0,
+      "y": -230.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "start_1",
+      "definitionName": "Button_Start_NO",
+      "x": -60.0,
+      "y": -230.0,
+      "isClosed": false,
+      "parameters": []
+    }
+  ],
+  "wires": [
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L2",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P2_IN",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L3",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P1_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P2_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L2_IN",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P3_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L1_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L1",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L2_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L2",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L3_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L3",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T1",
+      "endComponentId": "motor_1",
+      "endTerminalId": "U",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T2",
+      "endComponentId": "motor_1",
+      "endTerminalId": "V",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T3",
+      "endComponentId": "motor_1",
+      "endTerminalId": "W",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "PE",
+      "endComponentId": "motor_1",
+      "endTerminalId": "PE",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "emergency_1",
+      "endTerminalId": "11",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "emergency_1",
+      "startTerminalId": "12",
+      "endComponentId": "stop_1",
+      "endTerminalId": "11",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "start_1",
+      "endTerminalId": "23",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "start_1",
+      "startTerminalId": "24",
+      "endComponentId": "km_1",
+      "endTerminalId": "A1",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "A2",
+      "endComponentId": "power_3p_1",
+      "endTerminalId": "L2",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    }
+  ]
+}

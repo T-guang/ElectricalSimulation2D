@@ -11,6 +11,8 @@ namespace ElectricalSim.UI
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text label;
 
+        public ComponentDefinition Definition => definition;
+
         private RectTransform dragPreview;
 
         public void Initialize(ComponentDefinition componentDefinition, WorkspaceController targetWorkspace)

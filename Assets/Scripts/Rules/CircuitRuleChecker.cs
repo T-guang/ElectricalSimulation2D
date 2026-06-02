@@ -64,7 +64,7 @@ namespace ElectricalSim.Rules
                     powers.Add(component);
                 }
 
-                if (definition.kind == ComponentKind.Lamp || definition.kind == ComponentKind.Fan)
+                if (definition.kind == ComponentKind.Lamp || definition.kind == ComponentKind.Fan || definition.kind == ComponentKind.Motor)
                 {
                     loads.Add(component);
                 }
@@ -167,6 +167,14 @@ namespace ElectricalSim.Rules
                     AddTerminalEdge(graph, component, "L_IN", "L_OUT");
                     AddTerminalEdge(graph, component, "N_IN", "N_OUT");
                     break;
+                case ComponentKind.ContactorCoil:
+                    if (structural)
+                    {
+                        AddTerminalEdge(graph, component, "L1", "T1");
+                        AddTerminalEdge(graph, component, "L2", "T2");
+                        AddTerminalEdge(graph, component, "L3", "T3");
+                    }
+                    break;
             }
         }
 
@@ -193,6 +201,12 @@ namespace ElectricalSim.Rules
         {
             foreach (var load in loads)
             {
+                if (IsThreePhaseMotor(load))
+                {
+                    CheckThreePhaseMotorConnections(load);
+                    continue;
+                }
+
                 var lTerminal = FindPhaseTerminal(load);
                 var nTerminal = FindNeutralTerminal(load);
 
@@ -212,6 +226,12 @@ namespace ElectricalSim.Rules
         {
             foreach (var load in loads)
             {
+                if (IsThreePhaseMotor(load))
+                {
+                    CheckThreePhaseMotorPaths(load);
+                    continue;
+                }
+
                 var loadL = FindPhaseTerminal(load);
                 var loadN = FindNeutralTerminal(load);
 
@@ -231,6 +251,11 @@ namespace ElectricalSim.Rules
         {
             foreach (var load in loads)
             {
+                if (IsThreePhaseMotor(load))
+                {
+                    continue;
+                }
+
                 var loadL = FindPhaseTerminal(load);
                 if (loadL == null || !CanReachAnyPowerTerminal(loadL, TerminalRole.Phase, structuralGraph))
                 {
@@ -403,6 +428,11 @@ namespace ElectricalSim.Rules
         {
             foreach (var load in loads)
             {
+                if (IsThreePhaseMotor(load))
+                {
+                    continue;
+                }
+
                 var loadL = FindPhaseTerminal(load);
                 var loadN = FindNeutralTerminal(load);
                 if (loadL == null || loadN == null)
@@ -546,6 +576,11 @@ namespace ElectricalSim.Rules
         {
             foreach (var load in loads)
             {
+                if (IsThreePhaseMotor(load))
+                {
+                    continue;
+                }
+
                 var loadL = FindPhaseTerminal(load);
                 var loadN = FindNeutralTerminal(load);
                 if (loadL == null || loadN == null)
@@ -609,6 +644,70 @@ namespace ElectricalSim.Rules
                 if (target != null && AreConnected(from, target, graph))
                 {
                     return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void CheckThreePhaseMotorConnections(CircuitComponent motor)
+        {
+            CheckMotorTerminalWire(motor, "U");
+            CheckMotorTerminalWire(motor, "V");
+            CheckMotorTerminalWire(motor, "W");
+        }
+
+        private void CheckThreePhaseMotorPaths(CircuitComponent motor)
+        {
+            CheckMotorPhasePath(motor, "U");
+            CheckMotorPhasePath(motor, "V");
+            CheckMotorPhasePath(motor, "W");
+        }
+
+        private void CheckMotorTerminalWire(CircuitComponent motor, string terminalId)
+        {
+            var terminal = motor.GetTerminal(terminalId);
+            if (terminal == null || !HasAnyWire(terminal))
+            {
+                AddIssue(CircuitIssueSeverity.Error, "MOTOR_PHASE_MISSING",
+                    LoadName(motor) + "缺少 " + terminalId + " 相连接。",
+                    "三相电机需要 U/V/W 三个相线端子都接入三相主回路。",
+                    "请检查电机 " + terminalId + " 端是否已经接到接触器或三相电源输出端。", motor);
+            }
+        }
+
+        private void CheckMotorPhasePath(CircuitComponent motor, string terminalId)
+        {
+            var terminal = motor.GetTerminal(terminalId);
+            if (terminal != null && !CanReachAnyPowerPhase(terminal, structuralGraph))
+            {
+                AddIssue(CircuitIssueSeverity.Error, "MOTOR_PHASE_PATH_MISSING",
+                    "未检测到从三相电源到 " + LoadName(motor) + " " + terminalId + " 端的主回路路径。",
+                    "三相电机的 U/V/W 端需要分别通过空开、熔断器、接触器等主回路元件接到三相电源。",
+                    "请沿该相导线检查三相电源、空开、熔断器、接触器和电机端子之间是否连通。", motor);
+            }
+        }
+
+        private bool CanReachAnyPowerPhase(TerminalView from, Dictionary<string, HashSet<string>> graph)
+        {
+            if (from == null)
+            {
+                return false;
+            }
+
+            foreach (var power in powers)
+            {
+                if (power == null || power.Terminals == null)
+                {
+                    continue;
+                }
+
+                foreach (var terminal in power.Terminals)
+                {
+                    if (terminal != null && terminal.Role == TerminalRole.Phase && AreConnected(from, terminal, graph))
+                    {
+                        return true;
+                    }
                 }
             }
 
@@ -683,6 +782,12 @@ namespace ElectricalSim.Rules
         private static TerminalView FindNeutralTerminal(CircuitComponent component)
         {
             return FindTerminal(component, "N") ?? FindTerminal(component, "N_IN") ?? FindByRole(component, TerminalRole.Neutral);
+        }
+
+        private static bool IsThreePhaseMotor(CircuitComponent component)
+        {
+            return component != null && component.Definition != null && component.Definition.kind == ComponentKind.Motor &&
+                   component.GetTerminal("U") != null && component.GetTerminal("V") != null && component.GetTerminal("W") != null;
         }
 
         private static TerminalView FindTerminal(CircuitComponent component, string terminalId)
