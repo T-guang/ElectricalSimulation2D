@@ -186,7 +186,7 @@ namespace ElectricalSim.Practice
             var titleText = texts.FirstOrDefault(t => t.name.Contains("Recommendation") || (t.text != null && t.text.Contains("推荐")));
             if (titleText != null)
             {
-                titleText.text = $"当前练习：{item.templateName}";
+                titleText.text = item.templateName;
             }
         }
 
@@ -236,10 +236,9 @@ namespace ElectricalSim.Practice
             if (templateName.Contains("电灯泡与电风扇并联")) return "220V电源、单开单控开关 ×2、电灯泡(220V)、电风扇(220V)";
             if (templateName.Contains("单开控制双灯")) return "220V电源、空气开关2P、单开单控开关、电灯泡(220V) ×2";
             if (templateName.Contains("双开分别控制双灯")) return "220V电源、空气开关2P、单开单控开关 ×2、电灯泡(220V) ×2";
-            if (templateName.Contains("空开控制灯泡与电风扇")) return "220V电源、空气开关2P、单开单控开关 ×2、电灯泡(220V)、电风扇(220V)";
+            if (templateName.Contains("空开控制灯泡与风扇")) return "220V电源、空气开关2P、单开单控开关 ×2、电灯泡(220V)、电风扇(220V)";
             return "220V电源、相关负载及开关";
         }
-
         private void ShowPracticeConfirm(CircuitTemplateCatalogItemDto item, System.Action onConfirm)
         {
             var canvas = FindObjectOfType<Canvas>();
@@ -367,9 +366,3 @@ namespace ElectricalSim.Practice
         }
     }
 }
-
-
-
-
-
-
