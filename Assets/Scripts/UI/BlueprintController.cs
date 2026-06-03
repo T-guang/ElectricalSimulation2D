@@ -30,7 +30,8 @@ namespace ElectricalSim.UI
         [SerializeField] private Text referenceRecommendations;
         [SerializeField] private Button referenceCloseButton;
 
-        private List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto> dynamicTemplates = new List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto>();
+        private readonly List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto> dynamicTemplates = new List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto>();
+        private readonly List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto> catalogTemplates = new List<ElectricalSim.Templates.CircuitTemplateCatalogItemDto>();
 
         private int selectedIndex;
         private int activeCategory;
@@ -53,37 +54,24 @@ namespace ElectricalSim.UI
             if (catalogJson != null)
             {
                 var catalog = JsonUtility.FromJson<ElectricalSim.Templates.CircuitTemplateCatalogDto>(catalogJson.text);
+                if (catalog != null && catalog.templates != null)
+                {
+                    catalogTemplates.Clear();
+                    catalogTemplates.AddRange(catalog.templates);
+                }
+
                 if (catalog != null && catalog.templates != null && blueprintCards.Count > 0)
                 {
                     var templateCard = blueprintCards[0];
                     foreach (var item in catalog.templates)
                     {
-                        if (item.category == "\u5bb6\u5ead\u7535\u8def")
+                        if (item.category == "\u5bb6\u5ead\u7535\u8def" || item.category == "\u5de5\u4e1a\u7535\u8def")
                         {
                             var newCard = Instantiate(templateCard, cardContent);
                             var newIndex = blueprintButtons.Count;
+                            var categoryLabel = item.category == "\u5de5\u4e1a\u7535\u8def" ? "\u5de5\u4e1a\u7535\u8def" : "\u5bb6\u5ead\u7535\u8def";
                             
-                            var texts = newCard.GetComponentsInChildren<Text>(true);
-                            foreach (var t in texts)
-                            {
-                                if (t.text.Contains("\u7ec3\u4e60") || t.text.Contains("\u8fdb\u5165"))
-                                {
-                                    t.text = "\u8fdb\u5165\u7ec3\u4e60";
-                                    continue;
-                                }
-                                if (t.text.Contains("\u5de5\u4e1a") || t.text.Contains("\u5bb6\u5ead") || t.text.Contains("\u7535\u8def"))
-                                {
-                                    t.text = "\u5bb6\u5ead\u7535\u8def";
-                                }
-                                else if (t.text.Contains("\u521d") || t.text.Contains("\u4e2d") || t.text.Contains("\u9ad8") || t.text.Contains("\u5165\u95e8") || t.text.Contains("\u8fdb\u9636"))
-                                {
-                                    t.text = item.difficulty;
-                                }
-                                else
-                                {
-                                    t.text = item.templateName;
-                                }
-                            }
+                            ApplyDynamicCardTexts(newCard, item, categoryLabel);
 
                             Sprite sprite = null;
                             if (!string.IsNullOrEmpty(item.thumbnailPath))
@@ -111,7 +99,7 @@ namespace ElectricalSim.UI
                             blueprintCards.Add(newCard);
                             blueprintNames.Add(item.templateName);
                             blueprintSprites.Add(sprite);
-                            blueprintCategories.Add(1);
+                            blueprintCategories.Add(item.category == "\u5de5\u4e1a\u7535\u8def" ? 0 : 1);
 
                             int diff = 0;
                             if (!string.IsNullOrEmpty(item.difficulty) && (item.difficulty.Contains("\u4e2d") || item.difficulty.Contains("\u8fdb\u9636"))) diff = 1;
@@ -193,17 +181,159 @@ namespace ElectricalSim.UI
 
         private void EnterConfiguration()
         {
-            if (selectedIndex >= 0 && selectedIndex < dynamicTemplates.Count && dynamicTemplates[selectedIndex] != null)
+            var templateItem = ResolveSelectedTemplateItem();
+            if (templateItem != null)
             {
                 var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
                 if (practiceController != null)
                 {
-                    practiceController.StartPractice(dynamicTemplates[selectedIndex], ClosePreview);
+                    practiceController.StartPractice(templateItem, ClosePreview);
                     return;
                 }
             }
 
             EnterConfigurationInternal();
+        }
+
+        private ElectricalSim.Templates.CircuitTemplateCatalogItemDto ResolveSelectedTemplateItem()
+        {
+            if (selectedIndex >= 0 && selectedIndex < dynamicTemplates.Count && dynamicTemplates[selectedIndex] != null)
+            {
+                return dynamicTemplates[selectedIndex];
+            }
+
+            var candidates = new List<string>();
+            AddTemplateNameCandidate(candidates, selectedIndex >= 0 && selectedIndex < blueprintNames.Count ? blueprintNames[selectedIndex] : string.Empty);
+
+            if (selectedIndex >= 0 && selectedIndex < blueprintCards.Count && blueprintCards[selectedIndex] != null)
+            {
+                var labels = blueprintCards[selectedIndex].GetComponentsInChildren<Text>(true);
+                for (var i = 0; i < labels.Length; i++)
+                {
+                    AddTemplateNameCandidate(candidates, labels[i] != null ? labels[i].text : string.Empty);
+                }
+            }
+
+            for (var i = 0; i < catalogTemplates.Count; i++)
+            {
+                var item = catalogTemplates[i];
+                if (item == null || string.IsNullOrWhiteSpace(item.templateName))
+                {
+                    continue;
+                }
+
+                for (var c = 0; c < candidates.Count; c++)
+                {
+                    var candidate = candidates[c];
+                    if (string.Equals(item.templateName, candidate, System.StringComparison.OrdinalIgnoreCase)
+                        || item.templateName.Contains(candidate)
+                        || candidate.Contains(item.templateName))
+                    {
+                        return item;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static void AddTemplateNameCandidate(List<string> candidates, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return;
+            }
+
+            var candidate = value.Trim();
+            if (candidate.Length < 3)
+            {
+                return;
+            }
+
+            for (var i = 0; i < candidates.Count; i++)
+            {
+                if (string.Equals(candidates[i], candidate, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            candidates.Add(candidate);
+        }
+
+        private static void ApplyDynamicCardTexts(GameObject card, ElectricalSim.Templates.CircuitTemplateCatalogItemDto item, string categoryLabel)
+        {
+            if (card == null || item == null)
+            {
+                return;
+            }
+
+            var texts = card.GetComponentsInChildren<Text>(true);
+            var titleAssigned = false;
+            var categoryAssigned = false;
+            var difficultyAssigned = false;
+
+            foreach (var text in texts)
+            {
+                if (text == null || string.IsNullOrWhiteSpace(text.text))
+                {
+                    continue;
+                }
+
+                var original = text.text.Trim();
+                if (IsActionLabel(original))
+                {
+                    text.text = "\u8fdb\u5165\u7ec3\u4e60";
+                    continue;
+                }
+
+                if (!categoryAssigned && IsCategoryLabel(original))
+                {
+                    text.text = categoryLabel;
+                    categoryAssigned = true;
+                    continue;
+                }
+
+                if (!difficultyAssigned && IsDifficultyLabel(original))
+                {
+                    text.text = item.difficulty;
+                    difficultyAssigned = true;
+                    continue;
+                }
+
+                if (!titleAssigned)
+                {
+                    text.text = item.templateName;
+                    titleAssigned = true;
+                }
+            }
+        }
+
+        private static bool IsActionLabel(string text)
+        {
+            return text.Contains("\u7ec3\u4e60") || text.Contains("\u8fdb\u5165");
+        }
+
+        private static bool IsCategoryLabel(string text)
+        {
+            return text == "\u5bb6\u5ead"
+                   || text == "\u5de5\u4e1a"
+                   || text == "\u5bb6\u5ead\u7535\u8def"
+                   || text == "\u5de5\u4e1a\u7535\u8def"
+                   || text == "\u5bb6\u5ead\u7535\u8def\u56fe\u7eb8"
+                   || text == "\u5de5\u4e1a\u7535\u8def\u56fe\u7eb8";
+        }
+
+        private static bool IsDifficultyLabel(string text)
+        {
+            return text == "\u521d\u7ea7"
+                   || text == "\u4e2d\u7ea7"
+                   || text == "\u9ad8\u7ea7"
+                   || text == "\u5165\u95e8"
+                   || text == "\u8fdb\u9636"
+                   || text == "\u521d\u7ea7\u56fe\u7eb8"
+                   || text == "\u4e2d\u7ea7\u56fe\u7eb8"
+                   || text == "\u9ad8\u7ea7\u56fe\u7eb8";
         }
 
         private void EnterConfigurationInternal()

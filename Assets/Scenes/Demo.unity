@@ -700,7 +700,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u7194\u65AD\u5668(FU)"
+  m_Text: "\u7194\u65AD\u56681P(FU)"
 --- !u!222 &10340643
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -8252,7 +8252,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u7194\u65AD\u5668(FU)"
+  m_Text: "\u7194\u65AD\u56683P(FU)"
 --- !u!222 &249266444
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -18596,6 +18596,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   searchInput: {fileID: 1866211725}
+  saveLoadService: {fileID: 0}
+  workspace: {fileID: 0}
   content: {fileID: 180775695}
   sectionTitles:
   - {fileID: 866417053}
@@ -23128,7 +23130,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u590D\u5408\u5F00\u5173(SB)"
+  m_Text: "\u590D\u5408\u5F00\u5173(SB)\u7EA2"
 --- !u!222 &675879606
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -23483,6 +23485,9 @@ MonoBehaviour:
   clearAllButton: {fileID: 522910374}
   saveButton: {fileID: 1018932824}
   loadButton: {fileID: 361510866}
+  saveDialog: {fileID: 0}
+  importPanel: {fileID: 0}
+  aiAssistantPanel: {fileID: 0}
   undoButton: {fileID: 58876408}
   redoButton: {fileID: 1390944697}
   quickDeleteButton: {fileID: 1638931994}
@@ -42465,7 +42470,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u81EA\u9501\u5F00\u5173(SB)"
+  m_Text: "\u81EA\u9501\u5F00\u5173(SB)\u7EA2"
 --- !u!222 &1323881154
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -45267,7 +45272,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u4EA4\u6D41\u7535\u6E90"
+  m_Text: "\u4E09\u76F8\u4EA4\u6D41\u7535\u6E90"
 --- !u!222 &1413467385
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -51819,6 +51824,7 @@ MonoBehaviour:
   actionLogText: {fileID: 1630243104}
   actionLogScrollRect: {fileID: 741776699}
   measurementPanel: {fileID: 0}
+  componentParameterView: {fileID: 0}
   gridSize: 24
   minCanvasZoom: 0.65
   maxCanvasZoom: 1.7
@@ -55806,7 +55812,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u590D\u5408\u5F00\u5173(SB)"
+  m_Text: "\u590D\u5408\u5F00\u5173(SB)l\u7EFF"
 --- !u!222 &1747930072
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -57974,7 +57980,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\u81EA\u9501\u5F00\u5173(SB)"
+  m_Text: "\u81EA\u9501\u5F00\u5173(SB)\u7EFF"
 --- !u!222 &1861174209
 CanvasRenderer:
   m_ObjectHideFlags: 0

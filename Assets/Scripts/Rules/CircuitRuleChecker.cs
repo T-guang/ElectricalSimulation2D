@@ -36,6 +36,7 @@ namespace ElectricalSim.Rules
             CheckSwitchOnPhaseBranch();
             CheckBreakers();
             CheckMeters();
+            CheckIndustrialControlLoops();
             CheckIsolatedComponents();
             CheckOpenDevicesAffectLoads();
             CheckBypassedDevices();
@@ -140,7 +141,7 @@ namespace ElectricalSim.Rules
                 case ComponentKind.PushButton:
                     if (structural || component.IsClosed)
                     {
-                        AddTerminalEdge(graph, component, "L", "L1");
+                        AddContactEdges(graph, component);
                     }
                     break;
                 case ComponentKind.TwoWaySwitch:
@@ -170,6 +171,7 @@ namespace ElectricalSim.Rules
                         AddTerminalEdge(graph, component, "L1", "T1");
                         AddTerminalEdge(graph, component, "L2", "T2");
                         AddTerminalEdge(graph, component, "L3", "T3");
+                        AddTerminalEdge(graph, component, "95", "96");
                     }
                     break;
                 case ComponentKind.EnergyMeter:
@@ -237,6 +239,7 @@ namespace ElectricalSim.Rules
             {
                 if (IsThreePhaseMotor(load))
                 {
+                    CheckIndustrialMotorMainCircuitSegments(load);
                     CheckThreePhaseMotorPaths(load);
                     continue;
                 }
@@ -587,6 +590,156 @@ namespace ElectricalSim.Rules
             }
         }
 
+        private void CheckIndustrialControlLoops()
+        {
+            var components = workspace.Components;
+            if (components == null)
+            {
+                return;
+            }
+
+            foreach (var component in components)
+            {
+                if (component == null || component.Definition == null)
+                {
+                    continue;
+                }
+
+                if (IsIndustrialContactor(component))
+                {
+                    CheckContactorControlLoop(component);
+                }
+
+                if (IsThermalRelay(component))
+                {
+                    CheckThermalRelayControlLoop(component);
+                }
+            }
+        }
+
+        private void CheckContactorControlLoop(CircuitComponent contactor)
+        {
+            var coilA1 = contactor.GetTerminal("A1");
+            var coilA2 = contactor.GetTerminal("A2");
+            if (coilA1 == null || coilA2 == null)
+            {
+                AddIssue(CircuitIssueSeverity.Warning, "INDUSTRIAL_CONTACTOR_COIL_TERMINAL_MISSING",
+                    ComponentName(contactor) + "\u7f3a\u5c11 A1/A2 \u7ebf\u5708\u7aef\u5b50\u3002",
+                    "\u5f53\u524d\u63a5\u89e6\u5668\u65e0\u6cd5\u8fdb\u884c\u63a7\u5236\u56de\u8def\u68c0\u67e5\u3002",
+                    "\u8bf7\u786e\u8ba4\u63a5\u89e6\u5668\u6a21\u578b\u5305\u542b A1/A2 \u7ebf\u5708\u7aef\u5b50\u3002", contactor);
+                return;
+            }
+
+            if (!HasAnyWire(coilA1) || !HasAnyWire(coilA2))
+            {
+                AddIssue(CircuitIssueSeverity.Warning, "INDUSTRIAL_CONTACTOR_COIL_OPEN",
+                    "\u63a5\u89e6\u5668\u7ebf\u5708\u672a\u95ed\u5408\u6216\u7ebf\u8def\u4e0d\u5b8c\u6574\u3002",
+                    ComponentName(contactor) + " \u7684 A1/A2 \u63a7\u5236\u56de\u8def\u6ca1\u6709\u5b8c\u6574\u63a5\u7ebf\u3002",
+                    "\u8bf7\u68c0\u67e5 Start/Stop \u6309\u94ae\u53ca\u63a5\u89e6\u5668 A1/A2 \u63a5\u7ebf\uff1b\u5982\u6709\u70ed\u7ee7\u7535\u5668\uff0c\u8bf7\u786e\u8ba4 95/96 \u4e32\u5165\u63a7\u5236\u56de\u8def\u3002", contactor);
+                return;
+            }
+
+            if (!IsControlCoilRoutable(coilA1, coilA2, structuralGraph))
+            {
+                AddIssue(CircuitIssueSeverity.Warning, "INDUSTRIAL_CONTACTOR_COIL_OPEN",
+                    "\u63a5\u89e6\u5668\u7ebf\u5708\u672a\u95ed\u5408\u6216\u7ebf\u8def\u4e0d\u5b8c\u6574\u3002",
+                    ComponentName(contactor) + " \u7684 A1/A2 \u6ca1\u6709\u5f62\u6210\u5b8c\u6574\u63a7\u5236\u63a5\u7ebf\u8def\u5f84\u3002",
+                    "\u8bf7\u68c0\u67e5\u542f\u52a8/\u505c\u6b62\u6309\u94ae\u548c A1/A2 \u662f\u5426\u6309\u6807\u51c6\u56de\u8def\u63a5\u5165\u63a7\u5236\u7535\u6e90\u4e24\u7aef\u3002", contactor);
+            }
+        }
+
+        private void CheckThermalRelayControlLoop(CircuitComponent relay)
+        {
+            var ncIn = relay.GetTerminal("95");
+            var ncOut = relay.GetTerminal("96");
+            if (ncIn == null || ncOut == null)
+            {
+                return;
+            }
+
+            if (!HasAnyWire(ncIn) || !HasAnyWire(ncOut))
+            {
+                AddIssue(CircuitIssueSeverity.Warning, "INDUSTRIAL_THERMAL_RELAY_CONTROL_OPEN",
+                    "\u7ee7\u7535\u5668\u7ebf\u5708\u672a\u95ed\u5408\u6216\u7ebf\u8def\u4e0d\u5b8c\u6574\u3002",
+                    ComponentName(relay) + " \u7684 95/96 \u63a7\u5236\u89e6\u70b9\u6ca1\u6709\u5b8c\u6574\u63a5\u5165\u63a7\u5236\u56de\u8def\u3002",
+                    "\u8bf7\u68c0\u67e5\u70ed\u7ee7\u7535\u5668 95/96 \u662f\u5426\u4e32\u5165\u505c\u6b62\u6309\u94ae\u4e0e\u63a5\u89e6\u5668\u7ebf\u5708 A1/A2 \u7684\u63a7\u5236\u7ebf\u8def\u3002", relay);
+            }
+        }
+
+        private bool IsControlCoilRoutable(TerminalView first, TerminalView second, Dictionary<string, HashSet<string>> graph)
+        {
+            if (first == null || second == null || AreConnected(first, second, graph))
+            {
+                return false;
+            }
+
+            var firstPhases = GetReachablePowerPhaseKeys(first, graph);
+            var secondPhases = GetReachablePowerPhaseKeys(second, graph);
+            foreach (var firstPhase in firstPhases)
+            {
+                foreach (var secondPhase in secondPhases)
+                {
+                    if (firstPhase != secondPhase)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return firstPhases.Count > 0 && CanReachPowerNeutral(second, graph) ||
+                secondPhases.Count > 0 && CanReachPowerNeutral(first, graph);
+        }
+
+        private HashSet<string> GetReachablePowerPhaseKeys(TerminalView terminal, Dictionary<string, HashSet<string>> graph)
+        {
+            var phases = new HashSet<string>();
+            if (terminal == null || graph == null)
+            {
+                return phases;
+            }
+
+            foreach (var power in powers)
+            {
+                if (power == null || power.Terminals == null)
+                {
+                    continue;
+                }
+
+                foreach (var powerTerminal in power.Terminals)
+                {
+                    if (powerTerminal != null && powerTerminal.Role == TerminalRole.Phase && AreConnected(terminal, powerTerminal, graph))
+                    {
+                        phases.Add(Node(powerTerminal));
+                    }
+                }
+            }
+
+            return phases;
+        }
+
+        private bool CanReachPowerNeutral(TerminalView terminal, Dictionary<string, HashSet<string>> graph)
+        {
+            return CanReachAnyPowerTerminal(terminal, TerminalRole.Neutral, graph);
+        }
+
+        private static bool IsIndustrialContactor(CircuitComponent component)
+        {
+            return component != null && component.Definition != null &&
+                component.GetTerminal("A1") != null &&
+                component.GetTerminal("A2") != null &&
+                component.GetTerminal("L1") != null &&
+                component.GetTerminal("T1") != null;
+        }
+
+        private static bool IsThermalRelay(CircuitComponent component)
+        {
+            return component != null && component.Definition != null &&
+                component.GetTerminal("95") != null &&
+                component.GetTerminal("96") != null &&
+                component.GetTerminal("L1") != null &&
+                component.GetTerminal("T1") != null;
+        }
+
         private void CheckIsolatedComponents()
         {
             var components = workspace.Components;
@@ -711,6 +864,88 @@ namespace ElectricalSim.Rules
             }
 
             return false;
+        }
+
+        private void CheckIndustrialMotorMainCircuitSegments(CircuitComponent motor)
+        {
+            var contactor = FindMainContactorForMotor(motor);
+            var fuse = FindComponentWithTerminals("L1_OUT", "L2_OUT", "L3_OUT");
+            if (contactor == null || fuse == null)
+            {
+                return;
+            }
+
+            CheckMainCircuitSegment(fuse, "L1_OUT", contactor, "L1", "L1");
+            CheckMainCircuitSegment(fuse, "L2_OUT", contactor, "L2", "L2");
+            CheckMainCircuitSegment(fuse, "L3_OUT", contactor, "L3", "L3");
+        }
+
+        private void CheckMainCircuitSegment(CircuitComponent from, string fromTerminalId, CircuitComponent to, string toTerminalId, string phaseLabel)
+        {
+            var fromTerminal = from != null ? from.GetTerminal(fromTerminalId) : null;
+            var toTerminal = to != null ? to.GetTerminal(toTerminalId) : null;
+            if (fromTerminal == null || toTerminal == null || AreConnected(fromTerminal, toTerminal, structuralGraph))
+            {
+                return;
+            }
+
+            AddIssue(CircuitIssueSeverity.Error, "INDUSTRIAL_FUSE_CONTACTOR_SEGMENT_MISSING",
+                "\u7194\u65ad\u5668\u5230\u4ea4\u6d41\u63a5\u89e6\u5668\u4e4b\u95f4\u7684 " + phaseLabel + " \u76f8\u4e3b\u56de\u8def\u7f3a\u5931\u3002",
+                ComponentName(from) + " " + fromTerminalId + " \u4e0e " + ComponentName(to) + " " + toTerminalId + " \u672a\u8fde\u901a\uff0c\u8be5\u76f8\u4e3b\u56de\u8def\u5728\u7194\u65ad\u5668\u548c\u63a5\u89e6\u5668\u4e4b\u95f4\u65ad\u5f00\u3002",
+                "\u8bf7\u5148\u8865\u9f50\u7194\u65ad\u5668\u8f93\u51fa\u7aef\u5230\u4ea4\u6d41\u63a5\u89e6\u5668\u8f93\u5165\u7aef\u7684\u5bfc\u7ebf\uff0c\u518d\u68c0\u67e5\u63a5\u89e6\u5668\u5230\u7535\u673a U/V/W \u7aef\u7684\u8fde\u63a5\u3002", to);
+        }
+
+        private CircuitComponent FindMainContactorForMotor(CircuitComponent motor)
+        {
+            var motorU = motor.GetTerminal("U");
+            var motorV = motor.GetTerminal("V");
+            var motorW = motor.GetTerminal("W");
+            CircuitComponent fallback = null;
+            foreach (var component in workspace.Components)
+            {
+                if (!IsIndustrialContactor(component))
+                {
+                    continue;
+                }
+
+                fallback = fallback ?? component;
+                if (AreConnected(component.GetTerminal("T1"), motorU, structuralGraph) ||
+                    AreConnected(component.GetTerminal("T2"), motorV, structuralGraph) ||
+                    AreConnected(component.GetTerminal("T3"), motorW, structuralGraph))
+                {
+                    return component;
+                }
+            }
+
+            return fallback;
+        }
+
+        private CircuitComponent FindComponentWithTerminals(params string[] terminalIds)
+        {
+            foreach (var component in workspace.Components)
+            {
+                if (component == null)
+                {
+                    continue;
+                }
+
+                var hasAllTerminals = true;
+                foreach (var terminalId in terminalIds)
+                {
+                    if (component.GetTerminal(terminalId) == null)
+                    {
+                        hasAllTerminals = false;
+                        break;
+                    }
+                }
+
+                if (hasAllTerminals)
+                {
+                    return component;
+                }
+            }
+
+            return null;
         }
 
         private void CheckThreePhaseMotorConnections(CircuitComponent motor)
@@ -874,6 +1109,15 @@ namespace ElectricalSim.Rules
             }
 
             return null;
+        }
+
+        private static void AddContactEdges(Dictionary<string, HashSet<string>> graph, CircuitComponent component)
+        {
+            AddTerminalEdge(graph, component, "L", "L1");
+            AddTerminalEdge(graph, component, "11", "12");
+            AddTerminalEdge(graph, component, "13", "14");
+            AddTerminalEdge(graph, component, "21", "22");
+            AddTerminalEdge(graph, component, "23", "24");
         }
 
         private static void AddTerminalEdge(Dictionary<string, HashSet<string>> graph, CircuitComponent component, string a, string b)
