@@ -115,12 +115,13 @@ namespace ElectricalSim.EditorTools
 
         private static ComponentDefinition CreateThreePhasePower(Sprite sprite)
         {
-            var definition = CreateDefinition("AC_ThreePhase_Power", "\u4ea4\u6d41\u7535\u6e90", ComponentKind.PowerSource, new Color(1f, 0.98f, 0.88f), new Color(1f, 0.78f, 0.12f), true, false,
+            var definition = CreateDefinition("AC_ThreePhase_Power", "\u4e09\u76f8\u4ea4\u6d41\u7535\u6e90", ComponentKind.PowerSource, new Color(1f, 0.98f, 0.88f), new Color(1f, 0.78f, 0.12f), true, false,
                 T("L1", "L1", TerminalRole.Phase, 0.10f, 0.35f, Yellow()),
                 T("L2", "L2", TerminalRole.Phase, 0.30f, 0.35f, Green()),
                 T("L3", "L3", TerminalRole.Phase, 0.50f, 0.35f, Red()),
                 T("N", "N", TerminalRole.Neutral, 0.70f, 0.35f, Blue()),
                 T("PE", "PE", TerminalRole.ProtectiveEarth, 0.90f, 0.35f, Green()));
+            definition.category = ComponentCategory.Industrial;
             definition.sprite = sprite;
             definition.size = new Vector2(420f, 100f);
             EditorUtility.SetDirty(definition);
@@ -442,17 +443,17 @@ namespace ElectricalSim.EditorTools
 
         private static void AddIndustrialDefinitions(List<ComponentDefinition> definitions)
         {
-            definitions.Add(CreateIndustrial("Fuse_1P", "\u7194\u65ad\u5668(FU)", ComponentKind.Fuse, new Color(0.92f, 0.94f, 0.96f), new Color(0.92f, 0.2f, 0.16f), true, true,
+            definitions.Add(CreateIndustrial("Fuse_1P", "\u7194\u65ad\u56681P(FU)", ComponentKind.Fuse, new Color(0.92f, 0.94f, 0.96f), new Color(0.92f, 0.2f, 0.16f), true, true,
                 T("IN", "\u8fdb", TerminalRole.Input, 0.5f, 1f, Red()),
                 T("OUT", "\u51fa", TerminalRole.Output, 0.5f, 0f, Red())));
-            definitions.Add(CreateIndustrial("Fuse_3P", "\u7194\u65ad\u5668(FU)", ComponentKind.Fuse, new Color(0.92f, 0.94f, 0.96f), new Color(0.92f, 0.2f, 0.16f), true, true,
+            definitions.Add(CreateIndustrial("Fuse_3P", "\u7194\u65ad\u56683P(FU)", ComponentKind.Fuse, new Color(0.92f, 0.94f, 0.96f), new Color(0.92f, 0.2f, 0.16f), true, true,
                 T("L1_IN", "L1", TerminalRole.Input, 0.2f, 1f, Yellow()), T("L1_OUT", "T1", TerminalRole.Output, 0.2f, 0f, Yellow()),
                 T("L2_IN", "L2", TerminalRole.Input, 0.5f, 1f, Green()), T("L2_OUT", "T2", TerminalRole.Output, 0.5f, 0f, Green()),
                 T("L3_IN", "L3", TerminalRole.Input, 0.8f, 1f, Red()), T("L3_OUT", "T3", TerminalRole.Output, 0.8f, 0f, Red())));
-            definitions.Add(CreateIndustrial("Button_Compound_SB", "\u590d\u5408\u5f00\u5173(SB)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.28f, 0.24f), false, true, ControlTerminals()));
-            definitions.Add(CreateIndustrial("Button_SelfLock_SB", "\u81ea\u9501\u5f00\u5173(SB)", ComponentKind.Switch, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.28f, 0.24f), false, true, ControlTerminals()));
-            definitions.Add(CreateIndustrial("Button_Compound_Green_SB", "\u590d\u5408\u5f00\u5173(SB)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true, ControlTerminals()));
-            definitions.Add(CreateIndustrial("Button_SelfLock_Green_SB", "\u81ea\u9501\u5f00\u5173(SB)", ComponentKind.Switch, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true, ControlTerminals()));
+            definitions.Add(CreateIndustrial("Button_Compound_SB", "\u590d\u5408\u6309\u94aeSB(\u7ea2)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.28f, 0.24f), false, true, ControlTerminals()));
+            definitions.Add(CreateIndustrial("Button_SelfLock_SB", "\u81ea\u9501\u5f00\u5173SB(\u7ea2)", ComponentKind.Switch, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.28f, 0.24f), false, true, ControlTerminals()));
+            definitions.Add(CreateIndustrial("Button_Compound_Green_SB", "\u590d\u5408\u6309\u94aeSB(\u7eff)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true, ControlTerminals()));
+            definitions.Add(CreateIndustrial("Button_SelfLock_Green_SB", "\u81ea\u9501\u5f00\u5173SB(\u7eff)", ComponentKind.Switch, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true, ControlTerminals()));
             definitions.Add(CreateIndustrial("Button_Start_NO", "\u542f\u52a8\u6309\u94ae(NO)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(0.22f, 0.72f, 0.36f), false, true,
                 T("23", "23", TerminalRole.Input, 0f, 0.45f, Green()),
                 T("24", "24", TerminalRole.Output, 1f, 0.45f, Green())));

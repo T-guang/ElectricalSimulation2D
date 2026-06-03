@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using ElectricalSim.Core;
 
 namespace ElectricalSim.Rules
@@ -74,7 +74,7 @@ namespace ElectricalSim.Rules
                     switches.Add(component);
                 }
 
-                if (definition.kind == ComponentKind.Breaker)
+                if (definition.kind == ComponentKind.Breaker && IsProtectionBreaker(component))
                 {
                     breakers.Add(component);
                 }
@@ -154,13 +154,22 @@ namespace ElectricalSim.Rules
                         AddTerminalEdge(graph, component, "L", component.IsClosed ? "L1" : "L2");
                     }
                     break;
+                case ComponentKind.Fuse:
                 case ComponentKind.Breaker:
                     if (structural || component.IsClosed)
                     {
                         AddTerminalEdge(graph, component, "P1_IN", "P1_OUT");
                         AddTerminalEdge(graph, component, "P2_IN", "P2_OUT");
+                        AddTerminalEdge(graph, component, "P3_IN", "P3_OUT");
                         AddTerminalEdge(graph, component, "L_IN", "L_OUT");
                         AddTerminalEdge(graph, component, "N_IN", "N_OUT");
+                        AddTerminalEdge(graph, component, "IN", "OUT");
+                        AddTerminalEdge(graph, component, "L1_IN", "L1_OUT");
+                        AddTerminalEdge(graph, component, "L2_IN", "L2_OUT");
+                        AddTerminalEdge(graph, component, "L3_IN", "L3_OUT");
+                        AddTerminalEdge(graph, component, "L1", "T1");
+                        AddTerminalEdge(graph, component, "L2", "T2");
+                        AddTerminalEdge(graph, component, "L3", "T3");
                     }
                     break;
                 case ComponentKind.EnergyMeter:
@@ -460,10 +469,14 @@ namespace ElectricalSim.Rules
                     {
                         if (!br.IsClosed && IsBreakerOnPhasePath(br, loadL))
                         {
+                            string suggestion = IsThreePoleBreaker(br) 
+                                ? "请检查三相电源是否先进入空气开关，再连接后级电路。"
+                                : "请检查电源 L/N 是否先进入空气开关输入端，再由空气开关输出端连接到后级开关和负载。";
+
                             AddIssue(CircuitIssueSeverity.Error, "BreakerBypassed", 
                                 br.Definition.displayName + "处于 OFF，但后级" + LoadName(load) + "仍然通电。", 
                                 "这说明负载可能绕过了空气开关，直接从电源或其它路径获得火线，空开没有起到保护和断电作用。", 
-                                "请检查电源 L/N 是否先进入空气开关输入端，再由空气开关输出端连接到后级开关和负载。", br);
+                                suggestion, br);
                         }
                     }
                 }
@@ -483,42 +496,76 @@ namespace ElectricalSim.Rules
         {
             var p1In = breaker.GetTerminal("P1_IN");
             var p2In = breaker.GetTerminal("P2_IN");
+            var p3In = breaker.GetTerminal("P3_IN");
             var p1Out = breaker.GetTerminal("P1_OUT");
             var p2Out = breaker.GetTerminal("P2_OUT");
+            var p3Out = breaker.GetTerminal("P3_OUT");
 
             bool p1Path = p1In != null && p1Out != null && 
-                          CanReachAnyPowerTerminal(p1In, TerminalRole.Phase, structuralGraph) && 
+                          CanReachAnyPowerPhase(p1In, structuralGraph) && 
                           AreConnected(p1Out, loadL, structuralGraph);
             bool p2Path = p2In != null && p2Out != null && 
-                          CanReachAnyPowerTerminal(p2In, TerminalRole.Phase, structuralGraph) && 
+                          CanReachAnyPowerPhase(p2In, structuralGraph) && 
                           AreConnected(p2Out, loadL, structuralGraph);
+            bool p3Path = p3In != null && p3Out != null && 
+                          CanReachAnyPowerPhase(p3In, structuralGraph) && 
+                          AreConnected(p3Out, loadL, structuralGraph);
 
-            return p1Path || p2Path;
+            return p1Path || p2Path || p3Path;
         }
 
         private void CheckBreakers()
         {
             if (breakers.Count == 0)
             {
-                AddIssue(CircuitIssueSeverity.Info, "NO_BREAKER", "当前电路未检测到 2P 空气开关。", "基础演示电路可以运行，但实际家庭电路通常需要保护开关。", "后续可加入 2P 空气开关，让电源 L/N 先进入空开输入端。");
+                AddIssue(CircuitIssueSeverity.Info, "NO_BREAKER", "\u5f53\u524d\u7535\u8def\u672a\u68c0\u6d4b\u5230\u7a7a\u6c14\u5f00\u5173\u3002", "\u57fa\u7840\u6f14\u793a\u7535\u8def\u53ef\u4ee5\u8fd0\u884c\uff0c\u4f46\u5b9e\u9645\u7535\u8def\u901a\u5e38\u9700\u8981\u4fdd\u62a4\u5f00\u5173\u3002", "\u540e\u7eed\u53ef\u52a0\u5165\u7a7a\u6c14\u5f00\u5173\uff0c\u8ba9\u7535\u6e90\u5148\u8fdb\u5165\u4fdd\u62a4\u5f00\u5173\u8f93\u5165\u7aef\u3002");
                 return;
             }
 
             foreach (var breaker in breakers)
             {
-                var p1In = breaker.GetTerminal("P1_IN");
-                var p2In = breaker.GetTerminal("P2_IN");
-                var p1Out = breaker.GetTerminal("P1_OUT");
-                var p2Out = breaker.GetTerminal("P2_OUT");
-                var incomplete = p1In == null || p2In == null || p1Out == null || p2Out == null ||
-                    !CanReachAnyPowerTerminal(p1In, TerminalRole.Phase, structuralGraph) ||
-                    !CanReachAnyPowerTerminal(p2In, TerminalRole.Neutral, structuralGraph) ||
-                    !HasAnyWire(p1Out) ||
-                    !HasAnyWire(p2Out);
+                if (IsThreePoleBreaker(breaker))
+                {
+                    CheckThreePoleBreaker(breaker);
+                }
+                else
+                {
+                    CheckSinglePhaseBreaker(breaker);
+                }
+            }
+        }
 
+        private void CheckSinglePhaseBreaker(CircuitComponent breaker)
+        {
+            var p1In = breaker.GetTerminal("P1_IN");
+            var p2In = breaker.GetTerminal("P2_IN");
+            var p1Out = breaker.GetTerminal("P1_OUT");
+            var p2Out = breaker.GetTerminal("P2_OUT");
+            var incomplete = p1In == null || p2In == null || p1Out == null || p2Out == null ||
+                !CanReachAnyPowerTerminal(p1In, TerminalRole.Phase, structuralGraph) ||
+                !CanReachAnyPowerTerminal(p2In, TerminalRole.Neutral, structuralGraph) ||
+                !HasAnyWire(p1Out) ||
+                !HasAnyWire(p2Out);
+
+            if (incomplete)
+            {
+                AddIssue(CircuitIssueSeverity.Warning, "BREAKER_INCOMPLETE", "\u7a7a\u6c14\u5f00\u5173\u8fdb\u7ebf\u6216\u51fa\u7ebf\u4e0d\u5b8c\u6574\u3002", breaker.Definition.displayName + " \u6ca1\u6709\u5f62\u6210\u5b8c\u6574\u7684 L/N \u8f93\u5165\u8f93\u51fa\u7ed3\u6784\u3002", "\u8bf7\u786e\u8ba4\u7535\u6e90 L/N \u5148\u8fdb\u5165\u7a7a\u5f00\u8f93\u5165\u7aef\uff0c\u518d\u7531\u7a7a\u5f00\u8f93\u51fa\u7aef\u8fde\u63a5\u540e\u7eed\u8d1f\u8f7d\u3002", breaker);
+            }
+        }
+
+        private void CheckThreePoleBreaker(CircuitComponent breaker)
+        {
+            var ids = new[] { "P1", "P2", "P3" };
+            foreach (var id in ids)
+            {
+                var input = breaker.GetTerminal(id + "_IN");
+                var output = breaker.GetTerminal(id + "_OUT");
+                var incomplete = input == null || output == null ||
+                    !CanReachAnyPowerPhase(input, structuralGraph) ||
+                    !HasAnyWire(output);
                 if (incomplete)
                 {
-                    AddIssue(CircuitIssueSeverity.Warning, "BREAKER_INCOMPLETE", "空气开关进线或出线不完整。", breaker.Definition.displayName + " 没有形成完整的 L/N 输入输出结构。", "请确认电源 L/N 先进入空开输入端，再由空开输出端连接后续负载。", breaker);
+                    AddIssue(CircuitIssueSeverity.Warning, "BREAKER_3P_INCOMPLETE", "3P\u7a7a\u6c14\u5f00\u5173\u8fdb\u7ebf\u6216\u51fa\u7ebf\u4e0d\u5b8c\u6574\u3002", breaker.Definition.displayName + " \u7684 " + id + " \u76f8\u6ca1\u6709\u5f62\u6210\u5b8c\u6574\u8f93\u5165\u8f93\u51fa\u7ed3\u6784\u3002", "\u8bf7\u786e\u8ba4\u4e09\u76f8\u7535\u6e90 L1/L2/L3 \u5148\u8fdb\u5165\u7a7a\u5f00\u8f93\u5165\u7aef\uff0c\u518d\u7531\u7a7a\u5f00\u8f93\u51fa\u7aef\u8fde\u63a5\u540e\u7ea7\u5143\u4ef6\u3002", breaker);
                 }
             }
         }
@@ -630,6 +677,22 @@ namespace ElectricalSim.Rules
         }
 
 
+
+        private static bool IsProtectionBreaker(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null)
+            {
+                return false;
+            }
+
+            var name = component.Definition.name ?? string.Empty;
+            return name.Contains("Breaker") || component.GetTerminal("P1_IN") != null || component.GetTerminal("P2_IN") != null || component.GetTerminal("P3_IN") != null;
+        }
+
+        private static bool IsThreePoleBreaker(CircuitComponent component)
+        {
+            return component != null && component.GetTerminal("P1_IN") != null && component.GetTerminal("P2_IN") != null && component.GetTerminal("P3_IN") != null;
+        }
 
         private bool CanReachAnyPowerTerminal(TerminalView from, TerminalRole powerRole, Dictionary<string, HashSet<string>> graph)
         {

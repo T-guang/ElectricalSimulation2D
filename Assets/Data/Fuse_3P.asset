@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
   m_Name: Fuse_3P
   m_EditorClassIdentifier: 
-  displayName: "\u7194\u65AD\u5668(FU)"
+  displayName: "\u7194\u65AD\u56683P(FU)"
   category: 1
   kind: 4
   bodyColor: {r: 0.92, g: 0.94, b: 0.96, a: 1}

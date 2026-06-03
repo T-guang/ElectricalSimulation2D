@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
   m_Name: Button_Compound_SB
   m_EditorClassIdentifier: 
-  displayName: "\u590D\u5408\u5F00\u5173(SB)"
+  displayName: "\u590D\u5408\u6309\u94AESB(\u7EA2)"
   category: 1
   kind: 3
   bodyColor: {r: 0.2, g: 0.22, b: 0.24, a: 1}

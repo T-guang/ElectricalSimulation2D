@@ -77,12 +77,9 @@
       "templateName": "电动机点动控制电路",
       "category": "工业电路",
       "difficulty": "初级",
-      "description": "三相电源、断路器、熔断器、接触器、急停/停止/启动按钮和三相电机构成的点动控制接线示例。",
+      "description": "三相电源、断路器、熔断器、接触器、停止/启动按钮和三相电机构成的点动控制接线示例。",
       "resourcePath": "Blueprints/Templates/motor_jog_control_template",
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     }
   ]
 }
-
-
-

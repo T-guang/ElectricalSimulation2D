@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
   m_Name: AC_ThreePhase_Power
   m_EditorClassIdentifier: 
-  displayName: "\u4EA4\u6D41\u7535\u6E90"
-  category: 0
+  displayName: "\u4E09\u76F8\u4EA4\u6D41\u7535\u6E90"
+  category: 1
   kind: 0
   bodyColor: {r: 1, g: 0.98, b: 0.88, a: 1}
   accentColor: {r: 1, g: 0.78, b: 0.12, a: 1}

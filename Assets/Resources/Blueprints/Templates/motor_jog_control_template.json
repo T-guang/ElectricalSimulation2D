@@ -1,54 +1,26 @@
 {
   "templateId": "motor_jog_control",
-  "templateName": "\u7535\u52a8\u673a\u70b9\u52a8\u63a7\u5236\u7535\u8def",
-  "category": "\u5de5\u4e1a\u7535\u8def",
-  "difficulty": "\u521d\u7ea7",
-  "description": "\u4e09\u76f8\u7535\u6e90\u7ecf\u8fc7\u65ad\u8def\u5668\u3001\u7194\u65ad\u5668\u548c\u63a5\u89e6\u5668\u4e3b\u56de\u8def\u63a5\u5165\u4e09\u76f8\u5f02\u6b65\u7535\u52a8\u673a\uff1b\u63a7\u5236\u56de\u8def\u91c7\u7528\u6025\u505c\u3001\u505c\u6b62\u548c\u542f\u52a8\u6309\u94ae\u63a7\u5236\u63a5\u89e6\u5668\u7ebf\u5708\u3002\u7b2c\u4e00\u7248\u7528\u4e8e\u6559\u5b66\u63a5\u7ebf\u6f14\u793a\uff0c\u4e0d\u505a\u771f\u5b9e\u63a5\u89e6\u5668\u8054\u52a8\u4eff\u771f\u3002",
+  "templateName": "电动机点动控制电路",
+  "category": "工业电路",
+  "difficulty": "初级",
+  "description": "使用停止按钮和启动按钮控制接触器线圈，使三相异步电动机完成点动控制接线训练。第一版主要用于工业控制接线教学，只做端子连接与网表判定，不做真实接触器吸合联动仿真。",
+  "resourcePath": "Blueprints/Templates/motor_jog_control_template",
   "components": [
     {
       "instanceId": "power_3p_1",
       "definitionName": "AC_ThreePhase_Power",
-      "x": -500.0,
-      "y": 260.0,
-      "isClosed": true,
-      "parameters": [
-        {
-          "key": "phaseVoltage",
-          "displayName": "\u76f8\u7535\u538b",
-          "value": 220.0,
-          "unit": "V",
-          "min": 0.0,
-          "max": 250.0,
-          "editable": false
-        },
-        {
-          "key": "lineVoltage",
-          "displayName": "\u7ebf\u7535\u538b",
-          "value": 380.0,
-          "unit": "V",
-          "min": 0.0,
-          "max": 430.0,
-          "editable": false
-        }
-      ]
+      "x": -600.0,
+      "y": 70.0,
+      "isClosed": false,
+      "parameters": []
     },
     {
       "instanceId": "breaker_3p_1",
       "definitionName": "Breaker_3P",
-      "x": -500.0,
+      "x": -450.0,
       "y": 70.0,
       "isClosed": true,
-      "parameters": [
-        {
-          "key": "ratedCurrent",
-          "displayName": "\u989d\u5b9a\u7535\u6d41",
-          "value": 16.0,
-          "unit": "A",
-          "min": 1.0,
-          "max": 63.0,
-          "editable": true
-        }
-      ]
+      "parameters": []
     },
     {
       "instanceId": "fuse_3p_1",
@@ -56,17 +28,7 @@
       "x": -280.0,
       "y": 70.0,
       "isClosed": true,
-      "parameters": [
-        {
-          "key": "ratedCurrent",
-          "displayName": "\u7194\u65ad\u5668\u989d\u5b9a\u7535\u6d41",
-          "value": 10.0,
-          "unit": "A",
-          "min": 1.0,
-          "max": 32.0,
-          "editable": true
-        }
-      ]
+      "parameters": []
     },
     {
       "instanceId": "km_1",
@@ -74,26 +36,7 @@
       "x": -40.0,
       "y": 70.0,
       "isClosed": false,
-      "parameters": [
-        {
-          "key": "ratedVoltage",
-          "displayName": "\u7ebf\u5708\u7535\u538b",
-          "value": 380.0,
-          "unit": "V",
-          "min": 0.0,
-          "max": 430.0,
-          "editable": false
-        },
-        {
-          "key": "power",
-          "displayName": "\u7ebf\u5708\u529f\u7387",
-          "value": 18.0,
-          "unit": "W",
-          "min": 1.0,
-          "max": 80.0,
-          "editable": true
-        }
-      ]
+      "parameters": []
     },
     {
       "instanceId": "motor_1",
@@ -101,33 +44,6 @@
       "x": 260.0,
       "y": -150.0,
       "isClosed": false,
-      "parameters": [
-        {
-          "key": "ratedVoltage",
-          "displayName": "\u989d\u5b9a\u7535\u538b",
-          "value": 380.0,
-          "unit": "V",
-          "min": 0.0,
-          "max": 430.0,
-          "editable": false
-        },
-        {
-          "key": "power",
-          "displayName": "\u7535\u673a\u529f\u7387",
-          "value": 750.0,
-          "unit": "W",
-          "min": 100.0,
-          "max": 3000.0,
-          "editable": true
-        }
-      ]
-    },
-    {
-      "instanceId": "emergency_1",
-      "definitionName": "EmergencyStop_NC",
-      "x": -500.0,
-      "y": -230.0,
-      "isClosed": true,
       "parameters": []
     },
     {
@@ -294,17 +210,6 @@
     {
       "startComponentId": "power_3p_1",
       "startTerminalId": "L1",
-      "endComponentId": "emergency_1",
-      "endTerminalId": "11",
-      "color": "#F21F1F",
-      "style": "Orthogonal",
-      "manualRoutePoints": [],
-      "manualRouteHorizontal": false,
-      "manualRouteAxis": 0.0
-    },
-    {
-      "startComponentId": "emergency_1",
-      "startTerminalId": "12",
       "endComponentId": "stop_1",
       "endTerminalId": "11",
       "color": "#F21F1F",
