@@ -89,6 +89,15 @@
       "description": "占位模板，先用于练习流程验证，原理图后续批量更新",
       "resourcePath": "Blueprints/Templates/motor_self_hold_control_template",
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
+    },
+    {
+      "templateId": "motor_thermal_protection",
+      "templateName": "热继电器保护电动机控制电路",
+      "category": "工业电路",
+      "difficulty": "中级",
+      "description": "使用热继电器主回路和95/96常闭触点实现三相异步电动机过载保护。正常状态下95/96闭合，接触器可吸合并驱动电机运行；热继跳闸后95/96断开，接触器线圈失电，电机停止。",
+      "resourcePath": "Blueprints/Templates/motor_thermal_protection_template",
+      "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     }
   ]
 }

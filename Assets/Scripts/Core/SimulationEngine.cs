@@ -372,6 +372,12 @@ namespace ElectricalSim.Core
                 return;
             }
 
+            if (IsThermalRelayComponent(component))
+            {
+                AddThermalRelayInternalConnections(component);
+                return;
+            }
+
             switch (component.Definition.kind)
             {
                 case ComponentKind.TwoWaySwitch:
@@ -397,6 +403,46 @@ namespace ElectricalSim.Core
                     ConnectPairs(terms, component.IsClosed || component.Definition.kind == ComponentKind.TerminalBlock);
                     break;
             }
+        }
+
+        private void AddThermalRelayInternalConnections(CircuitComponent component)
+        {
+            if (component == null || !component.IsClosed)
+            {
+                return;
+            }
+
+            ConnectById(component, "L1", "T1");
+            ConnectById(component, "L2", "T2");
+            ConnectById(component, "L3", "T3");
+
+            if (IsThermalRelayTripped(component))
+            {
+                ConnectById(component, "97", "98");
+            }
+            else
+            {
+                ConnectById(component, "95", "96");
+            }
+        }
+
+        private static bool IsThermalRelayComponent(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.GetTerminal("95") != null &&
+                component.GetTerminal("96") != null &&
+                component.GetTerminal("97") != null &&
+                component.GetTerminal("98") != null &&
+                component.GetTerminal("L1") != null &&
+                component.GetTerminal("T1") != null;
+        }
+
+        private static bool IsThermalRelayTripped(CircuitComponent component)
+        {
+            return TryGetParameterValue(component, "tripState", out var value) && value >= 0.5f ||
+                TryGetParameterValue(component, "isTripped", out value) && value >= 0.5f ||
+                TryGetParameterValue(component, "tripped", out value) && value >= 0.5f;
         }
 
         private void ConnectById(CircuitComponent component, string a, string b)
