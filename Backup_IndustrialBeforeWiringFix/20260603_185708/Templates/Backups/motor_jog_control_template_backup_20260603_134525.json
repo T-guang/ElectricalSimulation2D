@@ -1,0 +1,255 @@
+{
+  "templateId": "motor_jog_control",
+  "templateName": "电动机点动控制电路",
+  "category": "工业电路",
+  "difficulty": "初级",
+  "description": "使用停止按钮和启动按钮控制接触器线圈，使三相异步电动机完成点动控制接线训练。第一版主要用于工业控制接线教学，只做端子连接与网表判定，不做真实接触器吸合联动仿真。",
+  "resourcePath": "Blueprints/Templates/motor_jog_control_template",
+  "components": [
+    {
+      "instanceId": "power_3p_1",
+      "definitionName": "AC_ThreePhase_Power",
+      "x": -600.0,
+      "y": 70.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "breaker_3p_1",
+      "definitionName": "Breaker_3P",
+      "x": -450.0,
+      "y": 70.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "fuse_3p_1",
+      "definitionName": "Fuse_3P",
+      "x": -280.0,
+      "y": 70.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "km_1",
+      "definitionName": "Contactor_KM_380V",
+      "x": -40.0,
+      "y": 70.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "motor_1",
+      "definitionName": "Motor_ThreePhase_380V",
+      "x": 260.0,
+      "y": -150.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "stop_1",
+      "definitionName": "Button_Stop_NC",
+      "x": -280.0,
+      "y": -230.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "start_1",
+      "definitionName": "Button_Start_NO",
+      "x": -60.0,
+      "y": -230.0,
+      "isClosed": false,
+      "parameters": []
+    }
+  ],
+  "wires": [
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L2",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P2_IN",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L3",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P1_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P2_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L2_IN",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P3_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L1_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L1",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L2_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L2",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L3_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L3",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T1",
+      "endComponentId": "motor_1",
+      "endTerminalId": "U",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T2",
+      "endComponentId": "motor_1",
+      "endTerminalId": "V",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T3",
+      "endComponentId": "motor_1",
+      "endTerminalId": "W",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "PE",
+      "endComponentId": "motor_1",
+      "endTerminalId": "PE",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "stop_1",
+      "endTerminalId": "11",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "start_1",
+      "endTerminalId": "23",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "start_1",
+      "startTerminalId": "24",
+      "endComponentId": "km_1",
+      "endTerminalId": "A1",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "A2",
+      "endComponentId": "power_3p_1",
+      "endTerminalId": "L2",
+      "color": "#14A642",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    }
+  ]
+}

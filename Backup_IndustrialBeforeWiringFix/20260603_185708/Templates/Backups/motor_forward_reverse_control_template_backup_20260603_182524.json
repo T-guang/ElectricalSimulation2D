@@ -8,8 +8,8 @@
         {
             "instanceId": "power_3p_1",
             "definitionName": "AC_ThreePhase_Power",
-            "x": -720.0,
-            "y": 384.0,
+            "x": -600.0,
+            "y": 360.0,
             "isClosed": true,
             "parameters": [
                 {
@@ -35,8 +35,8 @@
         {
             "instanceId": "breaker_3p_1",
             "definitionName": "Breaker_3P",
-            "x": -312.0,
-            "y": 384.0,
+            "x": -600.0,
+            "y": 96.0,
             "isClosed": true,
             "parameters": [
                 {
@@ -53,8 +53,8 @@
         {
             "instanceId": "fuse_3p_1",
             "definitionName": "Fuse_3P",
-            "x": 72.0,
-            "y": 384.0,
+            "x": -288.0,
+            "y": 96.0,
             "isClosed": true,
             "parameters": [
                 {
@@ -71,7 +71,7 @@
         {
             "instanceId": "km_forward",
             "definitionName": "Contactor_KM_380V",
-            "x": -120.0,
+            "x": -24.0,
             "y": 96.0,
             "isClosed": false,
             "parameters": [
@@ -89,7 +89,7 @@
         {
             "instanceId": "km_reverse",
             "definitionName": "Contactor_KM_380V",
-            "x": 264.0,
+            "x": 216.0,
             "y": 96.0,
             "isClosed": false,
             "parameters": [
@@ -107,8 +107,8 @@
         {
             "instanceId": "motor_1",
             "definitionName": "Motor_ThreePhase_380V",
-            "x": 552.0,
-            "y": -120.0,
+            "x": 216.0,
+            "y": -168.0,
             "isClosed": false,
             "parameters": [
                 {
@@ -161,25 +161,25 @@
         {
             "instanceId": "stop_1",
             "definitionName": "Button_Stop_NC",
-            "x": -552.0,
-            "y": -432.0,
+            "x": -600.0,
+            "y": -168.0,
             "isClosed": true,
             "parameters": []
         },
         {
             "instanceId": "forward_button_1",
             "definitionName": "Button_Start_NO",
-            "x": -312.0,
-            "y": -432.0,
-            "isClosed": true,
+            "x": -288.0,
+            "y": -168.0,
+            "isClosed": false,
             "parameters": []
         },
         {
             "instanceId": "reverse_button_1",
             "definitionName": "Button_Start_NO",
-            "x": 96.0,
-            "y": -432.0,
-            "isClosed": true,
+            "x": -24.0,
+            "y": -168.0,
+            "isClosed": false,
             "parameters": []
         }
     ],
@@ -193,68 +193,68 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -887.9999389648438,
-                    "y": 369.00006103515627
+                    "x": -768.0,
+                    "y": 344.99993896484377
                 },
                 {
-                    "x": -887.9999389648438,
-                    "y": 341.00006103515627
+                    "x": -768.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -887.9999389648438,
-                    "y": 540.0
+                    "x": -768.0,
+                    "y": 216.0
                 },
                 {
-                    "x": -339.5000305175781,
-                    "y": 540.0
+                    "x": -627.5,
+                    "y": 216.0
                 },
                 {
-                    "x": -339.5000305175781,
-                    "y": 476.9999694824219
+                    "x": -627.5,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": -339.5000305175781,
-                    "y": 448.9999694824219
+                    "x": -627.5,
+                    "y": 161.0000457763672
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 540.0
+            "manualRouteAxis": 216.0
         },
         {
             "startComponentId": "power_3p_1",
             "startTerminalId": "L2",
             "endComponentId": "breaker_3p_1",
             "endTerminalId": "P2_IN",
-            "color": "#14A640",
+            "color": "#1A59F2",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -804.0,
-                    "y": 369.00006103515627
+                    "x": -684.0,
+                    "y": 344.99993896484377
                 },
                 {
-                    "x": -804.0,
-                    "y": 341.00006103515627
+                    "x": -684.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -804.0,
-                    "y": 504.0
+                    "x": -684.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -312.0000305175781,
-                    "y": 504.0
+                    "x": -684.0,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": -312.0000305175781,
-                    "y": 476.9999694824219
+                    "x": -600.0,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": -312.0000305175781,
-                    "y": 448.9999694824219
+                    "x": -600.0,
+                    "y": 161.0000457763672
                 }
             ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 504.0
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": -684.0
         },
         {
             "startComponentId": "power_3p_1",
@@ -265,32 +265,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -719.9999389648438,
-                    "y": 369.00006103515627
+                    "x": -600.0,
+                    "y": 344.99993896484377
                 },
                 {
-                    "x": -719.9999389648438,
-                    "y": 341.00006103515627
+                    "x": -600.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -719.9999389648438,
-                    "y": 480.0
+                    "x": -516.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -284.5000305175781,
-                    "y": 480.0
+                    "x": -516.0,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": -284.5000305175781,
-                    "y": 476.9999694824219
+                    "x": -572.5,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": -284.5000305175781,
-                    "y": 448.9999694824219
+                    "x": -572.5,
+                    "y": 161.0000457763672
                 }
             ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 480.0
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": -516.0
         },
         {
             "startComponentId": "breaker_3p_1",
@@ -301,32 +301,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -339.5000305175781,
-                    "y": 319.00006103515627
+                    "x": -627.5,
+                    "y": 30.9999942779541
                 },
                 {
-                    "x": -339.5000305175781,
-                    "y": 291.00006103515627
+                    "x": -627.5,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": -339.5000305175781,
-                    "y": 288.0
+                    "x": -504.0,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": 39.0000114440918,
-                    "y": 288.0
+                    "x": -504.0,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": 39.0000114440918,
-                    "y": 476.9999694824219
+                    "x": -320.9999694824219,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": 39.0000114440918,
-                    "y": 448.9999694824219
+                    "x": -320.9999694824219,
+                    "y": 161.0000457763672
                 }
             ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 288.0
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": -504.0
         },
         {
             "startComponentId": "breaker_3p_1",
@@ -337,32 +337,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -312.0000305175781,
-                    "y": 319.00006103515627
+                    "x": -600.0,
+                    "y": 30.9999942779541
                 },
                 {
-                    "x": -312.0000305175781,
-                    "y": 291.00006103515627
+                    "x": -600.0,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": -312.0000305175781,
-                    "y": 264.0
+                    "x": -600.0,
+                    "y": 192.0
                 },
                 {
-                    "x": 71.99993896484375,
-                    "y": 264.0
+                    "x": -288.0,
+                    "y": 192.0
                 },
                 {
-                    "x": 71.99993896484375,
-                    "y": 476.9999694824219
+                    "x": -288.0,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": 71.99993896484375,
-                    "y": 448.9999694824219
+                    "x": -288.0,
+                    "y": 161.0000457763672
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 264.0
+            "manualRouteAxis": 192.0
         },
         {
             "startComponentId": "breaker_3p_1",
@@ -373,32 +373,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -284.5000305175781,
-                    "y": 319.00006103515627
+                    "x": -572.5,
+                    "y": 30.9999942779541
                 },
                 {
-                    "x": -284.5000305175781,
-                    "y": 291.00006103515627
+                    "x": -572.5,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": -284.5000305175781,
-                    "y": 240.0
+                    "x": -572.5,
+                    "y": 192.0
                 },
                 {
-                    "x": 105.00004577636719,
-                    "y": 240.0
+                    "x": -254.99996948242188,
+                    "y": 192.0
                 },
                 {
-                    "x": 105.00004577636719,
-                    "y": 476.9999694824219
+                    "x": -254.99996948242188,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": 105.00004577636719,
-                    "y": 448.9999694824219
+                    "x": -254.99996948242188,
+                    "y": 161.0000457763672
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 240.0
+            "manualRouteAxis": 192.0
         },
         {
             "startComponentId": "fuse_3p_1",
@@ -409,358 +409,358 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": 39.0000114440918,
-                    "y": 319.00006103515627
+                    "x": -320.9999694824219,
+                    "y": 30.9999942779541
                 },
                 {
-                    "x": 39.0000114440918,
-                    "y": 291.00006103515627
+                    "x": -320.9999694824219,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": 39.0000114440918,
-                    "y": 264.0
+                    "x": -216.0,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": -155.19996643066407,
-                    "y": 264.0
+                    "x": -216.0,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": -155.19996643066407,
-                    "y": 188.99993896484376
+                    "x": -59.20005798339844,
+                    "y": 189.0000457763672
                 },
                 {
-                    "x": -155.19996643066407,
-                    "y": 160.99993896484376
+                    "x": -59.20005798339844,
+                    "y": 161.0000457763672
                 }
             ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 264.0
-        },
-        {
-            "startComponentId": "fuse_3p_1",
-            "startTerminalId": "L2_OUT",
-            "endComponentId": "km_forward",
-            "endTerminalId": "L2",
-            "color": "#14A640",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": 71.99993896484375,
-                    "y": 319.00006103515627
-                },
-                {
-                    "x": 71.99993896484375,
-                    "y": 291.00006103515627
-                },
-                {
-                    "x": 71.99993896484375,
-                    "y": 228.0
-                },
-                {
-                    "x": -119.99995422363281,
-                    "y": 228.0
-                },
-                {
-                    "x": -119.99995422363281,
-                    "y": 188.99993896484376
-                },
-                {
-                    "x": -119.99995422363281,
-                    "y": 160.99993896484376
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 228.0
-        },
-        {
-            "startComponentId": "fuse_3p_1",
-            "startTerminalId": "L3_OUT",
-            "endComponentId": "km_forward",
-            "endTerminalId": "L3",
-            "color": "#F21F1F",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": 105.00004577636719,
-                    "y": 319.00006103515627
-                },
-                {
-                    "x": 105.00004577636719,
-                    "y": 291.00006103515627
-                },
-                {
-                    "x": 105.00004577636719,
-                    "y": 204.0
-                },
-                {
-                    "x": -84.7999496459961,
-                    "y": 204.0
-                },
-                {
-                    "x": -84.7999496459961,
-                    "y": 188.99993896484376
-                },
-                {
-                    "x": -84.7999496459961,
-                    "y": 160.99993896484376
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 204.0
-        },
-        {
-            "startComponentId": "fuse_3p_1",
-            "startTerminalId": "L1_OUT",
-            "endComponentId": "km_reverse",
-            "endTerminalId": "L1",
-            "color": "#F2C71F",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": 39.0000114440918,
-                    "y": 319.00006103515627
-                },
-                {
-                    "x": 39.0000114440918,
-                    "y": 291.00006103515627
-                },
-                {
-                    "x": 39.0000114440918,
-                    "y": 216.0
-                },
-                {
-                    "x": 228.8000030517578,
-                    "y": 216.0
-                },
-                {
-                    "x": 228.8000030517578,
-                    "y": 188.99993896484376
-                },
-                {
-                    "x": 228.8000030517578,
-                    "y": 160.99993896484376
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 216.0
-        },
-        {
-            "startComponentId": "fuse_3p_1",
-            "startTerminalId": "L2_OUT",
-            "endComponentId": "km_reverse",
-            "endTerminalId": "L2",
-            "color": "#14A640",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": 71.99993896484375,
-                    "y": 319.00006103515627
-                },
-                {
-                    "x": 71.99993896484375,
-                    "y": 291.00006103515627
-                },
-                {
-                    "x": 71.99993896484375,
-                    "y": 288.0
-                },
-                {
-                    "x": 264.0,
-                    "y": 288.0
-                },
-                {
-                    "x": 264.0,
-                    "y": 188.99993896484376
-                },
-                {
-                    "x": 264.0,
-                    "y": 160.99993896484376
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 288.0
-        },
-        {
-            "startComponentId": "fuse_3p_1",
-            "startTerminalId": "L3_OUT",
-            "endComponentId": "km_reverse",
-            "endTerminalId": "L3",
-            "color": "#F21F1F",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": 105.00004577636719,
-                    "y": 319.00006103515627
-                },
-                {
-                    "x": 105.00004577636719,
-                    "y": 291.00006103515627
-                },
-                {
-                    "x": 105.00004577636719,
-                    "y": 264.0
-                },
-                {
-                    "x": 299.20001220703127,
-                    "y": 264.0
-                },
-                {
-                    "x": 299.20001220703127,
-                    "y": 188.99993896484376
-                },
-                {
-                    "x": 299.20001220703127,
-                    "y": 160.99993896484376
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": 264.0
-        },
-        {
-            "startComponentId": "km_forward",
-            "startTerminalId": "T1",
-            "endComponentId": "motor_1",
-            "endTerminalId": "U",
-            "color": "#F2C71F",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": -155.19996643066407,
-                    "y": 31.00002670288086
-                },
-                {
-                    "x": -155.19996643066407,
-                    "y": 3.0000267028808595
-                },
-                {
-                    "x": -155.19996643066407,
-                    "y": -12.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -12.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -83.60000610351563
-                },
-                {
-                    "x": 593.7999877929688,
-                    "y": -83.60000610351563
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": -12.0
-        },
-        {
-            "startComponentId": "km_forward",
-            "startTerminalId": "T2",
-            "endComponentId": "motor_1",
-            "endTerminalId": "V",
-            "color": "#14A640",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": -119.99995422363281,
-                    "y": 31.00002670288086
-                },
-                {
-                    "x": -119.99995422363281,
-                    "y": 3.0000267028808595
-                },
-                {
-                    "x": -119.99995422363281,
-                    "y": -48.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -48.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -113.50000762939453
-                },
-                {
-                    "x": 593.7999877929688,
-                    "y": -113.50000762939453
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": -48.0
-        },
-        {
-            "startComponentId": "km_forward",
-            "startTerminalId": "T3",
-            "endComponentId": "motor_1",
-            "endTerminalId": "W",
-            "color": "#F21F1F",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": -84.7999496459961,
-                    "y": 31.00002670288086
-                },
-                {
-                    "x": -84.7999496459961,
-                    "y": 3.0000267028808595
-                },
-                {
-                    "x": -84.7999496459961,
-                    "y": -84.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -84.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -143.39999389648438
-                },
-                {
-                    "x": 593.7999877929688,
-                    "y": -143.39999389648438
-                }
-            ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": -84.0
-        },
-        {
-            "startComponentId": "km_reverse",
-            "startTerminalId": "T1",
-            "endComponentId": "motor_1",
-            "endTerminalId": "W",
-            "color": "#F2C71F",
-            "style": "Orthogonal",
-            "manualRoutePoints": [
-                {
-                    "x": 228.8000030517578,
-                    "y": 31.00002670288086
-                },
-                {
-                    "x": 228.8000030517578,
-                    "y": 3.0000267028808595
-                },
-                {
-                    "x": 228.8000030517578,
-                    "y": -216.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -216.0
-                },
-                {
-                    "x": 621.7999877929688,
-                    "y": -143.39999389648438
-                },
-                {
-                    "x": 593.7999877929688,
-                    "y": -143.39999389648438
-                }
-            ],
-            "manualRouteHorizontal": true,
+            "manualRouteHorizontal": false,
             "manualRouteAxis": -216.0
         },
         {
+            "startComponentId": "fuse_3p_1",
+            "startTerminalId": "L2_OUT",
+            "endComponentId": "km_forward",
+            "endTerminalId": "L2",
+            "color": "#14A640",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -288.0,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": -288.0,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -180.0,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -180.0,
+                    "y": 189.0000457763672
+                },
+                {
+                    "x": -24.00005340576172,
+                    "y": 189.0000457763672
+                },
+                {
+                    "x": -24.00005340576172,
+                    "y": 161.0000457763672
+                }
+            ],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": -180.0
+        },
+        {
+            "startComponentId": "fuse_3p_1",
+            "startTerminalId": "L3_OUT",
+            "endComponentId": "km_forward",
+            "endTerminalId": "L3",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -254.99996948242188,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": -254.99996948242188,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -144.0,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -144.0,
+                    "y": 189.0000457763672
+                },
+                {
+                    "x": 11.199951171875,
+                    "y": 189.0000457763672
+                },
+                {
+                    "x": 11.199951171875,
+                    "y": 161.0000457763672
+                }
+            ],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": -144.0
+        },
+        {
+            "startComponentId": "fuse_3p_1",
+            "startTerminalId": "L1_OUT",
+            "endComponentId": "km_reverse",
+            "endTerminalId": "L1",
+            "color": "#F2C71F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -320.9999694824219,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": -320.9999694824219,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -320.9999694824219,
+                    "y": 0.0
+                },
+                {
+                    "x": 180.8000030517578,
+                    "y": 0.0
+                },
+                {
+                    "x": 180.8000030517578,
+                    "y": 189.0000457763672
+                },
+                {
+                    "x": 180.8000030517578,
+                    "y": 161.0000457763672
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "fuse_3p_1",
+            "startTerminalId": "L2_OUT",
+            "endComponentId": "km_reverse",
+            "endTerminalId": "L2",
+            "color": "#14A640",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -288.0,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": -288.0,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -288.0,
+                    "y": 0.0
+                },
+                {
+                    "x": 216.0,
+                    "y": 0.0
+                },
+                {
+                    "x": 216.0,
+                    "y": 189.0000457763672
+                },
+                {
+                    "x": 216.0,
+                    "y": 161.0000457763672
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "fuse_3p_1",
+            "startTerminalId": "L3_OUT",
+            "endComponentId": "km_reverse",
+            "endTerminalId": "L3",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -254.99996948242188,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": -254.99996948242188,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -254.99996948242188,
+                    "y": 0.0
+                },
+                {
+                    "x": 251.20001220703126,
+                    "y": 0.0
+                },
+                {
+                    "x": 251.20001220703126,
+                    "y": 189.0000457763672
+                },
+                {
+                    "x": 251.20001220703126,
+                    "y": 161.0000457763672
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "km_forward",
+            "startTerminalId": "T1",
+            "endComponentId": "motor_1",
+            "endTerminalId": "U",
+            "color": "#F2C71F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -59.20005798339844,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": -59.20005798339844,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -59.20005798339844,
+                    "y": -60.0
+                },
+                {
+                    "x": 285.800048828125,
+                    "y": -60.0
+                },
+                {
+                    "x": 285.800048828125,
+                    "y": -131.60000610351563
+                },
+                {
+                    "x": 257.800048828125,
+                    "y": -131.60000610351563
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -60.0
+        },
+        {
+            "startComponentId": "km_forward",
+            "startTerminalId": "T2",
+            "endComponentId": "motor_1",
+            "endTerminalId": "V",
+            "color": "#14A640",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -24.00005340576172,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": -24.00005340576172,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": -24.00005340576172,
+                    "y": 0.0
+                },
+                {
+                    "x": 285.800048828125,
+                    "y": 0.0
+                },
+                {
+                    "x": 285.800048828125,
+                    "y": -161.49996948242188
+                },
+                {
+                    "x": 257.800048828125,
+                    "y": -161.49996948242188
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "km_forward",
+            "startTerminalId": "T3",
+            "endComponentId": "motor_1",
+            "endTerminalId": "W",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": 11.199951171875,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": 11.199951171875,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": 11.199951171875,
+                    "y": 0.0
+                },
+                {
+                    "x": 285.800048828125,
+                    "y": 0.0
+                },
+                {
+                    "x": 285.800048828125,
+                    "y": -191.3999786376953
+                },
+                {
+                    "x": 257.800048828125,
+                    "y": -191.3999786376953
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "km_reverse",
+            "startTerminalId": "T1",
+            "endComponentId": "motor_1",
+            "endTerminalId": "W",
+            "color": "#F2C71F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": 180.8000030517578,
+                    "y": 30.9999942779541
+                },
+                {
+                    "x": 180.8000030517578,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": 288.0,
+                    "y": 2.9999942779541017
+                },
+                {
+                    "x": 288.0,
+                    "y": -191.3999786376953
+                },
+                {
+                    "x": 285.800048828125,
+                    "y": -191.3999786376953
+                },
+                {
+                    "x": 257.800048828125,
+                    "y": -191.3999786376953
+                }
+            ],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 288.0
+        },
+        {
             "startComponentId": "km_reverse",
             "startTerminalId": "T2",
             "endComponentId": "motor_1",
@@ -769,68 +769,68 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": 264.0,
-                    "y": 31.00002670288086
+                    "x": 216.0,
+                    "y": 30.9999942779541
                 },
                 {
-                    "x": 264.0,
-                    "y": 3.0000267028808595
+                    "x": 216.0,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": 264.0,
-                    "y": -180.0
+                    "x": 360.0,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": 621.7999877929688,
-                    "y": -180.0
+                    "x": 360.0,
+                    "y": -161.49996948242188
                 },
                 {
-                    "x": 621.7999877929688,
-                    "y": -113.50000762939453
+                    "x": 285.800048828125,
+                    "y": -161.49996948242188
                 },
                 {
-                    "x": 593.7999877929688,
-                    "y": -113.50000762939453
+                    "x": 257.800048828125,
+                    "y": -161.49996948242188
                 }
             ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": -180.0
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 360.0
         },
         {
             "startComponentId": "km_reverse",
             "startTerminalId": "T3",
             "endComponentId": "motor_1",
             "endTerminalId": "U",
-            "color": "#F21F1F",
+            "color": "#F2C71F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": 299.20001220703127,
-                    "y": 31.00002670288086
+                    "x": 251.20001220703126,
+                    "y": 30.9999942779541
                 },
                 {
-                    "x": 299.20001220703127,
-                    "y": 3.0000267028808595
+                    "x": 251.20001220703126,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": 299.20001220703127,
-                    "y": -144.0
+                    "x": 312.0,
+                    "y": 2.9999942779541017
                 },
                 {
-                    "x": 621.7999877929688,
-                    "y": -144.0
+                    "x": 312.0,
+                    "y": -131.60000610351563
                 },
                 {
-                    "x": 621.7999877929688,
-                    "y": -83.60000610351563
+                    "x": 285.800048828125,
+                    "y": -131.60000610351563
                 },
                 {
-                    "x": 593.7999877929688,
-                    "y": -83.60000610351563
+                    "x": 257.800048828125,
+                    "y": -131.60000610351563
                 }
             ],
-            "manualRouteHorizontal": true,
-            "manualRouteAxis": -144.0
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 312.0
         },
         {
             "startComponentId": "power_3p_1",
@@ -841,176 +841,176 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -552.0000610351563,
-                    "y": 369.00006103515627
+                    "x": -431.99993896484377,
+                    "y": 344.99993896484377
                 },
                 {
-                    "x": -552.0000610351563,
-                    "y": 341.00006103515627
+                    "x": -431.99993896484377,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -552.0000610351563,
-                    "y": -300.0
+                    "x": -431.99993896484377,
+                    "y": -348.0
                 },
                 {
-                    "x": 634.9999389648438,
-                    "y": -300.0
+                    "x": 298.9999694824219,
+                    "y": -348.0
                 },
                 {
-                    "x": 634.9999389648438,
-                    "y": -174.60000610351563
+                    "x": 298.9999694824219,
+                    "y": -222.60000610351563
                 },
                 {
-                    "x": 606.9999389648438,
-                    "y": -174.60000610351563
+                    "x": 270.9999694824219,
+                    "y": -222.60000610351563
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": -300.0
+            "manualRouteAxis": -348.0
         },
         {
             "startComponentId": "power_3p_1",
             "startTerminalId": "L1",
             "endComponentId": "stop_1",
             "endTerminalId": "11",
-            "color": "#B91C1C",
+            "color": "#F2C71F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -887.9999389648438,
-                    "y": 369.00006103515627
+                    "x": -768.0,
+                    "y": 344.99993896484377
                 },
                 {
-                    "x": -887.9999389648438,
-                    "y": 341.00006103515627
+                    "x": -768.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -888.0,
-                    "y": 341.00006103515627
+                    "x": -768.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -888.0,
-                    "y": -438.5
+                    "x": -768.0,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -635.0000610351563,
-                    "y": -438.5
+                    "x": -682.9999389648438,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -607.0000610351563,
-                    "y": -438.5
+                    "x": -654.9999389648438,
+                    "y": -174.49998474121095
                 }
             ],
             "manualRouteHorizontal": false,
-            "manualRouteAxis": -888.0
+            "manualRouteAxis": -768.0
         },
         {
             "startComponentId": "stop_1",
             "startTerminalId": "12",
             "endComponentId": "km_reverse",
             "endTerminalId": "21",
-            "color": "#B91C1C",
+            "color": "#F21F1F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -497.0000305175781,
-                    "y": -438.5
+                    "x": -544.9999389648438,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -469.0000305175781,
-                    "y": -438.5
+                    "x": -516.9999389648438,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -469.0000305175781,
-                    "y": 60.0
+                    "x": -516.9999389648438,
+                    "y": -252.0
                 },
                 {
-                    "x": 181.00001525878907,
-                    "y": 60.0
+                    "x": 133.0000457763672,
+                    "y": -252.0
                 },
                 {
-                    "x": 181.00001525878907,
-                    "y": 59.5999755859375
+                    "x": 133.0000457763672,
+                    "y": 59.60003662109375
                 },
                 {
-                    "x": 209.00001525878907,
-                    "y": 59.5999755859375
+                    "x": 161.0000457763672,
+                    "y": 59.60003662109375
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 60.0
+            "manualRouteAxis": -252.0
         },
         {
             "startComponentId": "km_reverse",
             "startTerminalId": "22",
             "endComponentId": "forward_button_1",
             "endTerminalId": "23",
-            "color": "#B91C1C",
+            "color": "#F21F1F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": 319.0,
-                    "y": 59.5999755859375
+                    "x": 270.9999694824219,
+                    "y": 59.60003662109375
                 },
                 {
-                    "x": 347.0,
-                    "y": 59.5999755859375
+                    "x": 298.9999694824219,
+                    "y": 59.60003662109375
                 },
                 {
-                    "x": 347.0,
-                    "y": -528.0
+                    "x": 298.9999694824219,
+                    "y": -36.0
                 },
                 {
-                    "x": -395.0000305175781,
-                    "y": -528.0
+                    "x": -370.9999694824219,
+                    "y": -36.0
                 },
                 {
-                    "x": -395.0000305175781,
-                    "y": -438.5
+                    "x": -370.9999694824219,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -367.0000305175781,
-                    "y": -438.5
+                    "x": -342.9999694824219,
+                    "y": -174.49998474121095
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": -528.0
+            "manualRouteAxis": -36.0
         },
         {
             "startComponentId": "forward_button_1",
             "startTerminalId": "24",
             "endComponentId": "km_forward",
             "endTerminalId": "A1",
-            "color": "#B91C1C",
+            "color": "#F21F1F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -257.0000305175781,
-                    "y": -438.5
+                    "x": -232.99996948242188,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -229.00003051757813,
-                    "y": -438.5
+                    "x": -204.99996948242188,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -216.0,
-                    "y": -438.5
+                    "x": -120.0,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -216.0,
-                    "y": 119.40006256103516
+                    "x": -120.0,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": -202.9999542236328,
-                    "y": 119.40006256103516
+                    "x": -107.0000228881836,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": -174.9999542236328,
-                    "y": 119.40006256103516
+                    "x": -79.0000228881836,
+                    "y": 119.39998626708985
                 }
             ],
             "manualRouteHorizontal": false,
-            "manualRouteAxis": -216.0
+            "manualRouteAxis": -120.0
         },
         {
             "startComponentId": "km_forward",
@@ -1021,140 +1021,140 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -64.99995422363281,
-                    "y": 119.40006256103516
+                    "x": 31.000072479248048,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": -36.99995422363281,
-                    "y": 119.40006256103516
+                    "x": 59.00007247924805,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": -36.99995422363281,
-                    "y": 324.0
+                    "x": 59.00007247924805,
+                    "y": 288.0
                 },
                 {
-                    "x": -804.0,
-                    "y": 324.0
+                    "x": -684.0,
+                    "y": 288.0
                 },
                 {
-                    "x": -804.0,
-                    "y": 341.00006103515627
+                    "x": -684.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -804.0,
-                    "y": 369.00006103515627
+                    "x": -684.0,
+                    "y": 344.99993896484377
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 324.0
+            "manualRouteAxis": 288.0
         },
         {
             "startComponentId": "stop_1",
             "startTerminalId": "12",
             "endComponentId": "km_forward",
             "endTerminalId": "21",
-            "color": "#B91C1C",
+            "color": "#F21F1F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -497.0000305175781,
-                    "y": -438.5
+                    "x": -544.9999389648438,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -469.0000305175781,
-                    "y": -438.5
+                    "x": -516.9999389648438,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": -504.0,
-                    "y": -438.5
+                    "x": -516.9999389648438,
+                    "y": 60.0
                 },
                 {
-                    "x": -504.0,
-                    "y": 59.5999755859375
+                    "x": -107.0000228881836,
+                    "y": 60.0
                 },
                 {
-                    "x": -202.9999542236328,
-                    "y": 59.5999755859375
+                    "x": -107.0000228881836,
+                    "y": 59.60003662109375
                 },
                 {
-                    "x": -174.9999542236328,
-                    "y": 59.5999755859375
+                    "x": -79.0000228881836,
+                    "y": 59.60003662109375
                 }
             ],
-            "manualRouteHorizontal": false,
-            "manualRouteAxis": -504.0
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 60.0
         },
         {
             "startComponentId": "km_forward",
             "startTerminalId": "22",
             "endComponentId": "reverse_button_1",
             "endTerminalId": "23",
-            "color": "#B91C1C",
+            "color": "#F21F1F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -64.99995422363281,
-                    "y": 59.5999755859375
+                    "x": 31.000072479248048,
+                    "y": 59.60003662109375
                 },
                 {
-                    "x": -36.99995422363281,
-                    "y": 59.5999755859375
+                    "x": 59.00007247924805,
+                    "y": 59.60003662109375
                 },
                 {
-                    "x": -36.0,
-                    "y": 59.5999755859375
+                    "x": 59.00007247924805,
+                    "y": -84.0
                 },
                 {
-                    "x": -36.0,
-                    "y": -438.5
+                    "x": -107.0000228881836,
+                    "y": -84.0
                 },
                 {
-                    "x": 12.999897003173829,
-                    "y": -438.5
+                    "x": -107.0000228881836,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": 40.99989700317383,
-                    "y": -438.5
+                    "x": -79.0000228881836,
+                    "y": -174.49998474121095
                 }
             ],
-            "manualRouteHorizontal": false,
-            "manualRouteAxis": -36.0
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -84.0
         },
         {
             "startComponentId": "reverse_button_1",
             "startTerminalId": "24",
             "endComponentId": "km_reverse",
             "endTerminalId": "A1",
-            "color": "#B91C1C",
+            "color": "#F21F1F",
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": 150.99989318847657,
-                    "y": -438.5
+                    "x": 31.000072479248048,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": 178.99989318847657,
-                    "y": -438.5
+                    "x": 59.00007247924805,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": 180.0,
-                    "y": -438.5
+                    "x": 120.0,
+                    "y": -174.49998474121095
                 },
                 {
-                    "x": 180.0,
-                    "y": 119.40006256103516
+                    "x": 120.0,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": 181.00001525878907,
-                    "y": 119.40006256103516
+                    "x": 133.0000457763672,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": 209.00001525878907,
-                    "y": 119.40006256103516
+                    "x": 161.0000457763672,
+                    "y": 119.39998626708985
                 }
             ],
             "manualRouteHorizontal": false,
-            "manualRouteAxis": 180.0
+            "manualRouteAxis": 120.0
         },
         {
             "startComponentId": "km_reverse",
@@ -1165,32 +1165,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": 319.0,
-                    "y": 119.40006256103516
+                    "x": 270.9999694824219,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": 347.0,
-                    "y": 119.40006256103516
+                    "x": 298.9999694824219,
+                    "y": 119.39998626708985
                 },
                 {
-                    "x": 347.0,
-                    "y": 348.0
+                    "x": 298.9999694824219,
+                    "y": 288.0
                 },
                 {
-                    "x": -804.0,
-                    "y": 348.0
+                    "x": -684.0,
+                    "y": 288.0
                 },
                 {
-                    "x": -804.0,
-                    "y": 341.00006103515627
+                    "x": -684.0,
+                    "y": 316.99993896484377
                 },
                 {
-                    "x": -804.0,
-                    "y": 369.00006103515627
+                    "x": -684.0,
+                    "y": 344.99993896484377
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 348.0
+            "manualRouteAxis": 288.0
         }
     ]
 }

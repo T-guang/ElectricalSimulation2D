@@ -1,0 +1,185 @@
+{
+    "templateId": "double_lamp_single_switch",
+    "templateName": "单开控制双灯电路",
+    "category": "家庭电路",
+    "difficulty": "初级",
+    "description": "一个单控开关同时控制两盏灯，讲解多个照明负载并联接入同一控制回路的接线方式。",
+    "components": [
+        {
+            "instanceId": "power_1",
+            "definitionName": "AC_220V_Power",
+            "x": -520.0,
+            "y": 120.0,
+            "isClosed": true,
+            "parameters": [
+                {
+                    "key": "voltage",
+                    "displayName": "输出电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "breaker_1",
+            "definitionName": "Breaker_2P",
+            "x": -340.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": []
+        },
+        {
+            "instanceId": "switch_1",
+            "definitionName": "Single_Control_Switch",
+            "x": -140.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "switchType",
+                    "displayName": "开关类型",
+                    "value": 1.0,
+                    "unit": "",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "editable": false
+                }
+            ]
+        },
+        {
+            "instanceId": "lamp_1",
+            "definitionName": "Lamp_220V",
+            "x": 140.0,
+            "y": 220.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power",
+                    "displayName": "功率",
+                    "value": 40.0,
+                    "unit": "W",
+                    "min": 1.0,
+                    "max": 200.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "lamp_2",
+            "definitionName": "Lamp_220V",
+            "x": 140.0,
+            "y": 20.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power",
+                    "displayName": "功率",
+                    "value": 40.0,
+                    "unit": "W",
+                    "min": 1.0,
+                    "max": 200.0,
+                    "editable": true
+                }
+            ]
+        }
+    ],
+    "wires": [
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "L",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P1_IN",
+            "color": "#F21F1F",
+            "manualRoutePoints": []
+        },
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "N",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P2_IN",
+            "color": "#1A59F2",
+            "manualRoutePoints": []
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P1_OUT",
+            "endComponentId": "switch_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "manualRoutePoints": []
+        },
+        {
+            "startComponentId": "switch_1",
+            "startTerminalId": "L1",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "manualRoutePoints": [
+                { "x": -140.0, "y": 155.0 },
+                { "x": -140.0, "y": 220.0 },
+                { "x": 112.5, "y": 220.0 },
+                { "x": 112.5, "y": 220.0 }
+            ]
+        },
+        {
+            "startComponentId": "switch_1",
+            "startTerminalId": "L1",
+            "endComponentId": "lamp_2",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "manualRoutePoints": [
+                { "x": -140.0, "y": 155.0 },
+                { "x": -140.0, "y": 20.0 },
+                { "x": 112.5, "y": 20.0 },
+                { "x": 112.5, "y": 20.0 }
+            ]
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P2_OUT",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "manualRoutePoints": [
+                { "x": -315.8, "y": 85.0 },
+                { "x": -315.8, "y": 280.0 },
+                { "x": 167.5, "y": 280.0 },
+                { "x": 167.5, "y": 220.0 }
+            ]
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P2_OUT",
+            "endComponentId": "lamp_2",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "manualRoutePoints": [
+                { "x": -315.8, "y": 85.0 },
+                { "x": -315.8, "y": -40.0 },
+                { "x": 167.5, "y": -40.0 },
+                { "x": 167.5, "y": 20.0 }
+            ]
+        }
+    ]
+}

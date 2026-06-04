@@ -14,6 +14,8 @@ namespace ElectricalSim.Core
 
         private WorkspaceController workspace;
         private Image image;
+        private bool selected;
+        private bool wireEndpointHighlighted;
 
         public void Initialize(CircuitComponent owner, TerminalDefinition definition, WorkspaceController ownerWorkspace)
         {
@@ -29,7 +31,19 @@ namespace ElectricalSim.Core
 
         public Vector3 WorldPosition => transform.position;
 
-        public void SetSelected(bool selected)
+        public void SetSelected(bool isSelected)
+        {
+            selected = isSelected;
+            ApplyVisualState();
+        }
+
+        public void SetWireEndpointHighlight(bool highlighted)
+        {
+            wireEndpointHighlighted = highlighted;
+            ApplyVisualState();
+        }
+
+        private void ApplyVisualState()
         {
             if (image == null)
             {
@@ -39,8 +53,10 @@ namespace ElectricalSim.Core
             if (image != null)
             {
                 image.raycastTarget = true;
-                image.transform.localScale = selected ? Vector3.one * 1.25f : Vector3.one;
             }
+
+            var scale = wireEndpointHighlighted ? 1.45f : selected ? 1.25f : 1f;
+            transform.localScale = Vector3.one * scale;
         }
 
         public void OnPointerClick(PointerEventData eventData)

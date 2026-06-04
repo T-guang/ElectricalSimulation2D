@@ -393,8 +393,40 @@ namespace ElectricalSim.Core
             ClearSelection();
             selectedWire = wire;
             selectedWire?.SetSelected(true);
-            SetStatus("已选中导线。按 D 或 Delete 删除。");
+            SetStatus("已选中导线：" + FormatWireConnection(wire) + "。按 D 或 Delete 删除。");
             RefreshMeasurementPanel();
+        }
+
+        private static string FormatWireConnection(WireView wire)
+        {
+            if (wire == null)
+            {
+                return "未知导线";
+            }
+
+            return FormatTerminalEndpoint(wire.StartTerminal) + " -> " + FormatTerminalEndpoint(wire.EndTerminal);
+        }
+
+        private static string FormatTerminalEndpoint(TerminalView terminal)
+        {
+            if (terminal == null)
+            {
+                return "未知端子";
+            }
+
+            var component = terminal.Owner;
+            var componentName = component != null && component.Definition != null ? component.Definition.displayName : null;
+            if (string.IsNullOrWhiteSpace(componentName) && component != null)
+            {
+                componentName = component.InstanceId;
+            }
+
+            if (string.IsNullOrWhiteSpace(componentName))
+            {
+                componentName = "未知元件";
+            }
+
+            return componentName + "." + terminal.TerminalId;
         }
 
         public void DeleteSelection()
@@ -408,6 +440,7 @@ namespace ElectricalSim.Core
             if (selectedWire != null)
             {
                 RecordHistoryCheckpoint();
+                selectedWire.SetSelected(false);
                 wireManager.DeleteWire(selectedWire);
                 selectedWire = null;
                 MarkSimulationDirty("已删除选中导线，点击开始仿真重新检查。");

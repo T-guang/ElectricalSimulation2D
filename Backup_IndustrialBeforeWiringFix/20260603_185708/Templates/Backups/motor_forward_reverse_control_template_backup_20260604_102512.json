@@ -310,11 +310,11 @@
                 },
                 {
                     "x": -339.5000305175781,
-                    "y": 288.0
+                    "y": 300.0
                 },
                 {
                     "x": 39.0000114440918,
-                    "y": 288.0
+                    "y": 300.0
                 },
                 {
                     "x": 39.0000114440918,
@@ -326,7 +326,7 @@
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 288.0
+            "manualRouteAxis": 300.0
         },
         {
             "startComponentId": "breaker_3p_1",
@@ -526,11 +526,11 @@
                 },
                 {
                     "x": 39.0000114440918,
-                    "y": 216.0
+                    "y": 168.0
                 },
                 {
                     "x": 228.8000030517578,
-                    "y": 216.0
+                    "y": 168.0
                 },
                 {
                     "x": 228.8000030517578,
@@ -542,7 +542,7 @@
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 216.0
+            "manualRouteAxis": 168.0
         },
         {
             "startComponentId": "fuse_3p_1",
@@ -562,11 +562,11 @@
                 },
                 {
                     "x": 71.99993896484375,
-                    "y": 288.0
+                    "y": 144.0
                 },
                 {
                     "x": 264.0,
-                    "y": 288.0
+                    "y": 144.0
                 },
                 {
                     "x": 264.0,
@@ -578,7 +578,7 @@
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 288.0
+            "manualRouteAxis": 144.0
         },
         {
             "startComponentId": "fuse_3p_1",
@@ -598,11 +598,11 @@
                 },
                 {
                     "x": 105.00004577636719,
-                    "y": 264.0
+                    "y": 120.0
                 },
                 {
                     "x": 299.20001220703127,
-                    "y": 264.0
+                    "y": 120.0
                 },
                 {
                     "x": 299.20001220703127,
@@ -614,7 +614,7 @@
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 264.0
+            "manualRouteAxis": 120.0
         },
         {
             "startComponentId": "km_forward",
@@ -1137,11 +1137,11 @@
                     "y": -438.5
                 },
                 {
-                    "x": 180.0,
+                    "x": 228.0,
                     "y": -438.5
                 },
                 {
-                    "x": 180.0,
+                    "x": 228.0,
                     "y": 119.40006256103516
                 },
                 {
@@ -1154,7 +1154,7 @@
                 }
             ],
             "manualRouteHorizontal": false,
-            "manualRouteAxis": 180.0
+            "manualRouteAxis": 228.0
         },
         {
             "startComponentId": "km_reverse",

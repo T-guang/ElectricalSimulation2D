@@ -1,0 +1,496 @@
+{
+  "templateId": "motor_forward_reverse_control",
+  "templateName": "电动机正反转控制电路",
+  "category": "工业电路",
+  "difficulty": "中级",
+  "description": "使用两个交流接触器实现三相异步电动机正转与反转控制。KM1 为正转接触器，KM2 为反转接触器，控制回路通过 21/22 常闭辅助触点实现电气互锁，防止两个接触器同时吸合。",
+  "components": [
+    {
+      "instanceId": "power_3p_1",
+      "definitionName": "AC_ThreePhase_Power",
+      "x": -528,
+      "y": 336,
+      "isClosed": true,
+      "parameters": [
+        {
+          "key": "voltage",
+          "displayName": "相电压",
+          "value": 220,
+          "unit": "V",
+          "min": 0,
+          "max": 250,
+          "editable": true
+        },
+        {
+          "key": "lineVoltage",
+          "displayName": "线电压",
+          "value": 380,
+          "unit": "V",
+          "min": 0,
+          "max": 430,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "breaker_3p_1",
+      "definitionName": "Breaker_3P",
+      "x": -528,
+      "y": 96,
+      "isClosed": true,
+      "parameters": [
+        {
+          "key": "ratedCurrent",
+          "displayName": "额定电流",
+          "value": 16,
+          "unit": "A",
+          "min": 1,
+          "max": 63,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "fuse_3p_1",
+      "definitionName": "Fuse_3P",
+      "x": -288,
+      "y": 96,
+      "isClosed": true,
+      "parameters": [
+        {
+          "key": "ratedCurrent",
+          "displayName": "额定电流",
+          "value": 10,
+          "unit": "A",
+          "min": 1,
+          "max": 32,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "km_forward",
+      "definitionName": "Contactor_KM_380V",
+      "x": -24,
+      "y": 96,
+      "isClosed": false,
+      "parameters": [
+        {
+          "key": "ratedVoltage",
+          "displayName": "线圈额定电压",
+          "value": 380,
+          "unit": "V",
+          "min": 0,
+          "max": 430,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "km_reverse",
+      "definitionName": "Contactor_KM_380V",
+      "x": 216,
+      "y": 96,
+      "isClosed": false,
+      "parameters": [
+        {
+          "key": "ratedVoltage",
+          "displayName": "线圈额定电压",
+          "value": 380,
+          "unit": "V",
+          "min": 0,
+          "max": 430,
+          "editable": true
+        }
+      ]
+    },
+    {
+      "instanceId": "motor_1",
+      "definitionName": "Motor_ThreePhase_380V",
+      "x": 96,
+      "y": -216,
+      "isClosed": false,
+      "parameters": [
+        {
+          "key": "ratedVoltage",
+          "displayName": "额定电压",
+          "value": 380,
+          "unit": "V",
+          "min": 0,
+          "max": 430,
+          "editable": false
+        },
+        {
+          "key": "ratedPower",
+          "displayName": "额定功率",
+          "value": 750,
+          "unit": "W",
+          "min": 100,
+          "max": 3000,
+          "editable": true
+        },
+        {
+          "key": "ratedCurrent",
+          "displayName": "额定电流",
+          "value": 1.8,
+          "unit": "A",
+          "min": 0.1,
+          "max": 10,
+          "editable": true
+        },
+        {
+          "key": "loadFactor",
+          "displayName": "负载倍率",
+          "value": 1,
+          "unit": "",
+          "min": 0,
+          "max": 3,
+          "editable": true
+        },
+        {
+          "key": "rotationDirection",
+          "displayName": "运行方向",
+          "value": 0,
+          "unit": "",
+          "min": -1,
+          "max": 1,
+          "editable": false
+        }
+      ]
+    },
+    {
+      "instanceId": "stop_1",
+      "definitionName": "Button_Stop_NC",
+      "x": -456,
+      "y": -168,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "forward_button_1",
+      "definitionName": "Button_Start_NO",
+      "x": -216,
+      "y": -168,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "reverse_button_1",
+      "definitionName": "Button_Start_NO",
+      "x": 24,
+      "y": -168,
+      "isClosed": false,
+      "parameters": []
+    }
+  ],
+  "wires": [
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L2",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P2_IN",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L3",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P1_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P2_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L2_IN",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P3_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L1_OUT",
+      "endComponentId": "km_forward",
+      "endTerminalId": "L1",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L2_OUT",
+      "endComponentId": "km_forward",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L3_OUT",
+      "endComponentId": "km_forward",
+      "endTerminalId": "L3",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L1_OUT",
+      "endComponentId": "km_reverse",
+      "endTerminalId": "L1",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L2_OUT",
+      "endComponentId": "km_reverse",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L3_OUT",
+      "endComponentId": "km_reverse",
+      "endTerminalId": "L3",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_forward",
+      "startTerminalId": "T1",
+      "endComponentId": "motor_1",
+      "endTerminalId": "U",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_forward",
+      "startTerminalId": "T2",
+      "endComponentId": "motor_1",
+      "endTerminalId": "V",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_forward",
+      "startTerminalId": "T3",
+      "endComponentId": "motor_1",
+      "endTerminalId": "W",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_reverse",
+      "startTerminalId": "T1",
+      "endComponentId": "motor_1",
+      "endTerminalId": "W",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_reverse",
+      "startTerminalId": "T2",
+      "endComponentId": "motor_1",
+      "endTerminalId": "V",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_reverse",
+      "startTerminalId": "T3",
+      "endComponentId": "motor_1",
+      "endTerminalId": "U",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "PE",
+      "endComponentId": "motor_1",
+      "endTerminalId": "PE",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "stop_1",
+      "endTerminalId": "11",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "km_reverse",
+      "endTerminalId": "21",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_reverse",
+      "startTerminalId": "22",
+      "endComponentId": "forward_button_1",
+      "endTerminalId": "23",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "forward_button_1",
+      "startTerminalId": "24",
+      "endComponentId": "km_forward",
+      "endTerminalId": "A1",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_forward",
+      "startTerminalId": "A2",
+      "endComponentId": "power_3p_1",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "km_forward",
+      "endTerminalId": "21",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_forward",
+      "startTerminalId": "22",
+      "endComponentId": "reverse_button_1",
+      "endTerminalId": "23",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "reverse_button_1",
+      "startTerminalId": "24",
+      "endComponentId": "km_reverse",
+      "endTerminalId": "A1",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    },
+    {
+      "startComponentId": "km_reverse",
+      "startTerminalId": "A2",
+      "endComponentId": "power_3p_1",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0
+    }
+  ]
+}

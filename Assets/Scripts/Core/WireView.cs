@@ -13,7 +13,7 @@ namespace ElectricalSim.Core
         private const float ExitDistance = 28f;
         private const float PointEpsilon = 2f;
         private const float SegmentThickness = 5f;
-        private const float SelectedSegmentThickness = 8f;
+        private const float SelectedSegmentThickness = 10f;
         private const float SegmentHitThickness = 22f;
 
         public string WireId { get; private set; }
@@ -89,6 +89,8 @@ namespace ElectricalSim.Core
         public void SetSelected(bool isSelected)
         {
             selected = isSelected;
+            StartTerminal?.SetWireEndpointHighlight(isSelected);
+            EndTerminal?.SetWireEndpointHighlight(isSelected);
             if (Style == WireStyle.Orthogonal && currentPoints.Count > 1)
             {
                 UpdateSegmentHandles();

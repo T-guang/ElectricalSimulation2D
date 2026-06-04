@@ -1,0 +1,118 @@
+﻿{
+  "templateId": "motor_thermal_protection",
+  "templateName": "热继电器保护电动机控制电路",
+  "category": "工业电路",
+  "difficulty": "中级",
+  "description": "使用热继电器主回路和95/96常闭触点实现三相异步电动机过载保护。正常状态下95/96闭合，接触器可吸合并驱动电机运行；热继跳闸后95/96断开，接触器线圈失电，电机停止。",
+  "components": [
+    {
+      "instanceId": "power_3p_1",
+      "definitionName": "AC_ThreePhase_Power",
+      "x": -360,
+      "y": 340,
+      "isClosed": true,
+      "parameters": [
+        { "key": "voltage", "displayName": "相电压", "value": 220, "unit": "V", "min": 0, "max": 250, "editable": true },
+        { "key": "lineVoltage", "displayName": "线电压", "value": 380, "unit": "V", "min": 0, "max": 430, "editable": true }
+      ]
+    },
+    {
+      "instanceId": "breaker_3p_1",
+      "definitionName": "Breaker_3P",
+      "x": -500,
+      "y": 95,
+      "isClosed": true,
+      "parameters": [
+        { "key": "ratedCurrent", "displayName": "额定电流", "value": 16, "unit": "A", "min": 1, "max": 63, "editable": true }
+      ]
+    },
+    {
+      "instanceId": "fuse_3p_1",
+      "definitionName": "Fuse_3P",
+      "x": -255,
+      "y": 95,
+      "isClosed": true,
+      "parameters": [
+        { "key": "ratedCurrent", "displayName": "额定电流", "value": 10, "unit": "A", "min": 1, "max": 32, "editable": true }
+      ]
+    },
+    {
+      "instanceId": "km_1",
+      "definitionName": "Contactor_KM_380V",
+      "x": -10,
+      "y": 95,
+      "isClosed": false,
+      "parameters": [
+        { "key": "ratedVoltage", "displayName": "线圈额定电压", "value": 380, "unit": "V", "min": 0, "max": 430, "editable": true }
+      ]
+    },
+    {
+      "instanceId": "fr_1",
+      "definitionName": "ThermalRelay_FR_380V",
+      "x": 250,
+      "y": 95,
+      "isClosed": true,
+      "parameters": [
+        { "key": "tripState", "displayName": "跳闸状态", "value": 0, "unit": "", "min": 0, "max": 1, "editable": true },
+        { "key": "ratedCurrent", "displayName": "整定电流", "value": 4, "unit": "A", "min": 0.5, "max": 10, "editable": true }
+      ]
+    },
+    {
+      "instanceId": "motor_1",
+      "definitionName": "Motor_ThreePhase_380V",
+      "x": 250,
+      "y": -190,
+      "isClosed": false,
+      "parameters": [
+        { "key": "ratedVoltage", "displayName": "额定电压", "value": 380, "unit": "V", "min": 0, "max": 430, "editable": false },
+        { "key": "ratedPower", "displayName": "额定功率", "value": 750, "unit": "W", "min": 1, "max": 3000, "editable": true },
+        { "key": "ratedCurrent", "displayName": "额定电流", "value": 1.8, "unit": "A", "min": 0.1, "max": 10, "editable": true }
+      ]
+    },
+    {
+      "instanceId": "stop_1",
+      "definitionName": "Button_Stop_NC",
+      "x": -500,
+      "y": -190,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "start_1",
+      "definitionName": "Button_Start_NO",
+      "x": -255,
+      "y": -190,
+      "isClosed": false,
+      "parameters": []
+    }
+  ],
+  "wires": [
+    { "startComponentId": "power_3p_1", "startTerminalId": "L1", "endComponentId": "breaker_3p_1", "endTerminalId": "P1_IN", "color": "#F2C71F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "breaker_3p_1", "startTerminalId": "P1_OUT", "endComponentId": "fuse_3p_1", "endTerminalId": "L1_IN", "color": "#F2C71F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fuse_3p_1", "startTerminalId": "L1_OUT", "endComponentId": "km_1", "endTerminalId": "L1", "color": "#F2C71F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "km_1", "startTerminalId": "T1", "endComponentId": "fr_1", "endTerminalId": "L1", "color": "#F2C71F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fr_1", "startTerminalId": "T1", "endComponentId": "motor_1", "endTerminalId": "U", "color": "#F2C71F", "style": "Orthogonal", "manualRoutePoints": [] },
+
+    { "startComponentId": "power_3p_1", "startTerminalId": "L2", "endComponentId": "breaker_3p_1", "endTerminalId": "P2_IN", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "breaker_3p_1", "startTerminalId": "P2_OUT", "endComponentId": "fuse_3p_1", "endTerminalId": "L2_IN", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fuse_3p_1", "startTerminalId": "L2_OUT", "endComponentId": "km_1", "endTerminalId": "L2", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "km_1", "startTerminalId": "T2", "endComponentId": "fr_1", "endTerminalId": "L2", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fr_1", "startTerminalId": "T2", "endComponentId": "motor_1", "endTerminalId": "V", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] },
+
+    { "startComponentId": "power_3p_1", "startTerminalId": "L3", "endComponentId": "breaker_3p_1", "endTerminalId": "P3_IN", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "breaker_3p_1", "startTerminalId": "P3_OUT", "endComponentId": "fuse_3p_1", "endTerminalId": "L3_IN", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fuse_3p_1", "startTerminalId": "L3_OUT", "endComponentId": "km_1", "endTerminalId": "L3", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "km_1", "startTerminalId": "T3", "endComponentId": "fr_1", "endTerminalId": "L3", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fr_1", "startTerminalId": "T3", "endComponentId": "motor_1", "endTerminalId": "W", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+
+    { "startComponentId": "power_3p_1", "startTerminalId": "PE", "endComponentId": "motor_1", "endTerminalId": "PE", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] },
+
+    { "startComponentId": "power_3p_1", "startTerminalId": "L1", "endComponentId": "stop_1", "endTerminalId": "11", "color": "#F2C71F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "stop_1", "startTerminalId": "12", "endComponentId": "fr_1", "endTerminalId": "95", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fr_1", "startTerminalId": "96", "endComponentId": "start_1", "endTerminalId": "23", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "start_1", "startTerminalId": "24", "endComponentId": "km_1", "endTerminalId": "A1", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "km_1", "startTerminalId": "A2", "endComponentId": "power_3p_1", "endTerminalId": "L2", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "fr_1", "startTerminalId": "96", "endComponentId": "km_1", "endTerminalId": "13", "color": "#F21F1F", "style": "Orthogonal", "manualRoutePoints": [] },
+    { "startComponentId": "km_1", "startTerminalId": "14", "endComponentId": "start_1", "endTerminalId": "24", "color": "#14A640", "style": "Orthogonal", "manualRoutePoints": [] }
+  ]
+}

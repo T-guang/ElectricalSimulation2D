@@ -1,0 +1,348 @@
+{
+    "templateId": "meter_lamp_template",
+    "templateName": "单相电能表照明电路",
+    "category": "家庭电路",
+    "difficulty": "进阶",
+    "description": "包含单相电能表进行电量计量的完整家庭进户照明电路。",
+    "components": [
+        {
+            "instanceId": "power_1",
+            "definitionName": "AC_220V_Power",
+            "x": -620.0,
+            "y": 160.0,
+            "isClosed": true,
+            "parameters": [
+                {
+                    "key": "voltage",
+                    "displayName": "????",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "meter_1",
+            "definitionName": "Single_Phase_Meter",
+            "x": -420.0,
+            "y": 160.0,
+            "isClosed": true,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "????",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "ratedCurrent",
+                    "displayName": "????",
+                    "value": 10.0,
+                    "unit": "A",
+                    "min": 1.0,
+                    "max": 40.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "breaker_1",
+            "definitionName": "Breaker_2P",
+            "x": -200.0,
+            "y": 160.0,
+            "isClosed": true,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "????",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 380.0,
+                    "editable": false
+                },
+                {
+                    "key": "ratedCurrent",
+                    "displayName": "????",
+                    "value": 16.0,
+                    "unit": "A",
+                    "min": 1.0,
+                    "max": 63.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "switch_1",
+            "definitionName": "Single_Control_Switch",
+            "x": 60.0,
+            "y": 160.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "switchType",
+                    "displayName": "????",
+                    "value": 1.0,
+                    "unit": "",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "editable": false
+                }
+            ]
+        },
+        {
+            "instanceId": "lamp_1",
+            "definitionName": "Lamp_220V",
+            "x": 340.0,
+            "y": 160.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "????",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power",
+                    "displayName": "??",
+                    "value": 40.0,
+                    "unit": "W",
+                    "min": 1.0,
+                    "max": 200.0,
+                    "editable": true
+                }
+            ]
+        }
+    ],
+    "wires": [
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "L",
+            "endComponentId": "meter_1",
+            "endTerminalId": "L_IN",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -644.2,
+                    "y": 95.0
+                },
+                {
+                    "x": -644.2,
+                    "y": 48.0
+                },
+                {
+                    "x": -455.2,
+                    "y": 48.0
+                },
+                {
+                    "x": -455.2,
+                    "y": 95.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 48.0
+        },
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "N",
+            "endComponentId": "meter_1",
+            "endTerminalId": "N_IN",
+            "color": "#1A59F2",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -595.8,
+                    "y": 95.0
+                },
+                {
+                    "x": -595.8,
+                    "y": 20.0
+                },
+                {
+                    "x": -406.8,
+                    "y": 20.0
+                },
+                {
+                    "x": -406.8,
+                    "y": 95.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 20.0
+        },
+        {
+            "startComponentId": "meter_1",
+            "startTerminalId": "L_OUT",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P1_IN",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -433.2,
+                    "y": 95.0
+                },
+                {
+                    "x": -433.2,
+                    "y": 32.0
+                },
+                {
+                    "x": -260.0,
+                    "y": 32.0
+                },
+                {
+                    "x": -260.0,
+                    "y": 253.0
+                },
+                {
+                    "x": -218.333,
+                    "y": 253.0
+                },
+                {
+                    "x": -218.333,
+                    "y": 225.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 32.0
+        },
+        {
+            "startComponentId": "meter_1",
+            "startTerminalId": "N_OUT",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P2_IN",
+            "color": "#1A59F2",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -384.8,
+                    "y": 95.0
+                },
+                {
+                    "x": -384.8,
+                    "y": 0.0
+                },
+                {
+                    "x": -150.0,
+                    "y": 0.0
+                },
+                {
+                    "x": -150.0,
+                    "y": 253.0
+                },
+                {
+                    "x": -181.667,
+                    "y": 253.0
+                },
+                {
+                    "x": -181.667,
+                    "y": 225.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P1_OUT",
+            "endComponentId": "switch_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -218.333,
+                    "y": 95.0
+                },
+                {
+                    "x": -218.333,
+                    "y": 42.0
+                },
+                {
+                    "x": 10.0,
+                    "y": 42.0
+                },
+                {
+                    "x": 10.0,
+                    "y": 253.0
+                },
+                {
+                    "x": 60.0,
+                    "y": 253.0
+                },
+                {
+                    "x": 60.0,
+                    "y": 225.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 42.0
+        },
+        {
+            "startComponentId": "switch_1",
+            "startTerminalId": "L1",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": 60.0,
+                    "y": 95.0
+                },
+                {
+                    "x": 60.0,
+                    "y": 40.0
+                },
+                {
+                    "x": 312.5,
+                    "y": 40.0
+                },
+                {
+                    "x": 312.5,
+                    "y": 95.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 40.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P2_OUT",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -181.667,
+                    "y": 95.0
+                },
+                {
+                    "x": -181.667,
+                    "y": -72.0
+                },
+                {
+                    "x": 367.5,
+                    "y": -72.0
+                },
+                {
+                    "x": 367.5,
+                    "y": 95.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -72.0
+        }
+    ]
+}
