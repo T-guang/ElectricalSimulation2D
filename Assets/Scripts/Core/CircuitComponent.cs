@@ -269,10 +269,32 @@ namespace ElectricalSim.Core
                 }
                 else
                 {
-                    stateLabel.text = IsEnergized ? "RUN" : "";
+                    stateLabel.text = IsEnergized ? GetRunStateText() : "";
                     stateLabel.color = new Color(0.05f, 0.45f, 0.95f);
                 }
             }
+        }
+
+        private string GetRunStateText()
+        {
+            if (Definition != null && Definition.kind == ComponentKind.Motor && GetTerminal("U") != null && GetTerminal("V") != null && GetTerminal("W") != null)
+            {
+                var direction = GetParameter("rotationDirection");
+                if (direction != null)
+                {
+                    if (direction.value > 0.5f)
+                    {
+                        return "正转";
+                    }
+
+                    if (direction.value < -0.5f)
+                    {
+                        return "反转";
+                    }
+                }
+            }
+
+            return "RUN";
         }
     }
 }

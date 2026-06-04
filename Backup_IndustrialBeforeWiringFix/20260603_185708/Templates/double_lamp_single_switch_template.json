@@ -1,0 +1,286 @@
+﻿{
+    "templateId": "double_lamp_single_switch",
+    "templateName": "单开控制双灯电路",
+    "category": "家庭电路",
+    "difficulty": "初级",
+    "description": "一个单控开关同时控制两盏灯，讲解多个照明负载并联接入同一控制回路的接线方式。",
+    "components": [
+        {
+            "instanceId": "power_1",
+            "definitionName": "AC_220V_Power",
+            "x": -600.0,
+            "y": 120.0,
+            "isClosed": true,
+            "parameters": [
+                {
+                    "key": "voltage",
+                    "displayName": "输出电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "breaker_1",
+            "definitionName": "Breaker_2P",
+            "x": -312.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": []
+        },
+        {
+            "instanceId": "switch_1",
+            "definitionName": "Single_Control_Switch",
+            "x": -120.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "switchType",
+                    "displayName": "开关类型",
+                    "value": 1.0,
+                    "unit": "",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "editable": false
+                }
+            ]
+        },
+        {
+            "instanceId": "lamp_1",
+            "definitionName": "Lamp_220V",
+            "x": 144.0,
+            "y": 264.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power",
+                    "displayName": "功率",
+                    "value": 40.0,
+                    "unit": "W",
+                    "min": 1.0,
+                    "max": 200.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "lamp_2",
+            "definitionName": "Lamp_220V",
+            "x": 168.0,
+            "y": 24.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power",
+                    "displayName": "功率",
+                    "value": 40.0,
+                    "unit": "W",
+                    "min": 1.0,
+                    "max": 200.0,
+                    "editable": true
+                }
+            ]
+        }
+    ],
+    "wires": [
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "L",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P1_IN",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "N",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P2_IN",
+            "color": "#1A59F2",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -575.800048828125,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -575.800048828125,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -575.800048828125,
+                    "y": 252.0
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 252.0
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 213.00001525878907
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 185.00001525878907
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 252.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P1_OUT",
+            "endComponentId": "switch_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -330.3333740234375,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -330.3333740234375,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -216.0,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -216.0,
+                    "y": 213.00001525878907
+                },
+                {
+                    "x": -119.99999237060547,
+                    "y": 213.00001525878907
+                },
+                {
+                    "x": -119.99999237060547,
+                    "y": 185.00001525878907
+                }
+            ],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": -216.0
+        },
+        {
+            "startComponentId": "switch_1",
+            "startTerminalId": "L1",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "switch_1",
+            "startTerminalId": "L1",
+            "endComponentId": "lamp_2",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P2_OUT",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -293.6667175292969,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": -132.0
+                },
+                {
+                    "x": 171.5,
+                    "y": -132.0
+                },
+                {
+                    "x": 171.5,
+                    "y": 171.00003051757813
+                },
+                {
+                    "x": 171.5,
+                    "y": 199.00003051757813
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -132.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P2_OUT",
+            "endComponentId": "lamp_2",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -293.6667175292969,
+                    "y": 54.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": 26.99999237060547
+                },
+                {
+                    "x": -293.6667175292969,
+                    "y": -168.0
+                },
+                {
+                    "x": 195.5,
+                    "y": -168.0
+                },
+                {
+                    "x": 195.5,
+                    "y": -69.00000762939453
+                },
+                {
+                    "x": 195.5,
+                    "y": -41.00000762939453
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -168.0
+        }
+    ]
+}

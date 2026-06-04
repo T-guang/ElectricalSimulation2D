@@ -1,0 +1,365 @@
+{
+    "templateId": "breaker_lamp_fan_parallel",
+    "templateName": "空开控制灯泡与风扇并联电路",
+    "category": "家庭电路",
+    "difficulty": "中级",
+    "description": "空气开关控制一个灯泡和一个电风扇并联回路，讲解不同负载并联接入家庭电路的方式。",
+    "components": [
+        {
+            "instanceId": "power_1",
+            "definitionName": "AC_220V_Power",
+            "x": -576.0,
+            "y": 120.0,
+            "isClosed": true,
+            "parameters": [
+                {
+                    "key": "voltage",
+                    "displayName": "输出电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "breaker_1",
+            "definitionName": "Breaker_2P",
+            "x": -360.0,
+            "y": 144.0,
+            "isClosed": true,
+            "parameters": []
+        },
+        {
+            "instanceId": "switch_1",
+            "definitionName": "Single_Control_Switch",
+            "x": -120.0,
+            "y": 264.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "switchType",
+                    "displayName": "开关类型",
+                    "value": 1.0,
+                    "unit": "",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "editable": false
+                }
+            ]
+        },
+        {
+            "instanceId": "switch_2",
+            "definitionName": "Single_Control_Switch",
+            "x": -96.0,
+            "y": -120.0,
+            "isClosed": true,
+            "parameters": [
+                {
+                    "key": "switchType",
+                    "displayName": "开关类型",
+                    "value": 1.0,
+                    "unit": "",
+                    "min": 0.0,
+                    "max": 1.0,
+                    "editable": false
+                }
+            ]
+        },
+        {
+            "instanceId": "lamp_1",
+            "definitionName": "Lamp_220V",
+            "x": 264.0,
+            "y": 360.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power",
+                    "displayName": "功率",
+                    "value": 40.0,
+                    "unit": "W",
+                    "min": 1.0,
+                    "max": 200.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "fan_1",
+            "definitionName": "Fan_220V",
+            "x": 216.0,
+            "y": 48.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power",
+                    "displayName": "功率",
+                    "value": 60.0,
+                    "unit": "W",
+                    "min": 10.0,
+                    "max": 500.0,
+                    "editable": true
+                }
+            ]
+        }
+    ],
+    "wires": [
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "L",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P1_IN",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "N",
+            "endComponentId": "breaker_1",
+            "endTerminalId": "P2_IN",
+            "color": "#1A59F2",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -551.800048828125,
+                    "y": 55.000022888183597
+                },
+                {
+                    "x": -551.800048828125,
+                    "y": 27.000022888183595
+                },
+                {
+                    "x": -551.800048828125,
+                    "y": 276.0
+                },
+                {
+                    "x": -341.6666564941406,
+                    "y": 276.0
+                },
+                {
+                    "x": -341.6666564941406,
+                    "y": 237.00001525878907
+                },
+                {
+                    "x": -341.6666564941406,
+                    "y": 209.00001525878907
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 276.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P1_OUT",
+            "endComponentId": "switch_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P1_OUT",
+            "endComponentId": "switch_2",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -378.3333435058594,
+                    "y": 79.00003814697266
+                },
+                {
+                    "x": -378.3333435058594,
+                    "y": 51.000038146972659
+                },
+                {
+                    "x": -378.3333435058594,
+                    "y": -24.0
+                },
+                {
+                    "x": -95.99998474121094,
+                    "y": -24.0
+                },
+                {
+                    "x": -95.99998474121094,
+                    "y": -27.0
+                },
+                {
+                    "x": -95.99998474121094,
+                    "y": -55.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -24.0
+        },
+        {
+            "startComponentId": "switch_1",
+            "startTerminalId": "L1",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -119.9999771118164,
+                    "y": 199.0
+                },
+                {
+                    "x": -119.9999771118164,
+                    "y": 171.0
+                },
+                {
+                    "x": -119.9999771118164,
+                    "y": 168.0
+                },
+                {
+                    "x": 236.49998474121095,
+                    "y": 168.0
+                },
+                {
+                    "x": 236.49998474121095,
+                    "y": 267.0000305175781
+                },
+                {
+                    "x": 236.49998474121095,
+                    "y": 295.0000305175781
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 168.0
+        },
+        {
+            "startComponentId": "switch_2",
+            "startTerminalId": "L1",
+            "endComponentId": "fan_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -95.99998474121094,
+                    "y": -184.99998474121095
+                },
+                {
+                    "x": -95.99998474121094,
+                    "y": -212.99998474121095
+                },
+                {
+                    "x": -95.99998474121094,
+                    "y": -216.0
+                },
+                {
+                    "x": 188.5,
+                    "y": -216.0
+                },
+                {
+                    "x": 188.5,
+                    "y": -44.99999237060547
+                },
+                {
+                    "x": 188.5,
+                    "y": -16.99999237060547
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -216.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P2_OUT",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -341.6666564941406,
+                    "y": 79.00003814697266
+                },
+                {
+                    "x": -341.6666564941406,
+                    "y": 51.000038146972659
+                },
+                {
+                    "x": -341.6666564941406,
+                    "y": -312.0
+                },
+                {
+                    "x": 291.50006103515627,
+                    "y": -312.0
+                },
+                {
+                    "x": 291.50006103515627,
+                    "y": 267.0000305175781
+                },
+                {
+                    "x": 291.50006103515627,
+                    "y": 295.0000305175781
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -312.0
+        },
+        {
+            "startComponentId": "breaker_1",
+            "startTerminalId": "P2_OUT",
+            "endComponentId": "fan_1",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "style": "",
+            "manualRoutePoints": [
+                {
+                    "x": -341.6666564941406,
+                    "y": 79.00003814697266
+                },
+                {
+                    "x": -341.6666564941406,
+                    "y": 51.000038146972659
+                },
+                {
+                    "x": -341.6666564941406,
+                    "y": -252.0
+                },
+                {
+                    "x": 243.50006103515626,
+                    "y": -252.0
+                },
+                {
+                    "x": 243.50006103515626,
+                    "y": -44.99999237060547
+                },
+                {
+                    "x": 243.50006103515626,
+                    "y": -16.99999237060547
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -252.0
+        }
+    ]
+}

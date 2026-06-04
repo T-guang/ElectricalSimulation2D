@@ -10,6 +10,8 @@ namespace ElectricalSim.UI
     {
         [SerializeField] private Text titleText;
         [SerializeField] private Text componentNameText;
+        [SerializeField] private ScrollRect parameterScrollRect;
+        [SerializeField] private RectTransform rowsViewport;
         [SerializeField] private RectTransform rowsRoot;
         [SerializeField] private Text emptyText;
         [SerializeField] private Button applyButton;
@@ -29,7 +31,7 @@ namespace ElectricalSim.UI
             rect.pivot = new Vector2(1f, 1f);
             // X = -100 避开右侧操作按钮，Y = -160 避开顶部文件栏
             rect.anchoredPosition = new Vector2(-100f, -160f);
-            rect.sizeDelta = new Vector2(300f, 240f);
+            rect.sizeDelta = new Vector2(300f, 300f);
 
             var image = panelObject.GetComponent<Image>();
             image.color = new Color(0.98f, 0.98f, 0.98f, 1f);
@@ -170,7 +172,13 @@ namespace ElectricalSim.UI
                 CreateParameterRow(parameter);
             }
             
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rowsRoot);
             LayoutRebuilder.ForceRebuildLayoutImmediate(GetComponent<RectTransform>());
+            if (parameterScrollRect != null)
+            {
+                parameterScrollRect.verticalNormalizedPosition = 1f;
+            }
         }
         
         private bool hasEditableParameters(IReadOnlyList<ComponentParameter> parameters)
@@ -231,6 +239,7 @@ namespace ElectricalSim.UI
         {
             if (titleText != null && componentNameText != null && rowsRoot != null && emptyText != null && applyButton != null)
             {
+                EnsureRowsAreScrollable((RectTransform)transform);
                 EnsureDragHandle();
                 return;
             }
@@ -275,21 +284,11 @@ namespace ElectricalSim.UI
                 le.preferredHeight = 24f;
             }
 
+            EnsureRowsAreScrollable(parent);
+
             if (rowsRoot == null)
             {
-                rowsRoot = new GameObject("ParameterRowsRoot", typeof(RectTransform)).GetComponent<RectTransform>();
-                rowsRoot.SetParent(parent, false);
-                
-                var le = rowsRoot.gameObject.AddComponent<LayoutElement>();
-                le.flexibleHeight = 1f;
-                
-                var rowsVlg = rowsRoot.gameObject.AddComponent<VerticalLayoutGroup>();
-                rowsVlg.spacing = 8f;
-                rowsVlg.childForceExpandWidth = true;
-                rowsVlg.childForceExpandHeight = false;
-                rowsVlg.childControlWidth = true;
-                rowsVlg.childControlHeight = true;
-                rowsVlg.childAlignment = TextAnchor.UpperLeft;
+                rowsRoot = CreateRowsContent(rowsViewport != null ? rowsViewport : parent);
             }
 
             if (emptyText == null)
@@ -310,6 +309,100 @@ namespace ElectricalSim.UI
                 applyButton.onClick.RemoveListener(ApplyChanges);
                 applyButton.onClick.AddListener(ApplyChanges);
             }
+        }
+
+        private void EnsureRowsAreScrollable(RectTransform parent)
+        {
+            if (parameterScrollRect != null && rowsViewport != null)
+            {
+                return;
+            }
+
+            var scrollObject = new GameObject("ParameterScrollView", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+            scrollObject.transform.SetParent(parent, false);
+            var scrollRectTransform = scrollObject.GetComponent<RectTransform>();
+            scrollRectTransform.anchorMin = Vector2.zero;
+            scrollRectTransform.anchorMax = Vector2.one;
+            scrollRectTransform.offsetMin = Vector2.zero;
+            scrollRectTransform.offsetMax = Vector2.zero;
+
+            var scrollImage = scrollObject.GetComponent<Image>();
+            scrollImage.color = new Color(1f, 1f, 1f, 0.02f);
+            scrollImage.raycastTarget = true;
+
+            var scrollLayout = scrollObject.AddComponent<LayoutElement>();
+            scrollLayout.minHeight = 110f;
+            scrollLayout.preferredHeight = 150f;
+            scrollLayout.flexibleHeight = 1f;
+
+            rowsViewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask)).GetComponent<RectTransform>();
+            rowsViewport.SetParent(scrollObject.transform, false);
+            rowsViewport.anchorMin = Vector2.zero;
+            rowsViewport.anchorMax = Vector2.one;
+            rowsViewport.offsetMin = Vector2.zero;
+            rowsViewport.offsetMax = Vector2.zero;
+
+            var viewportImage = rowsViewport.GetComponent<Image>();
+            viewportImage.color = new Color(1f, 1f, 1f, 0.01f);
+            viewportImage.raycastTarget = true;
+            var mask = rowsViewport.GetComponent<Mask>();
+            mask.showMaskGraphic = false;
+
+            parameterScrollRect = scrollObject.GetComponent<ScrollRect>();
+            parameterScrollRect.viewport = rowsViewport;
+            parameterScrollRect.horizontal = false;
+            parameterScrollRect.vertical = true;
+            parameterScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            parameterScrollRect.scrollSensitivity = 24f;
+
+            if (rowsRoot != null)
+            {
+                rowsRoot.SetParent(rowsViewport, false);
+                ConfigureRowsContent(rowsRoot);
+            }
+
+            parameterScrollRect.content = rowsRoot;
+        }
+
+        private RectTransform CreateRowsContent(RectTransform parent)
+        {
+            var content = new GameObject("ParameterRowsRoot", typeof(RectTransform)).GetComponent<RectTransform>();
+            content.SetParent(parent, false);
+            ConfigureRowsContent(content);
+            if (parameterScrollRect != null)
+            {
+                parameterScrollRect.content = content;
+            }
+            return content;
+        }
+
+        private static void ConfigureRowsContent(RectTransform content)
+        {
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = Vector2.zero;
+
+            var rowsVlg = content.GetComponent<VerticalLayoutGroup>();
+            if (rowsVlg == null)
+            {
+                rowsVlg = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            }
+            rowsVlg.spacing = 8f;
+            rowsVlg.childForceExpandWidth = true;
+            rowsVlg.childForceExpandHeight = false;
+            rowsVlg.childControlWidth = true;
+            rowsVlg.childControlHeight = true;
+            rowsVlg.childAlignment = TextAnchor.UpperLeft;
+
+            var fitter = content.GetComponent<ContentSizeFitter>();
+            if (fitter == null)
+            {
+                fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            }
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
 
         private void ClearRows()

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
+  m_Name: Tool_Oscilloscope
+  m_EditorClassIdentifier: 
+  displayName: "\u7B80\u6613\u793A\u6CE2\u5668"
+  category: 2
+  kind: 13
+  bodyColor: {r: 0.92, g: 1, b: 0.95, a: 1}
+  accentColor: {r: 0.08, g: 0.65, b: 0.25, a: 1}
+  sprite: {fileID: 0}
+  size: {x: 300, y: 210}
+  startsClosed: 0
+  togglable: 0
+  controlledByTag: 
+  outputTag: 
+  sourceVoltage: 0
+  sourceLineVoltage: 0
+  sourcePhaseCount: 0
+  ratedVoltage: 0
+  ratedPower: 0
+  ratedCurrent: 0
+  maxVoltage: 0
+  maxCurrent: 0
+  canBurnOut: 0
+  canTrip: 0
+  parameterNote: "\u6559\u5B66\u6D4B\u91CF\u5DE5\u5177\uFF1A\u62D6\u5230\u753B\u5E03\u540E\uFF0C\u70B9\u51FB\u5143\u4EF6\u67E5\u770B\u7B80\u5316\u4EA4\u6D41\u6CE2\u5F62\u3002"
+  terminals: []

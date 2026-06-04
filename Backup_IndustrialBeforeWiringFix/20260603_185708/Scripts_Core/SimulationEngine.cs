@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -333,38 +333,20 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            var orderedContactors = closedContactors
-                .OrderBy(GetComponentPriority)
-                .ToList();
             var toRelease = new HashSet<CircuitComponent>();
-
-            foreach (var contactor in orderedContactors)
+            foreach (var contactor in closedContactors)
             {
-                if (toRelease.Contains(contactor))
+                foreach (var other in closedContactors)
                 {
-                    continue;
-                }
-
-                foreach (var other in orderedContactors)
-                {
-                    if (contactor == other || toRelease.Contains(other))
+                    if (contactor == other)
                     {
                         continue;
                     }
 
-                    if (!CoilDependsOnNormallyClosedAuxiliary(contactor, other))
-                    {
-                        continue;
-                    }
-
-                    if (CoilDependsOnNormallyClosedAuxiliary(other, contactor))
-                    {
-                        var loser = GetComponentPriority(contactor) <= GetComponentPriority(other) ? other : contactor;
-                        toRelease.Add(loser);
-                    }
-                    else
+                    if (CoilDependsOnNormallyClosedAuxiliary(contactor, other))
                     {
                         toRelease.Add(contactor);
+                        toRelease.Add(other);
                     }
                 }
             }
@@ -373,12 +355,6 @@ namespace ElectricalSim.Core
             {
                 closedContactors.Remove(contactor);
             }
-        }
-
-        private int GetComponentPriority(CircuitComponent component)
-        {
-            var index = components.IndexOf(component);
-            return index >= 0 ? index : int.MaxValue;
         }
 
         private bool CoilDependsOnNormallyClosedAuxiliary(CircuitComponent contactor, CircuitComponent auxiliaryOwner)
@@ -801,5 +777,4 @@ namespace ElectricalSim.Core
         }
     }
 }
-
 

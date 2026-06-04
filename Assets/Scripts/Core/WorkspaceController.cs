@@ -22,6 +22,7 @@ namespace ElectricalSim.Core
         [SerializeField] private float minCanvasZoom = 0.65f;
         [SerializeField] private float maxCanvasZoom = 1.7f;
         [SerializeField] private float zoomStep = 0.12f;
+        [SerializeField] private float simulationRefreshInterval = 0.25f;
 
         public RectTransform WorkspaceRect => workspaceRect;
         public IReadOnlyList<CircuitComponent> Components => components;
@@ -46,9 +47,12 @@ namespace ElectricalSim.Core
         private bool simulationDirty = true;
         private bool panningCanvas;
         private float canvasZoom = 1f;
+        private float simulationRefreshTimer;
         private Vector2 panStartPointer;
         private Vector2 panStartPosition;
         private const int HistoryLimit = 40;
+        private const int ActionLogEntryLimit = 180;
+        private const int ActionLogCharacterLimit = 10000;
 
         private void Awake()
         {
@@ -86,6 +90,17 @@ namespace ElectricalSim.Core
             if (pendingTerminal != null)
             {
                 UpdatePreviewLine();
+            }
+
+            if (IsSimulationRunning)
+            {
+                simulationRefreshTimer += Time.deltaTime;
+                if (simulationRefreshTimer >= simulationRefreshInterval)
+                {
+                    var deltaTime = simulationRefreshTimer;
+                    simulationRefreshTimer = 0f;
+                    EvaluateSimulation(deltaTime);
+                }
             }
         }
 
@@ -264,9 +279,10 @@ namespace ElectricalSim.Core
         public void StartSimulation()
         {
             IsSimulationRunning = true;
+            simulationRefreshTimer = 0f;
             try
             {
-                EvaluateSimulation();
+                EvaluateSimulation(0f);
             }
             catch (System.Exception exception)
             {
@@ -281,14 +297,15 @@ namespace ElectricalSim.Core
         public void StopSimulation()
         {
             IsSimulationRunning = false;
+            simulationRefreshTimer = 0f;
             simulationDirty = true;
             ClearSimulationResult();
             SetStatus("仿真已结束，当前可继续编辑电路。");
         }
 
-        private void EvaluateSimulation()
+        private void EvaluateSimulation(float deltaTime = 0f)
         {
-            var result = new SimulationEngine(components, wireManager.Wires).Run();
+            var result = new SimulationEngine(components, wireManager.Wires, deltaTime).Run();
             simulationDirty = false;
             SetStatus(result);
             RefreshMeasurementPanel();
@@ -505,6 +522,7 @@ namespace ElectricalSim.Core
             }
 
             actionLogEntries.Add("[" + System.DateTime.Now.ToString("HH:mm:ss") + "] " + message);
+            TrimActionLogEntries();
             actionLogText.text = string.Join("\n", actionLogEntries);
 
             if (actionLogScrollRect != null)
@@ -512,6 +530,33 @@ namespace ElectricalSim.Core
                 Canvas.ForceUpdateCanvases();
                 actionLogScrollRect.verticalNormalizedPosition = 0f;
             }
+        }
+
+        private void TrimActionLogEntries()
+        {
+            while (actionLogEntries.Count > ActionLogEntryLimit)
+            {
+                actionLogEntries.RemoveAt(0);
+            }
+
+            while (actionLogEntries.Count > 0 && GetActionLogCharacterCount() > ActionLogCharacterLimit)
+            {
+                actionLogEntries.RemoveAt(0);
+            }
+        }
+
+        private int GetActionLogCharacterCount()
+        {
+            var total = 0;
+            foreach (var entry in actionLogEntries)
+            {
+                if (entry != null)
+                {
+                    total += entry.Length + 1;
+                }
+            }
+
+            return total;
         }
 
         public void OnPointerClick(PointerEventData eventData)

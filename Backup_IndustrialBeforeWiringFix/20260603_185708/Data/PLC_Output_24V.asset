@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a02b474d9ee1254f860afcd64e0f9b8, type: 3}
+  m_Name: PLC_Output_24V
+  m_EditorClassIdentifier: 
+  displayName: "PLC\u8F93\u51FA\u6A21\u5757\n(24V)"
+  category: 1
+  kind: 12
+  bodyColor: {r: 0.2, g: 0.32, b: 0.32, a: 1}
+  accentColor: {r: 0.24, g: 0.75, b: 0.72, a: 1}
+  sprite: {fileID: 0}
+  size: {x: 110, y: 130}
+  startsClosed: 1
+  togglable: 0
+  controlledByTag: 
+  outputTag: 
+  sourceVoltage: 0
+  sourceLineVoltage: 0
+  sourcePhaseCount: 0
+  ratedVoltage: 0
+  ratedPower: 0
+  ratedCurrent: 0
+  maxVoltage: 0
+  maxCurrent: 0
+  canBurnOut: 0
+  canTrip: 0
+  parameterNote: 
+  terminals:
+  - id: Y0
+    label: Y0
+    role: 5
+    normalizedPosition: {x: 0, y: 0.75}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: COM0
+    label: COM
+    role: 4
+    normalizedPosition: {x: 1, y: 0.75}
+    color: {r: 0.1, g: 0.35, b: 0.95, a: 1}
+  - id: Y1
+    label: Y1
+    role: 5
+    normalizedPosition: {x: 0, y: 0.5}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: COM1
+    label: COM
+    role: 4
+    normalizedPosition: {x: 1, y: 0.5}
+    color: {r: 0.1, g: 0.35, b: 0.95, a: 1}
+  - id: Y2
+    label: Y2
+    role: 5
+    normalizedPosition: {x: 0, y: 0.25}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: COM2
+    label: COM
+    role: 4
+    normalizedPosition: {x: 1, y: 0.25}
+    color: {r: 0.1, g: 0.35, b: 0.95, a: 1}

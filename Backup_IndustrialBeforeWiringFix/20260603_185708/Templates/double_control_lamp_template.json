@@ -1,0 +1,195 @@
+﻿{
+    "templateId": "double_control_lamp_template",
+    "templateName": "双控照明电路",
+    "category": "家庭电路",
+    "difficulty": "进阶",
+    "description": "使用两个单开双控开关控制同一盏灯的楼梯照明电路。",
+    "components": [
+        {
+            "instanceId": "power_1",
+            "definitionName": "AC_220V_Power",
+            "x": -528.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "voltage", "displayName": "输出电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": true
+                }
+            ]
+        },
+        {
+            "instanceId": "switch_a",
+            "definitionName": "Two_Way_Switch",
+            "x": -192.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "switchType", "displayName": "开关类型",
+                    "value": 2.0,
+                    "unit": "",
+                    "min": 0.0,
+                    "max": 2.0,
+                    "editable": false
+                }
+            ]
+        },
+        {
+            "instanceId": "switch_b",
+            "definitionName": "Two_Way_Switch",
+            "x": 120.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "switchType", "displayName": "开关类型",
+                    "value": 2.0,
+                    "unit": "",
+                    "min": 0.0,
+                    "max": 2.0,
+                    "editable": false
+                }
+            ]
+        },
+        {
+            "instanceId": "lamp_1",
+            "definitionName": "Lamp_220V",
+            "x": 432.0,
+            "y": 120.0,
+            "isClosed": false,
+            "parameters": [
+                {
+                    "key": "ratedVoltage", "displayName": "额定电压",
+                    "value": 220.0,
+                    "unit": "V",
+                    "min": 0.0,
+                    "max": 250.0,
+                    "editable": false
+                },
+                {
+                    "key": "power", "displayName": "功率",
+                    "value": 60.0,
+                    "unit": "W",
+                    "min": 1.0,
+                    "max": 200.0,
+                    "editable": true
+                }
+            ]
+        }
+    ],
+    "wires": [
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "L",
+            "endComponentId": "switch_a",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "switch_a",
+            "startTerminalId": "L1",
+            "endComponentId": "switch_b",
+            "endTerminalId": "L1",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "switch_a",
+            "startTerminalId": "L2",
+            "endComponentId": "switch_b",
+            "endTerminalId": "L2",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -167.79998779296875,
+                    "y": 55.0
+                },
+                {
+                    "x": -167.79998779296875,
+                    "y": 27.0
+                },
+                {
+                    "x": -167.79998779296875,
+                    "y": 0.0
+                },
+                {
+                    "x": 144.199951171875,
+                    "y": 0.0
+                },
+                {
+                    "x": 144.199951171875,
+                    "y": 27.0
+                },
+                {
+                    "x": 144.199951171875,
+                    "y": 55.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "switch_b",
+            "startTerminalId": "L",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "L",
+            "color": "#F21F1F",
+            "style": "Orthogonal",
+            "manualRoutePoints": [],
+            "manualRouteHorizontal": false,
+            "manualRouteAxis": 0.0
+        },
+        {
+            "startComponentId": "power_1",
+            "startTerminalId": "N",
+            "endComponentId": "lamp_1",
+            "endTerminalId": "N",
+            "color": "#1A59F2",
+            "style": "Orthogonal",
+            "manualRoutePoints": [
+                {
+                    "x": -503.79998779296875,
+                    "y": 55.0
+                },
+                {
+                    "x": -503.79998779296875,
+                    "y": 27.0
+                },
+                {
+                    "x": -503.79998779296875,
+                    "y": -84.0
+                },
+                {
+                    "x": 459.5,
+                    "y": -84.0
+                },
+                {
+                    "x": 459.5,
+                    "y": 27.0
+                },
+                {
+                    "x": 459.5,
+                    "y": 55.0
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -84.0
+        }
+    ],
+    "description": ""
+}
+
+
