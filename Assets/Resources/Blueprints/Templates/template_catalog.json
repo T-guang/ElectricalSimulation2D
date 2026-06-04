@@ -91,6 +91,15 @@
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     },
     {
+      "templateId": "motor_jog_continuous",
+      "templateName": "点动与连续运行混合控制电路",
+      "category": "工业电路",
+      "difficulty": "中级",
+      "description": "点动按钮按下时电机运行、松开停止；连续启动按钮启动后通过接触器13/14辅助常开触点自锁保持运行。",
+      "resourcePath": "Blueprints/Templates/motor_jog_continuous_template",
+      "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
+    },
+    {
       "templateId": "motor_thermal_protection",
       "templateName": "热继电器保护电动机控制电路",
       "category": "工业电路",
