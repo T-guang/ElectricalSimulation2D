@@ -347,6 +347,12 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
+                if (IsSelfHoldBrokenByJogButton(component))
+                {
+                    selfHoldEligibleContactors[id] = false;
+                    continue;
+                }
+
                 selfHoldEligibleContactors[id] = IsSelfHoldEligible(component) || HasClosedContinuousStartPath(component);
             }
         }
@@ -373,6 +379,11 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
+                if (IsJogStartButtonForContactor(component, contactor))
+                {
+                    continue;
+                }
+
                 if (AreConnected(component.GetTerminal("23"), a1) || AreConnected(component.GetTerminal("24"), a1))
                 {
                     return true;
@@ -382,13 +393,71 @@ namespace ElectricalSim.Core
             return false;
         }
 
+        private bool IsSelfHoldBrokenByJogButton(CircuitComponent contactor)
+        {
+            foreach (var component in components)
+            {
+                if (component == null || !component.IsClosed)
+                {
+                    continue;
+                }
+
+                if (IsJogStartButtonForContactor(component, contactor))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsJogStartButtonForContactor(CircuitComponent button, CircuitComponent contactor)
+        {
+            if (!IsCompoundPushButton(button) || contactor == null)
+            {
+                return false;
+            }
+
+            var a1 = contactor.GetTerminal("A1");
+            var button23 = button.GetTerminal("23");
+            var button24 = button.GetTerminal("24");
+            if (a1 == null || button23 == null || button24 == null)
+            {
+                return false;
+            }
+
+            if (!AreConnected(button23, a1) && !AreConnected(button24, a1))
+            {
+                return false;
+            }
+
+            var instanceId = button.InstanceId ?? string.Empty;
+            if (instanceId.IndexOf("jog", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                instanceId.IndexOf("点动", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            var button11 = button.GetTerminal("11");
+            var button12 = button.GetTerminal("12");
+            var contactor13 = contactor.GetTerminal("13");
+            var contactor14 = contactor.GetTerminal("14");
+            if (button11 == null || button12 == null || contactor13 == null || contactor14 == null)
+            {
+                return false;
+            }
+
+            return AreConnected(button11, contactor13) ||
+                AreConnected(button11, contactor14) ||
+                AreConnected(button12, contactor13) ||
+                AreConnected(button12, contactor14);
+        }
         private static bool IsClosedContinuousStartComponent(CircuitComponent component)
         {
             return component != null &&
                 component.Definition != null &&
                 component.Definition.kind == ComponentKind.PushButton &&
                 component.IsClosed &&
-                !IsCompoundPushButton(component) &&
                 component.GetTerminal("23") != null &&
                 component.GetTerminal("24") != null;
         }

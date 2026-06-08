@@ -52,6 +52,7 @@ namespace ElectricalSim.AI
             facts.HasSelfHold = facts.Contactors.Any(c => HasTerminalWire(facts, c, "13") || HasTerminalWire(facts, c, "14"));
             facts.HasThermalControlContact = facts.ThermalRelays.Any(r => HasTerminalWire(facts, r, "95") || HasTerminalWire(facts, r, "96"));
             facts.HasMutualInterlock = facts.Contactors.Count >= 2 && HasMutualInterlockWiring(facts, facts.Contactors[0], facts.Contactors[1]);
+            facts.HasButtonInterlock = facts.CompoundButtons.Count >= 2 && HasCompoundButtonInterlockWiring(facts);
             facts.IsIndustrial = facts.PowerSources.Count > 0 || facts.Motors.Count > 0 || facts.Contactors.Count > 0 || facts.ThermalRelays.Count > 0;
             facts.CircuitType = ResolveCircuitType(facts);
             return facts;
@@ -199,6 +200,20 @@ namespace ElectricalSim.AI
             }
 
             return HasNcAuxiliaryInCoilBranch(facts, first, second) && HasNcAuxiliaryInCoilBranch(facts, second, first);
+        }
+
+        internal static bool HasCompoundButtonInterlockWiring(IndustrialCircuitFacts facts)
+        {
+            if (facts == null || facts.CompoundButtons == null || facts.CompoundButtons.Count < 2)
+            {
+                return false;
+            }
+
+            return facts.CompoundButtons.Take(2).All(button =>
+                HasTerminalWire(facts, button, "11") &&
+                HasTerminalWire(facts, button, "12") &&
+                HasTerminalWire(facts, button, "23") &&
+                HasTerminalWire(facts, button, "24"));
         }
 
         private static bool HasNcAuxiliaryInCoilBranch(IndustrialCircuitFacts facts, CircuitComponent auxiliaryOwner, CircuitComponent coilOwner)
@@ -375,5 +390,6 @@ namespace ElectricalSim.AI
         public bool HasSelfHold;
         public bool HasThermalControlContact;
         public bool HasMutualInterlock;
+        public bool HasButtonInterlock;
     }
 }
