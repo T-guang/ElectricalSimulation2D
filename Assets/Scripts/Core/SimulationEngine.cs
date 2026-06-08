@@ -787,6 +787,20 @@ namespace ElectricalSim.Core
                 return;
             }
 
+            if (IsLimitSwitch(component))
+            {
+                if (component.IsClosed)
+                {
+                    ConnectById(component, "23", "24");
+                }
+                else
+                {
+                    ConnectById(component, "11", "12");
+                }
+
+                return;
+            }
+
             if (IsCompoundPushButton(component))
             {
                 if (component.IsClosed)
@@ -830,6 +844,25 @@ namespace ElectricalSim.Core
                     ConnectPairs(terms, component.IsClosed || component.Definition.kind == ComponentKind.TerminalBlock);
                     break;
             }
+        }
+
+        private static bool IsLimitSwitch(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null ||
+                component.GetTerminal("11") == null || component.GetTerminal("12") == null ||
+                component.GetTerminal("23") == null || component.GetTerminal("24") == null)
+            {
+                return false;
+            }
+
+            var id = component.Definition.name ?? string.Empty;
+            var displayName = component.Definition.displayName ?? string.Empty;
+            return id.IndexOf("LimitSwitch", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                id.IndexOf("TravelSwitch", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                id.IndexOf("PositionSwitch", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                id.IndexOf("Switch_Limit", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                displayName.Contains("行程开关") ||
+                displayName.Contains("限位开关");
         }
 
         private static bool IsCompoundPushButton(CircuitComponent component)

@@ -463,7 +463,7 @@ namespace ElectricalSim.EditorTools
             definitions.Add(CreateIndustrial("EmergencyStop_NC", "\u6025\u505c\u6309\u94ae(NC)", ComponentKind.PushButton, new Color(0.2f, 0.22f, 0.24f), new Color(1f, 0.18f, 0.14f), true, true,
                 T("11", "11", TerminalRole.Input, 0f, 0.45f, Red()),
                 T("12", "12", TerminalRole.Output, 1f, 0.45f, Red())));
-            definitions.Add(CreateIndustrial("LimitSwitch_Compound", "\u9650\u4f4d\u5f00\u5173(\u590d\u5408)", ComponentKind.PushButton, new Color(0.18f, 0.2f, 0.22f), new Color(0.74f, 0.62f, 0.42f), false, true, ControlTerminals()));
+            definitions.Add(CreateIndustrial("LimitSwitch_Compound", "\u884c\u7a0b\u5f00\u5173 SQ", ComponentKind.PushButton, new Color(0.18f, 0.2f, 0.22f), new Color(0.74f, 0.62f, 0.42f), false, true, ControlTerminals()));
             definitions.Add(CreateIndustrial("LimitSwitch_SelfLock", "\u9650\u4f4d\u5f00\u5173(\u81ea\u9501)", ComponentKind.Switch, new Color(0.18f, 0.2f, 0.22f), new Color(0.74f, 0.62f, 0.42f), false, true, ControlTerminals()));
             definitions.Add(CreateIndustrial("KnifeSwitch_QS", "\u5200\u5f00\u5173(QS)", ComponentKind.Breaker, new Color(0.5f, 0.53f, 0.6f), new Color(0.18f, 0.34f, 0.7f), true, true,
                 ThreePhasePairTerminals()));
@@ -714,7 +714,7 @@ namespace ElectricalSim.EditorTools
                     definition.ratedVoltage = assetName.Contains("24V") ? 24f : 220f;
                     definition.ratedCurrent = 5f;
                     definition.maxCurrent = 10f;
-                    definition.parameterNote = "开关/按钮：用于控制通断，后续可参与过流触点损坏判断。";
+                    definition.parameterNote = assetName.Contains("LimitSwitch") ? "ON = 被触碰，23-24 接通，11-12 断开；OFF = 未触碰，11-12 接通，23-24 断开。" : "开关/按钮：用于控制通断，后续可参与过流触点损坏判断。";
                     break;
             }
         }
