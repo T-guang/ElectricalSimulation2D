@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ElectricalSim.Core;
 using ElectricalSim.Rules;
 using UnityEngine;
@@ -292,6 +292,12 @@ namespace ElectricalSim.AI
 
         private void ExplainCurrentCircuit()
         {
+            if (IndustrialCircuitExplainer.TryExplain(workspace, out var industrialExplanation))
+            {
+                AddAssistantMessage(industrialExplanation);
+                return;
+            }
+
             AskAssistant("当前电路解释");
         }
 
@@ -305,6 +311,26 @@ namespace ElectricalSim.AI
 
             try
             {
+                if (IndustrialCircuitRuleAnalyzer.TryAnalyze(workspace, out var industrialResult) && industrialResult.IsIndustrial)
+                {
+                    AddAssistantMessage(industrialResult.FormatForAssistant());
+                    var industrialSummary = "工业电路检查完成：";
+                    if (industrialResult.ErrorCount > 0)
+                    {
+                        industrialSummary += "发现 " + industrialResult.ErrorCount + " 个严重问题。";
+                    }
+                    else if (industrialResult.WarningCount > 0)
+                    {
+                        industrialSummary += "发现 " + industrialResult.WarningCount + " 个提醒。";
+                    }
+                    else
+                    {
+                        industrialSummary += "未发现严重错误。";
+                    }
+                    workspace.SetStatus(industrialSummary);
+                    return;
+                }
+
                 var checker = new CircuitRuleChecker(workspace);
                 var result = checker.Check();
                 AddAssistantMessage(CircuitRuleCheckTeacherFormatter.FormatForTeaching(result));

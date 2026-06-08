@@ -12,6 +12,7 @@ namespace ElectricalSim.Core
         private readonly HashSet<CircuitComponent> closedContactors = new HashSet<CircuitComponent>();
         private readonly float simulationDeltaTime;
         private const int MaxContactorStabilizationIterations = 4;
+        private static readonly Dictionary<int, bool> selfHoldEligibleContactors = new Dictionary<int, bool>();
 
         public SimulationEngine(List<CircuitComponent> components, IReadOnlyList<WireView> wires, float simulationDeltaTime = 0f)
         {
@@ -40,6 +41,8 @@ namespace ElectricalSim.Core
 
                 BuildGraph();
             }
+
+            UpdateSelfHoldEligibility();
 
             var powered = Flood(phaseRoots);
             var neutral = Flood(neutralRoots);
@@ -83,6 +86,8 @@ namespace ElectricalSim.Core
 
                     BuildGraph();
                 }
+
+                UpdateSelfHoldEligibility();
 
                 powered = Flood(phaseRoots);
                 neutral = Flood(neutralRoots);
@@ -215,7 +220,7 @@ namespace ElectricalSim.Core
         {
             foreach (var component in components)
             {
-                if (IsContactorComponent(component) && component.IsEnergized)
+                if (IsContactorComponent(component) && component.IsEnergized && IsSelfHoldEligible(component))
                 {
                     closedContactors.Add(component);
                 }
@@ -324,6 +329,68 @@ namespace ElectricalSim.Core
 
             return a1Phases.Count > 0 && CanReachPowerNeutral(coilA2) ||
                 a2Phases.Count > 0 && CanReachPowerNeutral(coilA1);
+        }
+
+        private void UpdateSelfHoldEligibility()
+        {
+            foreach (var component in components)
+            {
+                if (!IsContactorComponent(component))
+                {
+                    continue;
+                }
+
+                var id = component.GetInstanceID();
+                if (!closedContactors.Contains(component))
+                {
+                    selfHoldEligibleContactors[id] = false;
+                    continue;
+                }
+
+                selfHoldEligibleContactors[id] = IsSelfHoldEligible(component) || HasClosedContinuousStartPath(component);
+            }
+        }
+
+        private static bool IsSelfHoldEligible(CircuitComponent component)
+        {
+            return component != null &&
+                selfHoldEligibleContactors.TryGetValue(component.GetInstanceID(), out var eligible) &&
+                eligible;
+        }
+
+        private bool HasClosedContinuousStartPath(CircuitComponent contactor)
+        {
+            var a1 = contactor.GetTerminal("A1");
+            if (a1 == null)
+            {
+                return false;
+            }
+
+            foreach (var component in components)
+            {
+                if (!IsClosedContinuousStartComponent(component))
+                {
+                    continue;
+                }
+
+                if (AreConnected(component.GetTerminal("23"), a1) || AreConnected(component.GetTerminal("24"), a1))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsClosedContinuousStartComponent(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.Definition.kind == ComponentKind.PushButton &&
+                component.IsClosed &&
+                !IsCompoundPushButton(component) &&
+                component.GetTerminal("23") != null &&
+                component.GetTerminal("24") != null;
         }
 
         private void ResolveMutualInterlockConflicts()
@@ -651,6 +718,20 @@ namespace ElectricalSim.Core
                 return;
             }
 
+            if (IsCompoundPushButton(component))
+            {
+                if (component.IsClosed)
+                {
+                    ConnectById(component, "23", "24");
+                }
+                else
+                {
+                    ConnectById(component, "11", "12");
+                }
+
+                return;
+            }
+
             switch (component.Definition.kind)
             {
                 case ComponentKind.TwoWaySwitch:
@@ -680,6 +761,17 @@ namespace ElectricalSim.Core
                     ConnectPairs(terms, component.IsClosed || component.Definition.kind == ComponentKind.TerminalBlock);
                     break;
             }
+        }
+
+        private static bool IsCompoundPushButton(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.GetTerminal("11") != null &&
+                component.GetTerminal("12") != null &&
+                component.GetTerminal("23") != null &&
+                component.GetTerminal("24") != null &&
+                component.Definition.name.IndexOf("Button_Compound", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void AddThermalRelayInternalConnections(CircuitComponent component)

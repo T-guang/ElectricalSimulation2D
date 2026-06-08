@@ -1,0 +1,379 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using ElectricalSim.Core;
+
+namespace ElectricalSim.AI
+{
+    public static class IndustrialCircuitRuleAnalyzer
+    {
+        public static bool TryAnalyze(WorkspaceController workspace, out CircuitAnalysisResult result)
+        {
+            var facts = BuildFacts(workspace);
+            result = new CircuitAnalysisResult
+            {
+                IsIndustrial = facts.IsIndustrial,
+                CircuitType = facts.CircuitType
+            };
+
+            if (!facts.IsIndustrial)
+            {
+                return false;
+            }
+
+            AnalyzeCommonIndustrialRules(facts, result);
+            AnalyzeControlRules(facts, result);
+            AddTeachingTips(facts, result);
+            return true;
+        }
+
+        internal static IndustrialCircuitFacts BuildFacts(WorkspaceController workspace)
+        {
+            var facts = new IndustrialCircuitFacts { Workspace = workspace };
+            if (workspace == null)
+            {
+                facts.CircuitType = "工业控制电路";
+                return facts;
+            }
+
+            facts.Components = workspace.Components != null ? workspace.Components.Where(c => c != null && c.Definition != null).ToList() : new List<CircuitComponent>();
+            facts.Wires = workspace.WireManager != null && workspace.WireManager.Wires != null ? workspace.WireManager.Wires.Where(w => w != null).ToList() : new List<WireView>();
+
+            facts.PowerSources = facts.Components.Where(IsThreePhasePower).ToList();
+            facts.Motors = facts.Components.Where(IsThreePhaseMotor).ToList();
+            facts.Contactors = facts.Components.Where(IsContactor).ToList();
+            facts.ThermalRelays = facts.Components.Where(IsThermalRelay).ToList();
+            facts.Breakers = facts.Components.Where(IsThreePoleBreaker).ToList();
+            facts.Fuses = facts.Components.Where(IsThreePoleFuse).ToList();
+            facts.StartButtons = facts.Components.Where(IsStartButton).ToList();
+            facts.StopButtons = facts.Components.Where(IsStopButton).ToList();
+            facts.CompoundButtons = facts.Components.Where(IsCompoundPushButton).ToList();
+
+            facts.HasSelfHold = facts.Contactors.Any(c => HasTerminalWire(facts, c, "13") || HasTerminalWire(facts, c, "14"));
+            facts.HasThermalControlContact = facts.ThermalRelays.Any(r => HasTerminalWire(facts, r, "95") || HasTerminalWire(facts, r, "96"));
+            facts.HasMutualInterlock = facts.Contactors.Count >= 2 && HasMutualInterlockWiring(facts, facts.Contactors[0], facts.Contactors[1]);
+            facts.IsIndustrial = facts.PowerSources.Count > 0 || facts.Motors.Count > 0 || facts.Contactors.Count > 0 || facts.ThermalRelays.Count > 0;
+            facts.CircuitType = ResolveCircuitType(facts);
+            return facts;
+        }
+
+        private static void AnalyzeCommonIndustrialRules(IndustrialCircuitFacts facts, CircuitAnalysisResult result)
+        {
+            if (facts.PowerSources.Count == 0)
+            {
+                result.Errors.Add("未检测到三相交流电源，请确认工业主回路是否有 L1/L2/L3 电源。 ");
+            }
+
+            if (facts.Motors.Count == 0 && facts.Contactors.Count > 0)
+            {
+                result.Warnings.Add("当前有工业控制元件，但未检测到三相异步电动机负载。 ");
+            }
+
+            if (facts.Motors.Count > 0 && facts.Breakers.Count == 0)
+            {
+                result.Warnings.Add("主回路未检测到 3P 空气开关。教学接线中建议三相电源先经过 3P 空开再进入后级。 ");
+            }
+
+            if (facts.Motors.Count > 0 && facts.Fuses.Count == 0)
+            {
+                result.Warnings.Add("主回路未检测到 3P 熔断器。教学接线中建议空开后串接熔断器，再进入接触器主触点。 ");
+            }
+
+            foreach (var motor in facts.Motors)
+            {
+                var missing = new List<string>();
+                if (!HasTerminalWire(facts, motor, "U")) missing.Add("U");
+                if (!HasTerminalWire(facts, motor, "V")) missing.Add("V");
+                if (!HasTerminalWire(facts, motor, "W")) missing.Add("W");
+                if (missing.Count > 0)
+                {
+                    result.Errors.Add("三相异步电动机 " + DisplayName(motor) + " 的 " + string.Join("/", missing) + " 端子未接入主回路。 ");
+                }
+
+                if (motor.GetTerminal("PE") != null && !HasTerminalWire(facts, motor, "PE"))
+                {
+                    result.Warnings.Add("三相异步电动机 " + DisplayName(motor) + " 的 PE 保护接地未连接。 ");
+                }
+            }
+        }
+
+        private static void AnalyzeControlRules(IndustrialCircuitFacts facts, CircuitAnalysisResult result)
+        {
+            foreach (var contactor in facts.Contactors)
+            {
+                var hasA1 = HasTerminalWire(facts, contactor, "A1");
+                var hasA2 = HasTerminalWire(facts, contactor, "A2");
+                if (!hasA1 || !hasA2)
+                {
+                    result.Errors.Add(DisplayName(contactor) + " 的线圈 A1/A2 接线不完整，请检查控制回路电源、按钮和返回相线。 ");
+                }
+            }
+
+            if (facts.Contactors.Count >= 2)
+            {
+                var energized = facts.Contactors.Where(c => c.IsEnergized).ToList();
+                if (energized.Count > 1)
+                {
+                    result.Errors.Add("检测到两个方向接触器同时吸合，正反转主回路存在短路风险，请检查互锁触点 21/22。 ");
+                }
+
+                if (!facts.HasMutualInterlock)
+                {
+                    result.Warnings.Add("正反转控制回路未检测到完整的 21/22 电气互锁。KM1 线圈支路应串入 KM2 的 21/22，KM2 线圈支路应串入 KM1 的 21/22。 ");
+                }
+
+                if (facts.StartButtons.Count(b => b.IsClosed) >= 2)
+                {
+                    result.Warnings.Add("检测到正转和反转启动按钮同时闭合。当前系统按正转优先处理，但实际操作中不应同时按下两个方向按钮，请先停止后再切换方向。 ");
+                }
+            }
+
+            if (facts.Contactors.Count > 0 && facts.StopButtons.Count == 0)
+            {
+                result.Warnings.Add("控制回路未检测到停止按钮 NC。工业控制中停止按钮通常应串在控制回路前级。 ");
+            }
+
+            if (facts.ThermalRelays.Count > 0 && !facts.HasThermalControlContact)
+            {
+                result.Warnings.Add("检测到热继电器，但未检测到 95/96 常闭触点接入控制回路，过载保护可能不能释放接触器。 ");
+            }
+        }
+
+        private static void AddTeachingTips(IndustrialCircuitFacts facts, CircuitAnalysisResult result)
+        {
+            if (facts.Contactors.Count >= 2)
+            {
+                result.TeachingTips.Add("正反转电路应把主回路和控制回路分开理解：主回路决定电机相序，控制回路决定哪个接触器吸合。 ");
+                result.TeachingTips.Add("21/22 是接触器辅助常闭触点，一侧接触器吸合后应切断另一侧线圈回路，防止两个方向同时吸合。 ");
+            }
+            else if (facts.Contactors.Count == 1 && facts.HasSelfHold)
+            {
+                result.TeachingTips.Add("13/14 是接触器辅助常开触点，通常并联启动按钮形成自锁回路。 ");
+            }
+            else if (facts.Contactors.Count == 1)
+            {
+                result.TeachingTips.Add("点动类控制中，启动按钮松开后线圈应失电，接触器释放，电机停止。 ");
+            }
+
+            if (facts.ThermalRelays.Count > 0)
+            {
+                result.TeachingTips.Add("热继电器主触点用于经过电机电流，95/96 常闭触点应串入控制回路用于跳闸停机。 ");
+            }
+        }
+
+        private static string ResolveCircuitType(IndustrialCircuitFacts facts)
+        {
+            if (facts.Contactors.Count >= 2 && facts.Motors.Count > 0)
+            {
+                return facts.HasMutualInterlock ? "电气互锁正反转控制电路" : "电动机正反转控制电路";
+            }
+
+            if (facts.Contactors.Count == 1 && facts.ThermalRelays.Count > 0)
+            {
+                return "热继电器保护电动机控制电路";
+            }
+
+            if (facts.Contactors.Count == 1 && facts.CompoundButtons.Count > 0 && facts.StartButtons.Count > 0 && facts.HasSelfHold)
+            {
+                return "点动与连续运行混合控制电路";
+            }
+
+            if (facts.Contactors.Count == 1 && facts.HasSelfHold)
+            {
+                return "电动机连续运行控制电路";
+            }
+
+            if (facts.Contactors.Count == 1 && facts.StartButtons.Count > 0)
+            {
+                return "电动机点动控制电路";
+            }
+
+            return "工业控制电路";
+        }
+
+        internal static bool HasMutualInterlockWiring(IndustrialCircuitFacts facts, CircuitComponent first, CircuitComponent second)
+        {
+            if (first == null || second == null)
+            {
+                return false;
+            }
+
+            return HasNcAuxiliaryInCoilBranch(facts, first, second) && HasNcAuxiliaryInCoilBranch(facts, second, first);
+        }
+
+        private static bool HasNcAuxiliaryInCoilBranch(IndustrialCircuitFacts facts, CircuitComponent auxiliaryOwner, CircuitComponent coilOwner)
+        {
+            return HasDirectTerminalConnection(facts, auxiliaryOwner, "21", coilOwner, "A1") ||
+                HasDirectTerminalConnection(facts, auxiliaryOwner, "22", coilOwner, "A1") ||
+                HasDirectTerminalConnection(facts, auxiliaryOwner, "21", coilOwner, "A2") ||
+                HasDirectTerminalConnection(facts, auxiliaryOwner, "22", coilOwner, "A2") ||
+                HasTerminalWire(facts, auxiliaryOwner, "21") && HasTerminalWire(facts, auxiliaryOwner, "22") && HasTerminalWire(facts, coilOwner, "A1");
+        }
+
+        private static bool HasDirectTerminalConnection(IndustrialCircuitFacts facts, CircuitComponent first, string firstTerminal, CircuitComponent second, string secondTerminal)
+        {
+            var a = first != null ? first.GetTerminal(firstTerminal) : null;
+            var b = second != null ? second.GetTerminal(secondTerminal) : null;
+            if (a == null || b == null)
+            {
+                return false;
+            }
+
+            return facts.Wires.Any(w => w != null &&
+                (w.StartTerminal == a && w.EndTerminal == b || w.StartTerminal == b && w.EndTerminal == a));
+        }
+
+        internal static bool HasTerminalWire(IndustrialCircuitFacts facts, CircuitComponent component, string terminalId)
+        {
+            var terminal = component != null ? component.GetTerminal(terminalId) : null;
+            return terminal != null && facts.Wires.Any(w => w != null && w.Uses(terminal));
+        }
+
+        internal static string DisplayName(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null)
+            {
+                return "未知元件";
+            }
+
+            return string.IsNullOrWhiteSpace(component.Definition.displayName) ? component.Definition.name : component.Definition.displayName;
+        }
+
+        internal static string MotorStateText(CircuitComponent motor)
+        {
+            if (motor == null || !motor.IsEnergized)
+            {
+                return "停止";
+            }
+
+            var direction = 0f;
+            var parameter = motor.GetParameter("rotationDirection");
+            if (parameter != null)
+            {
+                direction = parameter.value;
+            }
+
+            if (direction > 0.5f)
+            {
+                return "正转";
+            }
+
+            if (direction < -0.5f)
+            {
+                return "反转";
+            }
+
+            return "运行";
+        }
+
+        internal static bool TryGetParameterValue(CircuitComponent component, string key, out float value)
+        {
+            value = 0f;
+            var parameter = component != null ? component.GetParameter(key) : null;
+            if (parameter == null)
+            {
+                return false;
+            }
+
+            value = parameter.value;
+            return true;
+        }
+
+        private static bool IsThreePhasePower(CircuitComponent component)
+        {
+            return component != null && component.Definition != null &&
+                component.Definition.kind == ComponentKind.PowerSource &&
+                component.GetTerminal("L1") != null && component.GetTerminal("L2") != null && component.GetTerminal("L3") != null;
+        }
+
+        private static bool IsThreePhaseMotor(CircuitComponent component)
+        {
+            return component != null && component.Definition != null &&
+                component.Definition.kind == ComponentKind.Motor &&
+                component.GetTerminal("U") != null && component.GetTerminal("V") != null && component.GetTerminal("W") != null;
+        }
+
+        private static bool IsContactor(CircuitComponent component)
+        {
+            return component != null && component.Definition != null &&
+                (component.Definition.kind == ComponentKind.ContactorCoil ||
+                 component.GetTerminal("A1") != null && component.GetTerminal("A2") != null && component.GetTerminal("L1") != null && component.GetTerminal("T1") != null);
+        }
+
+        private static bool IsThermalRelay(CircuitComponent component)
+        {
+            return component != null && component.Definition != null &&
+                (component.Definition.name.IndexOf("ThermalRelay", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 DisplayName(component).Contains("热继") ||
+                 component.GetTerminal("95") != null && component.GetTerminal("96") != null);
+        }
+
+        private static bool IsThreePoleBreaker(CircuitComponent component)
+        {
+            return component != null && component.Definition != null && component.Definition.kind == ComponentKind.Breaker &&
+                component.GetTerminal("P1_IN") != null && component.GetTerminal("P2_IN") != null && component.GetTerminal("P3_IN") != null;
+        }
+
+        private static bool IsThreePoleFuse(CircuitComponent component)
+        {
+            return component != null && component.Definition != null && component.Definition.kind == ComponentKind.Fuse &&
+                component.GetTerminal("L1_IN") != null && component.GetTerminal("L2_IN") != null && component.GetTerminal("L3_IN") != null;
+        }
+
+        private static bool IsStartButton(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null || component.Definition.kind != ComponentKind.PushButton)
+            {
+                return false;
+            }
+
+            if (component.GetTerminal("23") == null || component.GetTerminal("24") == null || IsCompoundPushButton(component))
+            {
+                return false;
+            }
+
+            var name = component.Definition.name + " " + DisplayName(component) + " " + component.InstanceId;
+            return name.IndexOf("Start", StringComparison.OrdinalIgnoreCase) >= 0 || name.Contains("启动") || name.Contains("正转") || name.Contains("反转");
+        }
+
+        private static bool IsStopButton(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null || component.GetTerminal("11") == null || component.GetTerminal("12") == null)
+            {
+                return false;
+            }
+
+            var name = component.Definition.name + " " + DisplayName(component) + " " + component.InstanceId;
+            return name.IndexOf("Stop", StringComparison.OrdinalIgnoreCase) >= 0 || name.IndexOf("Emergency", StringComparison.OrdinalIgnoreCase) >= 0 || name.Contains("停止") || name.Contains("急停");
+        }
+
+        private static bool IsCompoundPushButton(CircuitComponent component)
+        {
+            return component != null && component.Definition != null &&
+                component.GetTerminal("11") != null && component.GetTerminal("12") != null &&
+                component.GetTerminal("23") != null && component.GetTerminal("24") != null &&
+                component.Definition.name.IndexOf("Button_Compound", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+    }
+
+    internal sealed class IndustrialCircuitFacts
+    {
+        public WorkspaceController Workspace;
+        public bool IsIndustrial;
+        public string CircuitType = "工业控制电路";
+        public List<CircuitComponent> Components = new List<CircuitComponent>();
+        public List<WireView> Wires = new List<WireView>();
+        public List<CircuitComponent> PowerSources = new List<CircuitComponent>();
+        public List<CircuitComponent> Motors = new List<CircuitComponent>();
+        public List<CircuitComponent> Contactors = new List<CircuitComponent>();
+        public List<CircuitComponent> ThermalRelays = new List<CircuitComponent>();
+        public List<CircuitComponent> Breakers = new List<CircuitComponent>();
+        public List<CircuitComponent> Fuses = new List<CircuitComponent>();
+        public List<CircuitComponent> StartButtons = new List<CircuitComponent>();
+        public List<CircuitComponent> StopButtons = new List<CircuitComponent>();
+        public List<CircuitComponent> CompoundButtons = new List<CircuitComponent>();
+        public bool HasSelfHold;
+        public bool HasThermalControlContact;
+        public bool HasMutualInterlock;
+    }
+}
