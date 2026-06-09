@@ -365,8 +365,8 @@ namespace ElectricalSim.AI
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("CircuitStateAnalyzer V0 failed: " + exception.Message);
-                AddAssistantMessage("【通用现象分析 V0】\n通用现象分析 V0 暂时无法完成：" + exception.Message);
+                Debug.LogWarning("CircuitStateAnalyzer V0.1.1 failed: " + exception.Message);
+                AddAssistantMessage("【通用现象分析 V0.1.1】\n通用现象分析 V0.1.1 暂时无法完成：" + exception.Message);
             }
         }
 

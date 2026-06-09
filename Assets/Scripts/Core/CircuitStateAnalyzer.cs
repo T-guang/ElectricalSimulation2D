@@ -15,6 +15,7 @@ namespace ElectricalSim.Core
         private readonly Dictionary<string, TerminalView> terminalsByKey = new Dictionary<string, TerminalView>();
         private readonly Dictionary<string, string> friendlyNamesByInstanceId = new Dictionary<string, string>();
         private readonly HashSet<string> wiredTerminalKeys = new HashSet<string>();
+        private readonly Dictionary<string, HashSet<string>> connectionGraph = new Dictionary<string, HashSet<string>>();
 
         public CircuitStateResult Analyze(
             IReadOnlyList<CircuitComponent> components,
@@ -23,6 +24,7 @@ namespace ElectricalSim.Core
             terminalsByKey.Clear();
             friendlyNamesByInstanceId.Clear();
             wiredTerminalKeys.Clear();
+            connectionGraph.Clear();
 
             var result = new CircuitStateResult();
             BuildFriendlyNames(components);
@@ -36,6 +38,7 @@ namespace ElectricalSim.Core
             AddPowerLabels(components, unionFind, rootLabels, rootSources, result);
             DetectPowerConflicts(rootLabels, result);
             BuildComponentStates(components, unionFind, rootLabels, rootSources, result);
+            BuildLoadPathExplanations(components, result);
             FinalizeBreakerControlAnalysis(result);
             return result;
         }
@@ -115,7 +118,7 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                unionFind.Union(startKey, endKey);
+                ConnectTerminalKeys(startKey, endKey, unionFind);
                 wiredTerminalKeys.Add(startKey);
                 wiredTerminalKeys.Add(endKey);
             }
@@ -341,18 +344,25 @@ namespace ElectricalSim.Core
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
                     info.IsTwoWaySwitch = true;
                     info.State = component.IsClosed ? "TwoWayL1" : "TwoWayL2";
+                    info.ConductionExplanation = component.IsClosed ? "当前导通：COM → L1" : "当前导通：COM → L2";
                 }
                 else if (IsHouseholdSwitch(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
                     info.IsHouseholdSwitch = true;
                     info.State = component.IsClosed ? "Closed" : "Open";
+                    info.ConductionExplanation = component.IsClosed
+                        ? "当前导通：" + FindFirstTerminalPair(component, " → ")
+                        : "当前状态：" + FindFirstTerminalPair(component, " 与 ") + " 不导通";
                 }
                 else if (component.Definition.kind == ComponentKind.Breaker || IsBreaker(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
                     info.IsBreaker = true;
                     info.State = component.IsClosed ? "Closed" : "Open";
+                    info.ConductionExplanation = component.IsClosed
+                        ? "当前导通：" + FindFirstTerminalPair(component, " → ")
+                        : "当前状态：" + FindFirstTerminalPair(component, " 与 ") + " 不导通";
                     AnalyzeBreaker(component, info, result);
                 }
                 else if (component.Definition.kind == ComponentKind.Fuse || DefinitionContains(component, "Fuse", "熔断器", "保险"))
@@ -368,11 +378,27 @@ namespace ElectricalSim.Core
                 else if (component.Definition.kind == ComponentKind.EnergyMeter || IsEnergyMeter(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupOther;
-                    info.State = "Conducting";
+                    info.State = AreMeterTerminalsWired(component) ? "Conducting" : "Incomplete";
+                    info.Judgement = "V0.1.1 简化认为电能表 L_IN/L_OUT、N_IN/N_OUT 内部导通，不计算电能。";
                 }
 
                 result.Components.Add(info);
             }
+        }
+
+        private bool AreMeterTerminalsWired(CircuitComponent component)
+        {
+            var terminalIds = new[] { "L_IN", "L_OUT", "N_IN", "N_OUT" };
+            for (var i = 0; i < terminalIds.Length; i++)
+            {
+                var terminal = component.GetTerminal(terminalIds[i]);
+                if (terminal == null || !wiredTerminalKeys.Contains(TerminalKey(terminal)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void AnalyzeBreaker(CircuitComponent component, ComponentStateInfo info, CircuitStateResult result)
@@ -508,8 +534,47 @@ namespace ElectricalSim.Core
         {
             var terminalKey = TerminalKey(terminal);
             var root = unionFind.Find(terminalKey);
-            info.TerminalVoltages[terminal.TerminalId] = ResolveRootVoltage(root, rootLabels);
-            info.VoltageSources[terminal.TerminalId] = ResolveSources(root, rootSources);
+            var sources = ResolveSources(root, rootSources);
+            var voltage = ResolveRootVoltage(root, rootLabels);
+            info.TerminalVoltages[terminal.TerminalId] = ResolveVoltageFromSources(voltage, sources);
+            info.VoltageSources[terminal.TerminalId] = sources;
+        }
+
+        private static string ResolveVoltageFromSources(string voltage, string sources)
+        {
+            if (voltage == VoltageConflict || voltage == VoltageNone || string.IsNullOrWhiteSpace(sources))
+            {
+                return voltage;
+            }
+
+            var sourceLabels = new HashSet<string>();
+            var sourceParts = sources.Split(',');
+            for (var i = 0; i < sourceParts.Length; i++)
+            {
+                var source = sourceParts[i].Trim();
+                if (source.EndsWith(".L", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourceLabels.Add(VoltageL);
+                }
+                else if (source.EndsWith(".N", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourceLabels.Add(VoltageN);
+                }
+                else if (source.EndsWith(".PE", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourceLabels.Add(VoltagePE);
+                }
+            }
+
+            if (sourceLabels.Count == 1)
+            {
+                foreach (var sourceLabel in sourceLabels)
+                {
+                    return sourceLabel;
+                }
+            }
+
+            return sourceLabels.Count > 1 ? VoltageConflict : voltage;
         }
 
         private static void AnalyzeSinglePhaseLoad(
@@ -534,6 +599,7 @@ namespace ElectricalSim.Core
             if (line == VoltageConflict || neutral == VoltageConflict)
             {
                 info.State = stoppedState;
+                info.Judgement = loadName + "所在回路存在电压冲突或短路风险。";
                 AddComponentError(info, result, loadName + "所在回路存在电压冲突或短路风险。");
                 return;
             }
@@ -541,12 +607,14 @@ namespace ElectricalSim.Core
             if (line == VoltageL && neutral == VoltageN)
             {
                 info.State = runningState;
+                info.Judgement = loadName + "获得有效 L-N 供电。";
                 return;
             }
 
             if (line == VoltageN && neutral == VoltageL)
             {
                 info.State = stoppedState;
+                info.Judgement = loadName + " L/N 接反，当前系统按规范端子判断为" + (isFan ? "停止" : "不亮") + "。";
                 AddComponentWarning(info, result, loadName + " L/N 接反。当前系统按规范端子判断，L 端应接火线、N 端应接零线，因此判断为" + (isFan ? "停止" : "不亮") + "。");
                 AddComponentInfo(info, result, isFan
                     ? "风扇应按规范连接 L/N 端子。"
@@ -570,6 +638,23 @@ namespace ElectricalSim.Core
             if (line != VoltageNone && line == neutral)
             {
                 AddComponentWarning(info, result, loadName + "两端没有形成有效 L-N 电压差。");
+            }
+
+            if (!hasLine && !hasNeutral)
+            {
+                info.Judgement = loadName + "未获得完整 L-N 供电。";
+            }
+            else if (!hasLine)
+            {
+                info.Judgement = loadName + "缺少火线 L。";
+            }
+            else if (!hasNeutral)
+            {
+                info.Judgement = loadName + "缺少零线 N 回路。";
+            }
+            else
+            {
+                info.Judgement = loadName + "两端没有形成有效 L-N 电压差。";
             }
         }
 
@@ -703,6 +788,182 @@ namespace ElectricalSim.Core
             return false;
         }
 
+        private void BuildLoadPathExplanations(
+            IReadOnlyList<CircuitComponent> components,
+            CircuitStateResult result)
+        {
+            if (components == null)
+            {
+                return;
+            }
+
+            var lineSources = new List<string>();
+            var neutralSources = new List<string>();
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (component == null || component.Definition == null ||
+                    component.Definition.kind != ComponentKind.PowerSource ||
+                    component.GetTerminal("L1") != null ||
+                    component.Definition.sourcePhaseCount >= 3)
+                {
+                    continue;
+                }
+
+                AddTerminalKey(component.GetTerminal("L"), lineSources);
+                AddTerminalKey(component.GetTerminal("N"), neutralSources);
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (component == null || (!IsLamp(component) && !IsFan(component)))
+                {
+                    continue;
+                }
+
+                var info = result.FindComponent(SafeInstanceId(component));
+                if (info == null)
+                {
+                    continue;
+                }
+
+                var lineTerminal = component.GetTerminal("L");
+                var neutralTerminal = component.GetTerminal("N");
+                info.LinePathExplanation = BuildPathExplanation(lineSources, TerminalKey(lineTerminal), "火线 L", info.DisplayName + ".L", false);
+                info.NeutralPathExplanation = BuildPathExplanation(neutralSources, TerminalKey(neutralTerminal), "零线 N", info.DisplayName + ".N", true);
+            }
+        }
+
+        private string BuildPathExplanation(
+            List<string> sourceKeys,
+            string targetKey,
+            string label,
+            string targetName,
+            bool reverseDisplay)
+        {
+            var path = FindShortestPath(sourceKeys, targetKey);
+            if (path == null || path.Count == 0)
+            {
+                return label + "：未到达 " + targetName;
+            }
+
+            if (reverseDisplay)
+            {
+                path.Reverse();
+            }
+
+            return label + "：" + FormatPath(path);
+        }
+
+        private List<string> FindShortestPath(List<string> sourceKeys, string targetKey)
+        {
+            if (sourceKeys == null || string.IsNullOrWhiteSpace(targetKey))
+            {
+                return null;
+            }
+
+            var queue = new Queue<string>();
+            var previous = new Dictionary<string, string>();
+            for (var i = 0; i < sourceKeys.Count; i++)
+            {
+                var source = sourceKeys[i];
+                if (string.IsNullOrWhiteSpace(source) || previous.ContainsKey(source))
+                {
+                    continue;
+                }
+
+                previous.Add(source, null);
+                queue.Enqueue(source);
+            }
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (current == targetKey)
+                {
+                    var path = new List<string>();
+                    while (current != null)
+                    {
+                        path.Add(current);
+                        current = previous[current];
+                    }
+
+                    path.Reverse();
+                    return path;
+                }
+
+                if (!connectionGraph.TryGetValue(current, out var neighbors))
+                {
+                    continue;
+                }
+
+                foreach (var neighbor in neighbors)
+                {
+                    if (previous.ContainsKey(neighbor))
+                    {
+                        continue;
+                    }
+
+                    previous.Add(neighbor, current);
+                    queue.Enqueue(neighbor);
+                }
+            }
+
+            return null;
+        }
+
+        private string FormatPath(List<string> terminalPath)
+        {
+            var parts = new List<string>();
+            for (var i = 0; i < terminalPath.Count; i++)
+            {
+                var key = terminalPath[i];
+                var separator = key.LastIndexOf('.');
+                var instanceId = separator > 0 ? key.Substring(0, separator) : key;
+                var isEndpoint = i == 0 || i == terminalPath.Count - 1;
+                var text = isEndpoint ? FriendlyTerminalKey(key) :
+                    friendlyNamesByInstanceId.TryGetValue(instanceId, out var name) ? name : ShortId(instanceId);
+                if (parts.Count == 0 || parts[parts.Count - 1] != text)
+                {
+                    parts.Add(text);
+                }
+            }
+
+            return string.Join(" → ", parts);
+        }
+
+        private static void AddTerminalKey(TerminalView terminal, List<string> keys)
+        {
+            if (terminal != null)
+            {
+                keys.Add(TerminalKey(terminal));
+            }
+        }
+
+        private static string FindFirstTerminalPair(CircuitComponent component, string separator)
+        {
+            var pairs = new[]
+            {
+                new[] { "L", "L1" },
+                new[] { "11", "12" },
+                new[] { "IN", "OUT" },
+                new[] { "L_IN", "L_OUT" },
+                new[] { "P_IN", "P_OUT" },
+                new[] { "P1_IN", "P1_OUT" }
+            };
+
+            for (var i = 0; i < pairs.Length; i++)
+            {
+                if (component.GetTerminal(pairs[i][0]) != null && component.GetTerminal(pairs[i][1]) != null)
+                {
+                    return pairs[i][0] + separator + pairs[i][1];
+                }
+            }
+
+            return "输入端" + separator + "输出端";
+        }
+
         private void BuildFriendlyNames(IReadOnlyList<CircuitComponent> components)
         {
             if (components == null)
@@ -748,7 +1009,7 @@ namespace ElectricalSim.Core
             return instanceId.Length <= 8 ? instanceId : instanceId.Substring(0, 8);
         }
 
-        private static bool ConnectKnownPairs(CircuitComponent component, TerminalUnionFind unionFind, bool fallbackToFirstPair)
+        private bool ConnectKnownPairs(CircuitComponent component, TerminalUnionFind unionFind, bool fallbackToFirstPair)
         {
             var connected = false;
             connected |= ConnectIfExists(component, "L", "L1", unionFind);
@@ -764,14 +1025,14 @@ namespace ElectricalSim.Core
 
             if (!connected && fallbackToFirstPair && component.Terminals != null && component.Terminals.Count == 2)
             {
-                unionFind.Union(TerminalKey(component.Terminals[0]), TerminalKey(component.Terminals[1]));
+                ConnectTerminalKeys(TerminalKey(component.Terminals[0]), TerminalKey(component.Terminals[1]), unionFind);
                 connected = true;
             }
 
             return connected;
         }
 
-        private static bool ConnectIfExists(
+        private bool ConnectIfExists(
             CircuitComponent component,
             string terminalA,
             string terminalB,
@@ -784,8 +1045,37 @@ namespace ElectricalSim.Core
                 return false;
             }
 
-            unionFind.Union(TerminalKey(a), TerminalKey(b));
+            ConnectTerminalKeys(TerminalKey(a), TerminalKey(b), unionFind);
             return true;
+        }
+
+        private void ConnectTerminalKeys(string a, string b, TerminalUnionFind unionFind)
+        {
+            unionFind.Union(a, b);
+            AddGraphEdge(a, b);
+        }
+
+        private void AddGraphEdge(string a, string b)
+        {
+            if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b))
+            {
+                return;
+            }
+
+            if (!connectionGraph.TryGetValue(a, out var from))
+            {
+                from = new HashSet<string>();
+                connectionGraph.Add(a, from);
+            }
+
+            if (!connectionGraph.TryGetValue(b, out var to))
+            {
+                to = new HashSet<string>();
+                connectionGraph.Add(b, to);
+            }
+
+            from.Add(b);
+            to.Add(a);
         }
 
         private static string TerminalKey(TerminalView terminal)
@@ -848,36 +1138,75 @@ namespace ElectricalSim.Core
             return Components.Find(c => c.InstanceId == instanceId);
         }
 
-        public string ToReadableText()
+        public string ToReadableText(bool includeDebug = false)
         {
             var builder = new StringBuilder();
-            builder.AppendLine("【通用现象分析 V0】");
+            builder.AppendLine("【通用现象分析 V0.1.1】");
 
             if (ContainsUnsupportedThreePhaseCircuit)
             {
-                builder.AppendLine("当前电路包含三相工业元件，V0 暂不进行三相工业现象分析。");
+                builder.AppendLine("当前电路包含三相工业元件，V0.1.1 暂不进行三相工业现象分析。");
                 return builder.ToString().TrimEnd();
             }
 
+            var loadCount = CountGroup(ComponentStateInfo.GroupLoad);
+            var controlCount = CountGroup(ComponentStateInfo.GroupControl);
+            var workingLoadCount = CountWorkingLoads();
             builder.AppendLine();
-            builder.AppendLine("全局状态：");
+            builder.AppendLine("一、总体结论");
             builder.AppendLine(HasShortCircuit ? "- 检测到 L/N 短路风险。" : "- 未发现 L/N 短路。");
-            builder.AppendLine("- 共分析 " + Components.Count + " 个元件。");
+            builder.AppendLine("- 共识别 " + loadCount + " 个负载、" + controlCount + " 个控制/保护元件。");
+            builder.AppendLine("- 当前有 " + workingLoadCount + " 个负载正常工作，" + (loadCount - workingLoadCount) + " 个负载未工作。");
 
-            AppendComponentGroup(builder, "负载状态", ComponentStateInfo.GroupLoad);
-            AppendComponentGroup(builder, "控制与保护元件", ComponentStateInfo.GroupControl);
-            AppendComponentGroup(builder, "电源与其他元件", ComponentStateInfo.GroupOther);
+            AppendComponentGroup(builder, "二、负载状态", ComponentStateInfo.GroupLoad);
+            AppendComponentGroup(builder, "三、控制与保护元件", ComponentStateInfo.GroupControl);
+            AppendComponentGroup(builder, "四、电源与其他元件", ComponentStateInfo.GroupOther);
 
-            AppendMessages(builder, "错误", Errors);
-            AppendMessages(builder, "警告", Warnings);
-            AppendMessages(builder, "教学提示", Infos);
+            AppendMessages(builder, "五、错误", Errors);
+            AppendMessages(builder, "六、警告", Warnings);
+            AppendMessages(builder, "七、教学提示", Infos);
+            if (includeDebug)
+            {
+                AppendDebugTerminalLabels(builder);
+            }
+
             return builder.ToString().TrimEnd();
+        }
+
+        private int CountGroup(string group)
+        {
+            var count = 0;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                if (Components[i].SummaryGroup == group)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private int CountWorkingLoads()
+        {
+            var count = 0;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                if (Components[i].SummaryGroup == ComponentStateInfo.GroupLoad &&
+                    (Components[i].State == "On" || Components[i].State == "Running"))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private void AppendComponentGroup(StringBuilder builder, string title, string group)
         {
             var index = 1;
-            var wroteHeader = false;
+            builder.AppendLine();
+            builder.AppendLine(title);
             for (var i = 0; i < Components.Count; i++)
             {
                 var component = Components[i];
@@ -886,14 +1215,12 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                if (!wroteHeader)
+                builder.AppendLine(index + ". " + component.DisplayName + "：" + ReadableState(component.State));
+                if (!string.IsNullOrWhiteSpace(component.ConductionExplanation))
                 {
-                    builder.AppendLine();
-                    builder.AppendLine(title + "：");
-                    wroteHeader = true;
+                    builder.AppendLine("   - " + component.ConductionExplanation);
                 }
 
-                builder.AppendLine(index + ". " + component.DisplayName + "：" + ReadableState(component.State));
                 if (component.IsTwoWaySwitch)
                 {
                     AppendTerminal(builder, component, "L");
@@ -908,7 +1235,24 @@ namespace ElectricalSim.Core
                     }
                 }
 
+                if (!string.IsNullOrWhiteSpace(component.Judgement))
+                {
+                    builder.AppendLine("   - 判断：" + component.Judgement);
+                }
+
+                if (component.SummaryGroup == ComponentStateInfo.GroupLoad)
+                {
+                    builder.AppendLine("   - 供电路径：");
+                    builder.AppendLine("     " + component.LinePathExplanation);
+                    builder.AppendLine("     " + component.NeutralPathExplanation);
+                }
+
                 index++;
+            }
+
+            if (index == 1)
+            {
+                builder.AppendLine("- 无");
             }
         }
 
@@ -925,10 +1269,10 @@ namespace ElectricalSim.Core
                 : component.IsBreaker
                     ? BreakerTerminalLabel(terminalId)
                     : terminalId;
-            builder.Append("   - ").Append(displayTerminalId).Append("端实际标签：").Append(voltage);
+            builder.Append("   - ").Append(displayTerminalId).Append("端：").Append(voltage);
             if (!string.IsNullOrWhiteSpace(source))
             {
-                builder.Append("，来源 ").Append(source);
+                builder.Append("，来源：").Append(source);
             }
 
             builder.AppendLine();
@@ -951,16 +1295,31 @@ namespace ElectricalSim.Core
 
         private static void AppendMessages(StringBuilder builder, string title, List<string> messages)
         {
+            builder.AppendLine();
+            builder.AppendLine(title);
             if (messages == null || messages.Count == 0)
             {
+                builder.AppendLine("- 无");
                 return;
             }
 
-            builder.AppendLine();
-            builder.AppendLine(title + "：");
             for (var i = 0; i < messages.Count; i++)
             {
                 builder.AppendLine("- " + messages[i]);
+            }
+        }
+
+        private void AppendDebugTerminalLabels(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【端子标签调试】");
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                foreach (var terminal in component.TerminalVoltages)
+                {
+                    builder.AppendLine(component.DisplayName + "." + terminal.Key + " = " + terminal.Value);
+                }
             }
         }
 
@@ -984,6 +1343,8 @@ namespace ElectricalSim.Core
                     return "正常";
                 case "Conducting":
                     return "导通";
+                case "Incomplete":
+                    return "接线不完整";
                 case "TwoWayL1":
                     return "COM→L1 导通";
                 case "TwoWayL2":
@@ -1005,6 +1366,10 @@ namespace ElectricalSim.Core
         public string DisplayName;
         public string State;
         public string SummaryGroup;
+        public string Judgement;
+        public string ConductionExplanation;
+        public string LinePathExplanation;
+        public string NeutralPathExplanation;
         public bool IsTwoWaySwitch;
         public bool IsHouseholdSwitch;
         public bool IsBreaker;
