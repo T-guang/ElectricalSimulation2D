@@ -314,6 +314,7 @@ namespace ElectricalSim.AI
                 if (IndustrialCircuitRuleAnalyzer.TryAnalyze(workspace, out var industrialResult) && industrialResult.IsIndustrial)
                 {
                     AddAssistantMessage(industrialResult.FormatForAssistant());
+                    AppendCircuitStateAnalysis();
                     var industrialSummary = "工业电路检查完成：";
                     if (industrialResult.ErrorCount > 0)
                     {
@@ -333,12 +334,15 @@ namespace ElectricalSim.AI
 
                 var checker = new CircuitRuleChecker(workspace);
                 var result = checker.Check();
-                AddAssistantMessage(CircuitRuleCheckTeacherFormatter.FormatForTeaching(result));
+                var stateResult = AnalyzeCircuitState();
+                var displayResult = FilterBreakerDirectControlFalsePositives(result, stateResult);
+                AddAssistantMessage(CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult));
+                AddAssistantMessage(stateResult.ToReadableText());
                 
                 string summary = "电路检查完成：";
-                if (result.ErrorCount > 0 || result.WarningCount > 0)
+                if (displayResult.ErrorCount > 0 || displayResult.WarningCount > 0)
                 {
-                    summary += "发现 " + result.ErrorCount + " 个严重问题，" + result.WarningCount + " 个提醒。";
+                    summary += "发现 " + displayResult.ErrorCount + " 个严重问题，" + displayResult.WarningCount + " 个提醒。";
                 }
                 else
                 {
@@ -353,6 +357,56 @@ namespace ElectricalSim.AI
             }
         }
 
+        private void AppendCircuitStateAnalysis()
+        {
+            try
+            {
+                AddAssistantMessage(AnalyzeCircuitState().ToReadableText());
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("CircuitStateAnalyzer V0 failed: " + exception.Message);
+                AddAssistantMessage("【通用现象分析 V0】\n通用现象分析 V0 暂时无法完成：" + exception.Message);
+            }
+        }
+
+        private CircuitStateResult AnalyzeCircuitState()
+        {
+            var analyzer = new CircuitStateAnalyzer();
+            return analyzer.Analyze(workspace.Components, workspace.WireManager != null ? workspace.WireManager.Wires : null);
+        }
+
+        private static CircuitCheckResult FilterBreakerDirectControlFalsePositives(
+            CircuitCheckResult ruleResult,
+            CircuitStateResult stateResult)
+        {
+            if (ruleResult == null || stateResult == null)
+            {
+                return ruleResult;
+            }
+
+            var filtered = new CircuitCheckResult();
+            for (var i = 0; i < ruleResult.issues.Count; i++)
+            {
+                var issue = ruleResult.issues[i];
+                var isBreakerCompletenessFalsePositive = issue != null &&
+                    issue.code == "BREAKER_INCOMPLETE" &&
+                    stateResult.HasBreakerWithSuppliedInputs;
+                var isBreakerDirectControlFalsePositive = issue != null &&
+                    stateResult.HasValidClosedBreakerControl &&
+                    !stateResult.HasHouseholdControlSwitch &&
+                    (issue.code == "LoadLivePathWithoutSwitch" ||
+                     issue.code == "ParallelLoadBypassedControl");
+                if (isBreakerCompletenessFalsePositive || isBreakerDirectControlFalsePositive)
+                {
+                    continue;
+                }
+
+                filtered.Add(issue);
+            }
+
+            return filtered;
+        }
         private void SubmitPracticeCheck()
         {
             var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
