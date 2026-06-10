@@ -475,8 +475,8 @@ namespace ElectricalSim.EditorTools
                 T("U1", "U1", TerminalRole.Input, 0.88f, 0.8f, Yellow()), T("V1", "V1", TerminalRole.Input, 0.88f, 0.6f, Green()), T("W1", "W1", TerminalRole.Input, 0.88f, 0.4f, Red()), T("U2", "U2", TerminalRole.Output, 0.88f, 0.2f, Blue())));
             definitions.Add(CreateIndustrial("ThermalRelay_FR_380V", "\u70ed\u7ee7\u7535\u5668(FR)\n(380V)", ComponentKind.Breaker, new Color(0.28f, 0.3f, 0.32f), new Color(0.85f, 0.18f, 0.16f), true, true, ThermalRelayTerminals()));
             definitions.Add(CreateIndustrial("SolenoidValve_24V", "\u7535\u78c1\u9600\n(24V)", ComponentKind.Indicator, new Color(0.86f, 0.9f, 0.94f), new Color(0.16f, 0.5f, 0.95f), false, false, CoilTerminals()));
-            definitions.Add(CreateIndustrial("Timer_OnDelay_220V", "\u901a\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(220V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, false, CoilTerminals()));
-            definitions.Add(CreateIndustrial("Timer_OnDelay_380V", "\u901a\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(380V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, false, CoilTerminals()));
+            definitions.Add(CreateIndustrial("Timer_OnDelay_220V", "\u901a\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(220V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, true, TimerRelayTerminals()));
+            definitions.Add(CreateIndustrial("Timer_OnDelay_380V", "\u901a\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(380V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, true, TimerRelayTerminals()));
             definitions.Add(CreateIndustrial("Timer_OffDelay_220V", "\u65ad\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(220V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, false, CoilTerminals()));
             definitions.Add(CreateIndustrial("Timer_OffDelay_380V", "\u65ad\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(380V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, false, CoilTerminals()));
             definitions.Add(CreateIndustrial("SwitchPower_220V", "\u5f00\u5173\u7535\u6e90\n(220V)", ComponentKind.PowerSource, new Color(0.42f, 0.44f, 0.45f), new Color(0.12f, 0.45f, 1f), true, false,
@@ -592,6 +592,18 @@ namespace ElectricalSim.EditorTools
             {
                 T("A1", "A1", TerminalRole.CoilA1, 0.15f, 0f, Red()),
                 T("A2", "A2", TerminalRole.CoilA2, 0.85f, 0f, Blue())
+            };
+        }
+
+        private static TerminalDefinition[] TimerRelayTerminals()
+        {
+            return new[]
+            {
+                T("A1", "A1", TerminalRole.CoilA1, 0.15f, 0f, Red()),
+                T("A2", "A2", TerminalRole.CoilA2, 0.85f, 0f, Blue()),
+                T("15", "15", TerminalRole.Input, 0f, 0.55f, Red()),
+                T("16", "16", TerminalRole.Output, 1f, 0.65f, Red()),
+                T("18", "18", TerminalRole.Output, 1f, 0.35f, Green())
             };
         }
 

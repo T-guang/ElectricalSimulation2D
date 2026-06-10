@@ -29,26 +29,31 @@ namespace ElectricalSim.Core
             BuildFriendlyNames(components);
 
             var previousStates = CreateInitialContactorCoilStates(components);
-            var seenStates = new HashSet<string> { ContactorStateSignature(previousStates) };
+            var previousTimerStates = CreateInitialTimerRelayCoilStates(components);
+            var seenStates = new HashSet<string> { DynamicStateSignature(previousStates, previousTimerStates) };
             CircuitStateResult finalResult = null;
             var stabilized = false;
             var hasInterlockConflict = false;
             var conflictContactorIds = new HashSet<string>();
             Dictionary<string, bool> lastCurrentStates = null;
+            Dictionary<string, bool> lastCurrentTimerStates = null;
 
             for (var iteration = 0; iteration < MaxContactorStateIterations; iteration++)
             {
-                finalResult = AnalyzePass(components, wires, previousStates);
+                finalResult = AnalyzePass(components, wires, previousStates, previousTimerStates);
                 var currentStates = CollectContactorCoilStates(finalResult);
+                var currentTimerStates = CollectTimerRelayCoilStates(finalResult);
                 lastCurrentStates = currentStates;
-                if (AreContactorStatesEqual(previousStates, currentStates))
+                lastCurrentTimerStates = currentTimerStates;
+                if (AreDynamicStatesEqual(previousStates, currentStates, previousTimerStates, currentTimerStates))
                 {
                     stabilized = true;
                     previousStates = currentStates;
+                    previousTimerStates = currentTimerStates;
                     break;
                 }
 
-                var signature = ContactorStateSignature(currentStates);
+                var signature = DynamicStateSignature(currentStates, currentTimerStates);
                 if (!seenStates.Add(signature))
                 {
                     hasInterlockConflict = true;
@@ -57,6 +62,7 @@ namespace ElectricalSim.Core
                 }
 
                 previousStates = currentStates;
+                previousTimerStates = currentTimerStates;
             }
 
             if (!stabilized)
@@ -80,7 +86,11 @@ namespace ElectricalSim.Core
                     previousStates[instanceId] = false;
                 }
 
-                finalResult = AnalyzePass(components, wires, previousStates);
+                finalResult = AnalyzePass(
+                    components,
+                    wires,
+                    previousStates,
+                    lastCurrentTimerStates ?? previousTimerStates);
             }
 
             ApplyContactorAuxiliaryContactStates(components, finalResult, previousStates, conflictContactorIds);
@@ -90,7 +100,8 @@ namespace ElectricalSim.Core
         private CircuitStateResult AnalyzePass(
             IReadOnlyList<CircuitComponent> components,
             IReadOnlyList<WireView> wires,
-            IReadOnlyDictionary<string, bool> contactorCoilStates)
+            IReadOnlyDictionary<string, bool> contactorCoilStates,
+            IReadOnlyDictionary<string, bool> timerRelayCoilStates)
         {
             terminalsByKey.Clear();
             wiredTerminalKeys.Clear();
@@ -101,6 +112,7 @@ namespace ElectricalSim.Core
             RegisterTerminals(components, unionFind, result);
             AddWireConnections(wires, unionFind, result);
             AddInternalConnections(components, unionFind);
+            AddTimerRelayDelayedContacts(components, unionFind, timerRelayCoilStates);
             AddDynamicContactorAuxiliaryContacts(components, unionFind, contactorCoilStates);
             AddDynamicContactorMainContacts(components, unionFind, contactorCoilStates, result);
 
@@ -136,6 +148,37 @@ namespace ElectricalSim.Core
             }
 
             return states;
+        }
+
+        private static Dictionary<string, bool> CreateInitialTimerRelayCoilStates(
+            IReadOnlyList<CircuitComponent> components)
+        {
+            var states = new Dictionary<string, bool>();
+            if (components == null)
+            {
+                return states;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (IsOnDelayTimerRelay(component))
+                {
+                    states[SafeInstanceId(component)] = false;
+                }
+            }
+
+            return states;
+        }
+
+        private static bool AreDynamicStatesEqual(
+            IReadOnlyDictionary<string, bool> previousContactorStates,
+            IReadOnlyDictionary<string, bool> currentContactorStates,
+            IReadOnlyDictionary<string, bool> previousTimerStates,
+            IReadOnlyDictionary<string, bool> currentTimerStates)
+        {
+            return AreContactorStatesEqual(previousContactorStates, currentContactorStates) &&
+                AreContactorStatesEqual(previousTimerStates, currentTimerStates);
         }
 
         private static bool AreContactorStatesEqual(
@@ -211,6 +254,14 @@ namespace ElectricalSim.Core
             return builder.ToString();
         }
 
+        private static string DynamicStateSignature(
+            IReadOnlyDictionary<string, bool> contactorStates,
+            IReadOnlyDictionary<string, bool> timerStates)
+        {
+            return "C:" + ContactorStateSignature(contactorStates) +
+                "|T:" + ContactorStateSignature(timerStates);
+        }
+
         private static Dictionary<string, bool> CollectContactorCoilStates(CircuitStateResult result)
         {
             var states = new Dictionary<string, bool>();
@@ -225,6 +276,26 @@ namespace ElectricalSim.Core
                 if (component.IsContactor)
                 {
                     states[component.InstanceId] = component.IsContactorCoilEnergizedByAnalyzer;
+                }
+            }
+
+            return states;
+        }
+
+        private static Dictionary<string, bool> CollectTimerRelayCoilStates(CircuitStateResult result)
+        {
+            var states = new Dictionary<string, bool>();
+            if (result == null)
+            {
+                return states;
+            }
+
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                var component = result.Components[i];
+                if (component.IsOnDelayTimerRelay)
+                {
+                    states[component.InstanceId] = component.IsTimerRelayCoilEnergizedByAnalyzer;
                 }
             }
 
@@ -451,6 +522,38 @@ namespace ElectricalSim.Core
                 else
                 {
                     ConnectIfExists(component, "21", "22", unionFind);
+                }
+            }
+        }
+
+        private void AddTimerRelayDelayedContacts(
+            IReadOnlyList<CircuitComponent> components,
+            TerminalUnionFind unionFind,
+            IReadOnlyDictionary<string, bool> timerRelayCoilStates)
+        {
+            if (components == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (!IsOnDelayTimerRelay(component))
+                {
+                    continue;
+                }
+
+                var coilEnergized = timerRelayCoilStates != null &&
+                    timerRelayCoilStates.TryGetValue(SafeInstanceId(component), out var state) &&
+                    state;
+                if (coilEnergized && component.IsClosed)
+                {
+                    ConnectIfExists(component, "15", "18", unionFind);
+                }
+                else
+                {
+                    ConnectIfExists(component, "15", "16", unionFind);
                 }
             }
         }
@@ -989,6 +1092,15 @@ namespace ElectricalSim.Core
                     info.IsThreePhaseMotor = true;
                     AnalyzeThreePhaseMotor(component, components, unionFind, info, result);
                 }
+                else if (IsOnDelayTimerRelay(component) || IsOffDelayTimerRelay(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupControl;
+                    info.IsTimerRelay = true;
+                    info.IsOnDelayTimerRelay = IsOnDelayTimerRelay(component);
+                    info.IsOffDelayTimerRelay = IsOffDelayTimerRelay(component);
+                    result.HasTimerRelays = true;
+                    AnalyzeTimerRelay(component, info, result);
+                }
                 else if (IsContactorComponent(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
@@ -1317,6 +1429,114 @@ namespace ElectricalSim.Core
             {
                 info.CoilVoltageDescription = "A1/A2 未形成可识别的有效控制电压。";
             }
+        }
+
+        private static void AnalyzeTimerRelay(
+            CircuitComponent timerRelay,
+            ComponentStateInfo info,
+            CircuitStateResult result)
+        {
+            info.TimerRelayType = info.IsOnDelayTimerRelay ? "OnDelay" : "OffDelay";
+            if (info.IsOffDelayTimerRelay)
+            {
+                info.State = "TimerUnsupported";
+                info.TimerDelayStatus = "Unsupported";
+                info.TimerContactDescription = "当前 V1.6.1 暂未支持断电延时触点分析。";
+                info.Judgement = "本阶段仅支持通电延时时间继电器。";
+                AddComponentInfo(info, result, info.TimerContactDescription);
+                return;
+            }
+
+            if (timerRelay.GetTerminal("A1") == null || timerRelay.GetTerminal("A2") == null)
+            {
+                info.State = "CoilUnknown";
+                info.CoilStatus = "CoilUnknown";
+                info.TimerDelayStatus = "Unknown";
+                info.TimerContactDescription = "时间继电器缺少 A1/A2 线圈端子，无法判断线圈和延时触点状态。";
+                info.IsTimerDelayedNcClosed = true;
+                AddComponentWarning(info, result, info.TimerContactDescription);
+                return;
+            }
+
+            if (timerRelay.GetTerminal("15") == null ||
+                timerRelay.GetTerminal("16") == null ||
+                timerRelay.GetTerminal("18") == null)
+            {
+                info.State = "CoilUnknown";
+                info.CoilStatus = "CoilUnknown";
+                info.TimerDelayStatus = "Unknown";
+                info.TimerContactDescription = "通电延时时间继电器缺少 15/16/18 延时触点端子，无法完成触点分析。";
+                AddComponentWarning(info, result, info.TimerContactDescription);
+                return;
+            }
+
+            var a1 = VoltageAt(info, "A1");
+            var a2 = VoltageAt(info, "A2");
+            if (a1 == VoltageConflict || a2 == VoltageConflict)
+            {
+                info.State = "CoilFault";
+                info.CoilStatus = "CoilFault";
+                info.TimerDelayStatus = "Fault";
+                info.TimerContactDescription = "KT 线圈端子存在电压冲突或短路风险，延时触点按复位状态处理。";
+                info.IsTimerDelayedNcClosed = true;
+                AddComponentError(info, result, info.TimerContactDescription);
+                return;
+            }
+
+            if (a1 == VoltagePE || a2 == VoltagePE)
+            {
+                info.State = "CoilFault";
+                info.CoilStatus = "CoilFault";
+                info.TimerDelayStatus = "Fault";
+                info.TimerContactDescription = "KT 线圈端子接入 PE，存在严重接线风险，延时触点按复位状态处理。";
+                info.IsTimerDelayedNcClosed = true;
+                AddComponentError(info, result, info.TimerContactDescription);
+                return;
+            }
+
+            info.IsTimerRelayCoilEnergizedByAnalyzer = IsValidCoilVoltage(a1, a2);
+            info.IsTimerDelayElapsed = info.IsTimerRelayCoilEnergizedByAnalyzer && timerRelay.IsClosed;
+            info.IsTimerDelayedNoClosed = info.IsTimerDelayElapsed;
+            info.IsTimerDelayedNcClosed = !info.IsTimerDelayedNoClosed;
+
+            if (!info.IsTimerRelayCoilEnergizedByAnalyzer)
+            {
+                info.State = "CoilOff";
+                info.CoilStatus = "CoilOff";
+                info.TimerDelayStatus = "Reset";
+                info.CoilVoltageDescription = CoilOffDescription(a1, a2);
+                info.TimerContactDescription = "KT 线圈未得电，延时触点保持复位状态。";
+                return;
+            }
+
+            info.State = "CoilEnergized";
+            info.CoilStatus = "CoilEnergized";
+            info.CoilVoltageDescription = "A1/A2 之间形成 " + a1 + "-" + a2 + " 有效控制电压。";
+            if (info.IsTimerDelayElapsed)
+            {
+                info.TimerDelayStatus = "Elapsed";
+                info.TimerContactDescription = "KT 线圈得电且延时到达，15/18 延时常开触点闭合。";
+            }
+            else
+            {
+                info.TimerDelayStatus = "Waiting";
+                info.TimerContactDescription = "KT 线圈已得电，但延时尚未到达，延时触点保持复位状态。";
+            }
+        }
+
+        private static string CoilOffDescription(string a1, string a2)
+        {
+            if (a1 == VoltageNone || a2 == VoltageNone)
+            {
+                return "A1 或 A2 未获得有效电源标签，线圈控制回路未闭合。";
+            }
+
+            if (a1 == a2)
+            {
+                return "A1/A2 同为 " + a1 + "，没有形成有效控制电压。";
+            }
+
+            return "A1/A2 未形成可识别的有效控制电压。";
         }
 
         private static bool IsValidCoilVoltage(string a1, string a2)
@@ -1767,10 +1987,30 @@ namespace ElectricalSim.Core
                 DefinitionContains(component, "ThermalRelay", "Thermal_Relay", "热继");
         }
 
+        private static bool IsOnDelayTimerRelay(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                DefinitionContains(component, "Timer_OnDelay", "OnDelay", "通电延时");
+        }
+
+        private static bool IsOffDelayTimerRelay(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                DefinitionContains(component, "Timer_OffDelay", "OffDelay", "断电延时");
+        }
+
+        private static bool IsTimerRelayComponent(CircuitComponent component)
+        {
+            return IsOnDelayTimerRelay(component) || IsOffDelayTimerRelay(component);
+        }
+
         private static bool IsContactorComponent(CircuitComponent component)
         {
             return component != null &&
                 component.Definition != null &&
+                !IsTimerRelayComponent(component) &&
                 (component.Definition.kind == ComponentKind.ContactorCoil ||
                     DefinitionContains(component, "Contactor", "KM", "接触器", "交流接触器"));
         }
@@ -2213,6 +2453,7 @@ namespace ElectricalSim.Core
         public bool HasCompoundButtonInterlockConflict;
         public bool HasLimitSwitches;
         public bool HasSimultaneouslyTriggeredLimitSwitches;
+        public bool HasTimerRelays;
         public bool ContainsUnsupportedThreePhaseCircuit;
         public bool HasThreePhaseCircuit;
         public bool HasHouseholdControlSwitch;
@@ -2254,6 +2495,11 @@ namespace ElectricalSim.Core
             if (HasLimitSwitches)
             {
                 AppendLimitSwitchAnalysis(builder);
+            }
+
+            if (HasTimerRelays)
+            {
+                AppendTimerRelayAnalysis(builder);
             }
 
             if (includeDebug)
@@ -2337,6 +2583,11 @@ namespace ElectricalSim.Core
             if (HasLimitSwitches)
             {
                 AppendLimitSwitchAnalysis(builder);
+            }
+
+            if (HasTimerRelays)
+            {
+                AppendTimerRelayAnalysis(builder);
             }
 
             AppendThreePhaseMotorAnalysis(builder);
@@ -2518,6 +2769,80 @@ namespace ElectricalSim.Core
             }
 
             builder.AppendLine("- 自动往返基础分析仅根据 SQ 当前触发状态改变控制回路路径，不模拟机械连续运动，也不会自动改变 SQ 状态。");
+        }
+
+        private void AppendTimerRelayAnalysis(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【通用现象分析 V1.6：时间继电器 KT 状态】");
+            var index = 1;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!component.IsTimerRelay)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(index + ". " + component.DisplayName);
+                builder.AppendLine("   - 类型：" + (component.IsOnDelayTimerRelay ? "通电延时" : "断电延时"));
+                if (component.IsOffDelayTimerRelay)
+                {
+                    builder.AppendLine("   - 当前支持状态：V1.6.1 暂未支持断电延时触点分析");
+                    builder.AppendLine("   - 说明：本阶段仅支持通电延时时间继电器。");
+                    index++;
+                    continue;
+                }
+
+                AppendTerminal(builder, component, "A1");
+                AppendTerminal(builder, component, "A2");
+                builder.AppendLine("   - 线圈状态：" +
+                    (component.IsTimerRelayCoilEnergizedByAnalyzer ? "得电" : "未得电"));
+                builder.AppendLine("   - 延时状态：" + TimerDelayStatusText(component.TimerDelayStatus));
+                builder.AppendLine("   - 15/16 延时常闭触点：" +
+                    (component.IsTimerDelayedNcClosed ? "导通" : "断开"));
+                builder.AppendLine("   - 15/18 延时常开触点：" +
+                    (component.IsTimerDelayedNoClosed ? "导通" : "断开"));
+                if (!string.IsNullOrWhiteSpace(component.CoilVoltageDescription))
+                {
+                    builder.AppendLine("   - 线圈说明：" + component.CoilVoltageDescription);
+                }
+
+                if (!string.IsNullOrWhiteSpace(component.TimerContactDescription))
+                {
+                    builder.AppendLine("   - 说明：" + component.TimerContactDescription);
+                }
+
+                index++;
+            }
+
+            if (index == 1)
+            {
+                builder.AppendLine("- 未检测到时间继电器 KT。");
+            }
+
+            builder.AppendLine("- V1.6.1 使用 IsClosed=false 表示延时未到，IsClosed=true 表示延时到达。");
+            builder.AppendLine("- 只有 KT 线圈得电且延时到达时，15/18 才导通；线圈未得电时始终按复位状态处理。");
+            builder.AppendLine("- 本阶段不做真实计时，也不读取 SimulationEngine 或电机 RUN 状态。");
+        }
+
+        private static string TimerDelayStatusText(string status)
+        {
+            switch (status)
+            {
+                case "Reset":
+                    return "复位";
+                case "Waiting":
+                    return "延时未到";
+                case "Elapsed":
+                    return "延时到达";
+                case "Fault":
+                    return "故障，按复位状态处理";
+                case "Unsupported":
+                    return "暂未支持";
+                default:
+                    return "暂无法判断";
+            }
         }
 
         private static void AppendMainContactPair(
@@ -2818,6 +3143,8 @@ namespace ElectricalSim.Core
                     return "线圈状态暂无法判断";
                 case "InterlockConflict":
                     return "互锁冲突 / 操作冲突";
+                case "TimerUnsupported":
+                    return "暂未支持断电延时分析";
                 default:
                     return state;
             }
@@ -2848,6 +3175,16 @@ namespace ElectricalSim.Core
         public bool IsLimitSwitch;
         public bool IsLimitSwitchTriggered;
         public string LimitSwitchContactDescription;
+        public bool IsTimerRelay;
+        public bool IsOnDelayTimerRelay;
+        public bool IsOffDelayTimerRelay;
+        public bool IsTimerRelayCoilEnergizedByAnalyzer;
+        public bool IsTimerDelayElapsed;
+        public bool IsTimerDelayedNoClosed;
+        public bool IsTimerDelayedNcClosed;
+        public string TimerRelayType;
+        public string TimerDelayStatus;
+        public string TimerContactDescription;
         public bool IsContactorCoilEnergizedByAnalyzer;
         public string CoilStatus;
         public string CoilVoltageDescription;

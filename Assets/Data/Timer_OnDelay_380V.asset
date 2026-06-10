@@ -20,7 +20,7 @@ MonoBehaviour:
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
   startsClosed: 0
-  togglable: 0
+  togglable: 1
   controlledByTag: 
   outputTag: 
   sourceVoltage: 0
@@ -45,3 +45,18 @@ MonoBehaviour:
     role: 7
     normalizedPosition: {x: 0.85, y: 0}
     color: {r: 0.1, g: 0.35, b: 0.95, a: 1}
+  - id: 15
+    label: 15
+    role: 4
+    normalizedPosition: {x: 0, y: 0.55}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: 16
+    label: 16
+    role: 5
+    normalizedPosition: {x: 1, y: 0.65}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: 18
+    label: 18
+    role: 5
+    normalizedPosition: {x: 1, y: 0.35}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}
