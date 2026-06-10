@@ -14,6 +14,7 @@ namespace ElectricalSim.Core
         public const string VoltageL3 = "L3";
         public const string VoltagePE = "PE";
         public const string VoltageConflict = "Conflict";
+        private const int MaxContactorStateIterations = 5;
 
         private readonly Dictionary<string, TerminalView> terminalsByKey = new Dictionary<string, TerminalView>();
         private readonly Dictionary<string, string> friendlyNamesByInstanceId = new Dictionary<string, string>();
@@ -27,9 +28,63 @@ namespace ElectricalSim.Core
             friendlyNamesByInstanceId.Clear();
             BuildFriendlyNames(components);
 
-            var preliminaryResult = AnalyzePass(components, wires, null);
-            var contactorCoilStates = CollectContactorCoilStates(preliminaryResult);
-            return AnalyzePass(components, wires, contactorCoilStates);
+            var previousStates = CreateInitialContactorCoilStates(components);
+            var seenStates = new HashSet<string> { ContactorStateSignature(previousStates) };
+            CircuitStateResult finalResult = null;
+            var stabilized = false;
+            var hasInterlockConflict = false;
+            var conflictContactorIds = new HashSet<string>();
+            Dictionary<string, bool> lastCurrentStates = null;
+
+            for (var iteration = 0; iteration < MaxContactorStateIterations; iteration++)
+            {
+                finalResult = AnalyzePass(components, wires, previousStates);
+                var currentStates = CollectContactorCoilStates(finalResult);
+                lastCurrentStates = currentStates;
+                if (AreContactorStatesEqual(previousStates, currentStates))
+                {
+                    stabilized = true;
+                    previousStates = currentStates;
+                    break;
+                }
+
+                var signature = ContactorStateSignature(currentStates);
+                if (!seenStates.Add(signature))
+                {
+                    hasInterlockConflict = true;
+                    AddChangedContactorIds(previousStates, currentStates, conflictContactorIds);
+                    break;
+                }
+
+                previousStates = currentStates;
+            }
+
+            if (!stabilized)
+            {
+                hasInterlockConflict = true;
+                AddChangedContactorIds(previousStates, lastCurrentStates, conflictContactorIds);
+                if (conflictContactorIds.Count == 0 && lastCurrentStates != null)
+                {
+                    foreach (var pair in lastCurrentStates)
+                    {
+                        conflictContactorIds.Add(pair.Key);
+                    }
+                }
+            }
+
+            if (hasInterlockConflict)
+            {
+                previousStates = CloneContactorStates(lastCurrentStates ?? previousStates);
+                foreach (var instanceId in conflictContactorIds)
+                {
+                    previousStates[instanceId] = false;
+                }
+
+                finalResult = AnalyzePass(components, wires, previousStates);
+            }
+
+            ApplyContactorAuxiliaryContactStates(components, finalResult, previousStates, conflictContactorIds);
+            return finalResult;
         }
 
         private CircuitStateResult AnalyzePass(
@@ -46,6 +101,7 @@ namespace ElectricalSim.Core
             RegisterTerminals(components, unionFind, result);
             AddWireConnections(wires, unionFind, result);
             AddInternalConnections(components, unionFind);
+            AddDynamicContactorAuxiliaryContacts(components, unionFind, contactorCoilStates);
             AddDynamicContactorMainContacts(components, unionFind, contactorCoilStates, result);
 
             var rootLabels = new Dictionary<string, HashSet<string>>();
@@ -58,6 +114,100 @@ namespace ElectricalSim.Core
             BuildLoadPathExplanations(components, result);
             FinalizeBreakerControlAnalysis(result);
             return result;
+        }
+
+        private static Dictionary<string, bool> CreateInitialContactorCoilStates(
+            IReadOnlyList<CircuitComponent> components)
+        {
+            var states = new Dictionary<string, bool>();
+            if (components == null)
+            {
+                return states;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (IsContactorComponent(component))
+                {
+                    states[SafeInstanceId(component)] = false;
+                }
+            }
+
+            return states;
+        }
+
+        private static bool AreContactorStatesEqual(
+            IReadOnlyDictionary<string, bool> left,
+            IReadOnlyDictionary<string, bool> right)
+        {
+            if (left == null || right == null || left.Count != right.Count)
+            {
+                return false;
+            }
+
+            foreach (var pair in left)
+            {
+                if (!right.TryGetValue(pair.Key, out var value) || value != pair.Value)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Dictionary<string, bool> CloneContactorStates(IReadOnlyDictionary<string, bool> states)
+        {
+            var clone = new Dictionary<string, bool>();
+            if (states == null)
+            {
+                return clone;
+            }
+
+            foreach (var pair in states)
+            {
+                clone[pair.Key] = pair.Value;
+            }
+
+            return clone;
+        }
+
+        private static void AddChangedContactorIds(
+            IReadOnlyDictionary<string, bool> previousStates,
+            IReadOnlyDictionary<string, bool> currentStates,
+            HashSet<string> changedIds)
+        {
+            if (previousStates == null || currentStates == null || changedIds == null)
+            {
+                return;
+            }
+
+            foreach (var pair in currentStates)
+            {
+                if (!previousStates.TryGetValue(pair.Key, out var previous) || previous != pair.Value)
+                {
+                    changedIds.Add(pair.Key);
+                }
+            }
+        }
+
+        private static string ContactorStateSignature(IReadOnlyDictionary<string, bool> states)
+        {
+            if (states == null || states.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var keys = new List<string>(states.Keys);
+            keys.Sort(StringComparer.Ordinal);
+            var builder = new StringBuilder();
+            for (var i = 0; i < keys.Count; i++)
+            {
+                builder.Append(keys[i]).Append('=').Append(states[keys[i]] ? '1' : '0').Append(';');
+            }
+
+            return builder.ToString();
         }
 
         private static Dictionary<string, bool> CollectContactorCoilStates(CircuitStateResult result)
@@ -222,12 +372,6 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                if (IsContactorComponent(component))
-                {
-                    ConnectIfExists(component, "21", "22", unionFind);
-                    continue;
-                }
-
                 if (IsKnifeSwitch(component))
                 {
                     if (component.IsClosed)
@@ -264,6 +408,38 @@ namespace ElectricalSim.Core
                     {
                         ConnectKnownPairs(component, unionFind, true);
                     }
+                }
+            }
+        }
+
+        private void AddDynamicContactorAuxiliaryContacts(
+            IReadOnlyList<CircuitComponent> components,
+            TerminalUnionFind unionFind,
+            IReadOnlyDictionary<string, bool> contactorCoilStates)
+        {
+            if (components == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (!IsContactorComponent(component))
+                {
+                    continue;
+                }
+
+                var isEnergized = contactorCoilStates != null &&
+                    contactorCoilStates.TryGetValue(SafeInstanceId(component), out var state) &&
+                    state;
+                if (isEnergized)
+                {
+                    ConnectIfExists(component, "13", "14", unionFind);
+                }
+                else
+                {
+                    ConnectIfExists(component, "21", "22", unionFind);
                 }
             }
         }
@@ -325,6 +501,219 @@ namespace ElectricalSim.Core
                     ? "根据 V1.2 线圈得电结果，V1.3 将该接触器三组主触点作为闭合处理。"
                     : "接触器线圈未得电，因此 V1.3 不闭合该接触器主触点。";
             }
+        }
+
+        private void ApplyContactorAuxiliaryContactStates(
+            IReadOnlyList<CircuitComponent> components,
+            CircuitStateResult result,
+            IReadOnlyDictionary<string, bool> contactorCoilStates,
+            HashSet<string> conflictContactorIds)
+        {
+            if (components == null || result == null)
+            {
+                return;
+            }
+
+            result.HasContactorInterlockConflict = conflictContactorIds != null && conflictContactorIds.Count > 0;
+            if (result.HasContactorInterlockConflict)
+            {
+                AddUnique(result.Warnings, "检测到接触器线圈状态在动态互锁迭代中无法稳定，属于方向同时启动或互锁冲突操作；V1.4 已阻止相关主触点作为正常闭合状态传播。");
+            }
+
+            var contactorCount = CountContactors(components);
+            var energizedContactorCount = CountEnergizedContactors(contactorCoilStates);
+            var hasOpenStopControl = HasOpenStopControlButton(components);
+            result.HasCompoundButtonInterlockConflict =
+                contactorCount > 1 && CountPressedCompoundButtons(components) > 1;
+            if (result.HasCompoundButtonInterlockConflict)
+            {
+                AddUnique(result.Warnings, "检测到两个方向复合按钮同时按下；按钮联锁使两个方向不能作为正常启动状态。");
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (!IsContactorComponent(component))
+                {
+                    continue;
+                }
+
+                var info = result.FindComponent(SafeInstanceId(component));
+                if (info == null)
+                {
+                    continue;
+                }
+
+                info.HasSelfHoldStructure = IsTerminalExternallyWired(component, "13") &&
+                    IsTerminalExternallyWired(component, "14");
+                info.HasInterlockStructure = IsTerminalExternallyWired(component, "21") &&
+                    IsTerminalExternallyWired(component, "22");
+
+                var isEnergized = contactorCoilStates != null &&
+                    contactorCoilStates.TryGetValue(info.InstanceId, out var state) &&
+                    state;
+                var isInterlockConflict = conflictContactorIds != null &&
+                    conflictContactorIds.Contains(info.InstanceId);
+                info.IsSelfHoldCutByStopOrControlOpen = info.HasSelfHoldStructure && hasOpenStopControl;
+                info.IsCompoundButtonInterlockConflict = result.HasCompoundButtonInterlockConflict;
+                info.IsInactiveDirectionInForwardReversePair =
+                    info.HasSelfHoldStructure && contactorCount > 1 && !isEnergized;
+                info.SelfHoldStatus = BuildSelfHoldStatus(
+                    info,
+                    isEnergized,
+                    isInterlockConflict,
+                    energizedContactorCount);
+                info.InterlockStatus = !info.HasInterlockStructure
+                    ? "未检测到 21/22 互锁结构"
+                    : isEnergized
+                        ? "线圈得电，21/22 常闭辅助触点按断开处理"
+                        : "线圈未得电，21/22 常闭辅助触点按闭合处理";
+
+                if (conflictContactorIds == null || !conflictContactorIds.Contains(info.InstanceId))
+                {
+                    continue;
+                }
+
+                info.IsContactorCoilEnergizedByAnalyzer = false;
+                info.IsContactorMainContactsClosedByAnalyzer = false;
+                info.State = "InterlockConflict";
+                info.CoilStatus = "InterlockConflict";
+                info.MainContactStatus = "Open";
+                info.Judgement = "检测到方向同时启动或动态互锁状态无法稳定，V1.4 不将该接触器作为正常吸合状态处理。";
+                info.MainContactDescription = "互锁冲突状态下，V1.4 已阻止主触点作为正常闭合状态传播。";
+            }
+        }
+
+        private static string BuildSelfHoldStatus(
+            ComponentStateInfo info,
+            bool isEnergized,
+            bool isInterlockConflict,
+            int energizedContactorCount)
+        {
+            if (!info.HasSelfHoldStructure)
+            {
+                return "未检测到 13/14 自锁结构";
+            }
+
+            if (isInterlockConflict || info.IsCompoundButtonInterlockConflict)
+            {
+                return "方向同时动作触发按钮联锁或互锁冲突；13/14 未作为正常闭合状态处理，不处于自锁保持状态";
+            }
+
+            if (info.IsSelfHoldCutByStopOrControlOpen)
+            {
+                return "检测到 13/14 自锁结构，但停止按钮已断开，控制电源与自锁保持路径当前被切断";
+            }
+
+            if (isEnergized)
+            {
+                return "13/14 已按线圈得电状态闭合，具备自锁保持条件";
+            }
+
+            if (info.IsInactiveDirectionInForwardReversePair)
+            {
+                return energizedContactorCount > 0
+                    ? "当前方向未启动或被另一方向互锁切断；线圈未得电，13/14 未闭合，不处于自锁保持状态"
+                    : "当前方向未启动或控制路径未闭合；线圈未得电，13/14 未闭合，不处于自锁保持状态";
+            }
+
+            return "检测到 13/14 自锁结构；当前停止回路闭合且启动按钮未形成确定启动状态，静态快照无法确认此前是否已吸合进入保持状态";
+        }
+
+        private static int CountContactors(IReadOnlyList<CircuitComponent> components)
+        {
+            var count = 0;
+            if (components == null)
+            {
+                return count;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                if (IsContactorComponent(components[i]))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountEnergizedContactors(IReadOnlyDictionary<string, bool> contactorCoilStates)
+        {
+            var count = 0;
+            if (contactorCoilStates == null)
+            {
+                return count;
+            }
+
+            foreach (var pair in contactorCoilStates)
+            {
+                if (pair.Value)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountPressedCompoundButtons(IReadOnlyList<CircuitComponent> components)
+        {
+            var count = 0;
+            if (components == null)
+            {
+                return count;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                if (IsCompoundPushButton(components[i]) && components[i].IsClosed)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool HasOpenStopControlButton(IReadOnlyList<CircuitComponent> components)
+        {
+            if (components == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (component == null ||
+                    component.Definition == null ||
+                    component.Definition.kind != ComponentKind.PushButton ||
+                    IsCompoundPushButton(component))
+                {
+                    continue;
+                }
+
+                var hasNormallyClosedPair =
+                    component.GetTerminal("11") != null && component.GetTerminal("12") != null;
+                var isStopButton = hasNormallyClosedPair &&
+                    (component.GetTerminal("23") == null ||
+                        component.GetTerminal("24") == null ||
+                        DefinitionContains(component, "Stop", "停止"));
+                if (isStopButton && !component.IsClosed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsTerminalExternallyWired(CircuitComponent component, string terminalId)
+        {
+            var terminal = component != null ? component.GetTerminal(terminalId) : null;
+            return terminal != null && wiredTerminalKeys.Contains(TerminalKey(terminal));
         }
 
         private static void FinalizeDeferredMotorStates(CircuitStateResult result)
@@ -1738,6 +2127,8 @@ namespace ElectricalSim.Core
 
         public bool HasShortCircuit;
         public bool HasPowerConflict;
+        public bool HasContactorInterlockConflict;
+        public bool HasCompoundButtonInterlockConflict;
         public bool ContainsUnsupportedThreePhaseCircuit;
         public bool HasThreePhaseCircuit;
         public bool HasHouseholdControlSwitch;
@@ -1853,6 +2244,7 @@ namespace ElectricalSim.Core
             builder.AppendLine("- 接触器线圈与主触点由 V1.2/V1.3 分阶段推导，不属于 V1.0 静态传播。");
             AppendContactorCoilAnalysis(builder);
             AppendContactorMainContactAnalysis(builder);
+            AppendContactorAuxiliaryContactAnalysis(builder);
             AppendThreePhaseMotorAnalysis(builder);
 
             if (includeDebug)
@@ -1905,11 +2297,10 @@ namespace ElectricalSim.Core
             }
 
             builder.AppendLine("- V1.2 当前只判断接触器 A1/A2 线圈是否获得有效控制电压。");
-            builder.AppendLine("- V1.2.1 为了判断线圈控制路径，将接触器 21/22 常闭辅助触点按未吸合状态处理为导通。");
-            builder.AppendLine("- 本阶段不传播接触器主触点，也不判断 13/14 自锁和 21/22 动态互锁。");
+            builder.AppendLine("- V1.4 通过有限轮迭代动态处理 13/14 自锁与 21/22 互锁，线圈状态不读取 SimulationEngine 运行结果。");
             if (energizedCount > 1)
             {
-                builder.AppendLine("- 阶段提醒：检测到多个接触器线圈同时获得启动路径；完整的 21/22 动态互锁稳定分析留到 V1.4。");
+                builder.AppendLine("- 提醒：检测到多个接触器线圈同时获得启动路径，请结合 V1.4 互锁状态检查。");
             }
         }
 
@@ -1952,11 +2343,49 @@ namespace ElectricalSim.Core
             }
 
             builder.AppendLine("- V1.3 当前根据 V1.2 推导出的接触器线圈状态，动态传播 L1/T1、L2/T2、L3/T3 主触点。");
-            builder.AppendLine("- 本阶段不处理 13/14 自锁保持，也不处理 21/22 动态互锁断开。");
+            builder.AppendLine("- V1.4 迭代中的主触点仍严格跟随分析器推导出的线圈状态。");
             if (closedCount > 1)
             {
-                builder.AppendLine("- 阶段提醒：多个接触器主触点同时按闭合传播，完整的 21/22 动态互锁稳定分析留到 V1.4。");
+                builder.AppendLine("- 提醒：检测到多个接触器主触点同时闭合，请检查 V1.4 互锁状态。");
             }
+        }
+
+        private void AppendContactorAuxiliaryContactAnalysis(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【通用现象分析 V1.4：自锁与互锁状态】");
+            var index = 1;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!component.IsContactor)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(index + ". " + component.DisplayName);
+                builder.AppendLine("   - 13/14 自锁触点：" + component.SelfHoldStatus);
+                builder.AppendLine("   - 21/22 互锁触点：" + component.InterlockStatus);
+                index++;
+            }
+
+            if (index == 1)
+            {
+                builder.AppendLine("- 未检测到接触器辅助触点。");
+            }
+
+            if (HasContactorInterlockConflict)
+            {
+                builder.AppendLine("- 检测到正反转方向同时启动或互锁状态无法稳定；该状态属于互锁冲突操作，V1.4 已阻止相关主触点作为正常闭合状态传播。");
+            }
+
+            if (HasCompoundButtonInterlockConflict)
+            {
+                builder.AppendLine("- 检测到两个方向复合按钮同时按下；按钮联锁使两个接触器线圈均不能作为正常得电状态，13/14 均不闭合。");
+            }
+
+            builder.AppendLine("- V1.4 从全部接触器未吸合状态开始有限轮迭代，最多 5 轮；不读取接触器或电机 RUN 状态。");
+            builder.AppendLine("- 仅当停止回路闭合、没有方向互锁/按钮联锁冲突，且单接触器自锁结构仍存在历史歧义时，才提示静态快照无法确认此前是否进入保持状态。");
         }
 
         private static void AppendMainContactPair(
@@ -2255,6 +2684,8 @@ namespace ElectricalSim.Core
                     return "线圈故障 / 接线风险";
                 case "CoilUnknown":
                     return "线圈状态暂无法判断";
+                case "InterlockConflict":
+                    return "互锁冲突 / 操作冲突";
                 default:
                     return state;
             }
@@ -2288,6 +2719,13 @@ namespace ElectricalSim.Core
         public bool IsContactorMainContactsClosedByAnalyzer;
         public string MainContactStatus;
         public string MainContactDescription;
+        public bool HasSelfHoldStructure;
+        public bool HasInterlockStructure;
+        public bool IsSelfHoldCutByStopOrControlOpen;
+        public bool IsInactiveDirectionInForwardReversePair;
+        public bool IsCompoundButtonInterlockConflict;
+        public string SelfHoldStatus;
+        public string InterlockStatus;
         public bool IsMotorDeferredByContactorOutput;
         public string MotorFeederContactorNames;
         public bool BreakerInputHasSupply;
