@@ -10,6 +10,7 @@ namespace ElectricalSim.Core
         private readonly IReadOnlyList<WireView> wires;
         private readonly Dictionary<TerminalView, List<TerminalView>> graph = new Dictionary<TerminalView, List<TerminalView>>();
         private readonly HashSet<CircuitComponent> closedContactors = new HashSet<CircuitComponent>();
+        private readonly HashSet<CircuitComponent> energizedOnDelayTimers = new HashSet<CircuitComponent>();
         private readonly float simulationDeltaTime;
         private const int MaxContactorStabilizationIterations = 4;
         private static readonly Dictionary<int, bool> selfHoldEligibleContactors = new Dictionary<int, bool>();
@@ -23,24 +24,10 @@ namespace ElectricalSim.Core
 
         public string Run()
         {
-            closedContactors.Clear();
-            SeedClosedContactorsFromRuntimeState();
-            BuildGraph();
+            StabilizeDynamicControlDevices();
 
             var phaseRoots = GetPhaseRoots();
             var neutralRoots = GetNeutralRoots();
-
-            for (var i = 0; i < MaxContactorStabilizationIterations; i++)
-            {
-                var previous = new HashSet<CircuitComponent>(closedContactors);
-                UpdateClosedContactors();
-                if (previous.SetEquals(closedContactors))
-                {
-                    break;
-                }
-
-                BuildGraph();
-            }
 
             UpdateSelfHoldEligibility();
 
@@ -71,21 +58,7 @@ namespace ElectricalSim.Core
 
             if (UpdateThermalRelays())
             {
-                closedContactors.Clear();
-                SeedClosedContactorsFromRuntimeState();
-                BuildGraph();
-
-                for (var i = 0; i < MaxContactorStabilizationIterations; i++)
-                {
-                    var previous = new HashSet<CircuitComponent>(closedContactors);
-                    UpdateClosedContactors();
-                    if (previous.SetEquals(closedContactors))
-                    {
-                        break;
-                    }
-
-                    BuildGraph();
-                }
+                StabilizeDynamicControlDevices();
 
                 UpdateSelfHoldEligibility();
 
@@ -119,6 +92,30 @@ namespace ElectricalSim.Core
             }
 
             return energizedCount > 0 ? $"仿真完成：{energizedCount} 个负载/线圈已动作。" : "线路未形成完整回路。";
+        }
+
+        private void StabilizeDynamicControlDevices()
+        {
+            closedContactors.Clear();
+            energizedOnDelayTimers.Clear();
+            SeedClosedContactorsFromRuntimeState();
+            BuildGraph();
+
+            for (var i = 0; i < MaxContactorStabilizationIterations; i++)
+            {
+                var previousContactors = new HashSet<CircuitComponent>(closedContactors);
+                var previousTimers = new HashSet<CircuitComponent>(energizedOnDelayTimers);
+
+                UpdateClosedContactors();
+                UpdateEnergizedOnDelayTimers();
+                if (previousContactors.SetEquals(closedContactors) &&
+                    previousTimers.SetEquals(energizedOnDelayTimers))
+                {
+                    break;
+                }
+
+                BuildGraph();
+            }
         }
 
         private static void ApplyMeasurement(CircuitComponent component, bool active, float systemVoltage)
@@ -244,6 +241,16 @@ namespace ElectricalSim.Core
                 return HasPhaseAndNeutral(component, powered, neutral);
             }
 
+            if (IsOnDelayTimerRelay(component))
+            {
+                return energizedOnDelayTimers.Contains(component);
+            }
+
+            if (IsTimerRelayComponent(component))
+            {
+                return false;
+            }
+
             if (component.Definition.kind == ComponentKind.ContactorCoil)
             {
                 return closedContactors.Contains(component);
@@ -287,7 +294,7 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                if (IsContactorCoilEnergized(component))
+                if (IsCoilEnergized(component))
                 {
                     closedContactors.Add(component);
                 }
@@ -296,9 +303,26 @@ namespace ElectricalSim.Core
             ResolveMutualInterlockConflicts();
         }
 
+        private void UpdateEnergizedOnDelayTimers()
+        {
+            energizedOnDelayTimers.Clear();
+            foreach (var component in components)
+            {
+                if (IsOnDelayTimerRelay(component) && IsCoilEnergized(component))
+                {
+                    energizedOnDelayTimers.Add(component);
+                }
+            }
+        }
+
         private static bool IsContactorComponent(CircuitComponent component)
         {
             if (component == null || component.Definition == null)
+            {
+                return false;
+            }
+
+            if (IsTimerRelayComponent(component))
             {
                 return false;
             }
@@ -310,10 +334,10 @@ namespace ElectricalSim.Core
                 component.GetTerminal("T1") != null;
         }
 
-        private bool IsContactorCoilEnergized(CircuitComponent contactor)
+        private bool IsCoilEnergized(CircuitComponent component)
         {
-            var coilA1 = contactor.GetTerminal("A1");
-            var coilA2 = contactor.GetTerminal("A2");
+            var coilA1 = component.GetTerminal("A1");
+            var coilA2 = component.GetTerminal("A2");
             if (coilA1 == null || coilA2 == null || AreConnected(coilA1, coilA2))
             {
                 return false;
@@ -329,6 +353,34 @@ namespace ElectricalSim.Core
 
             return a1Phases.Count > 0 && CanReachPowerNeutral(coilA2) ||
                 a2Phases.Count > 0 && CanReachPowerNeutral(coilA1);
+        }
+
+        private static bool IsOnDelayTimerRelay(CircuitComponent component)
+        {
+            if (!IsTimerRelayComponent(component))
+            {
+                return false;
+            }
+
+            var id = component.Definition.name ?? string.Empty;
+            var displayName = component.Definition.displayName ?? string.Empty;
+            return id.IndexOf("Timer_OnDelay", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                displayName.Contains("通电延时");
+        }
+
+        private static bool IsTimerRelayComponent(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null ||
+                component.GetTerminal("A1") == null || component.GetTerminal("A2") == null)
+            {
+                return false;
+            }
+
+            var id = component.Definition.name ?? string.Empty;
+            var displayName = component.Definition.displayName ?? string.Empty;
+            return id.IndexOf("Timer_", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                id.IndexOf("TimerRelay", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                displayName.Contains("时间继电器");
         }
 
         private void UpdateSelfHoldEligibility()
@@ -812,6 +864,25 @@ namespace ElectricalSim.Core
                     ConnectById(component, "11", "12");
                 }
 
+                return;
+            }
+
+            if (IsOnDelayTimerRelay(component))
+            {
+                if (energizedOnDelayTimers.Contains(component) && component.IsClosed)
+                {
+                    ConnectById(component, "15", "18");
+                }
+                else
+                {
+                    ConnectById(component, "15", "16");
+                }
+
+                return;
+            }
+
+            if (IsTimerRelayComponent(component))
+            {
                 return;
             }
 

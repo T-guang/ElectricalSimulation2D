@@ -143,6 +143,15 @@
       "description": "使用左右行程开关、正反转接触器、自锁与互锁实现自动往返控制。用于验证 SQ 限位触发后控制回路切换。",
       "resourcePath": "Blueprints/Templates/motor_auto_reciprocating_control_template",
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
+    },
+    {
+      "templateId": "motor_sequential_start_timer",
+      "templateName": "两电机时间继电器顺序启动控制电路",
+      "category": "工业电路",
+      "difficulty": "中高级",
+      "description": "使用通电延时时间继电器 KT 实现两台三相异步电动机顺序启动。M1 先启动，KT 得电计时；延时到达后 KT 延时常开触点闭合，KM2 得电，M2 启动。",
+      "resourcePath": "Blueprints/Templates/motor_sequential_start_timer_template",
+      "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     }
   ]
 }

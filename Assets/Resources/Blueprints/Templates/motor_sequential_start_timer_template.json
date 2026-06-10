@@ -1,0 +1,454 @@
+{
+  "templateId": "motor_sequential_start_timer",
+  "templateName": "两电机时间继电器顺序启动控制电路",
+  "category": "工业电路",
+  "difficulty": "中高级",
+  "description": "使用通电延时时间继电器 KT 实现两台三相异步电动机顺序启动。启动后 M1 先运行，KT 得电计时；延时到达后 KT 延时常开触点闭合，KM2 得电，M2 启动。",
+  "components": [
+    {
+      "instanceId": "power_3p_1",
+      "definitionName": "AC_ThreePhase_Power",
+      "x": -840.0,
+      "y": 432.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "breaker_3p_1",
+      "definitionName": "Breaker_3P",
+      "x": -480.0,
+      "y": 432.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "fuse_3p_1",
+      "definitionName": "Fuse_3P",
+      "x": -120.0,
+      "y": 432.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "km_1",
+      "definitionName": "Contactor_KM_380V",
+      "x": 240.0,
+      "y": 192.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "km_2",
+      "definitionName": "Contactor_KM_380V",
+      "x": 600.0,
+      "y": 192.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "kt_1",
+      "definitionName": "Timer_OnDelay_380V",
+      "x": 240.0,
+      "y": -144.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "motor_1",
+      "definitionName": "Motor_ThreePhase_380V",
+      "x": 240.0,
+      "y": -432.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "motor_2",
+      "definitionName": "Motor_ThreePhase_380V",
+      "x": 600.0,
+      "y": -432.0,
+      "isClosed": false,
+      "parameters": []
+    },
+    {
+      "instanceId": "stop_1",
+      "definitionName": "Button_Stop_NC",
+      "x": -720.0,
+      "y": -192.0,
+      "isClosed": true,
+      "parameters": []
+    },
+    {
+      "instanceId": "start_1",
+      "definitionName": "Button_Start_NO",
+      "x": -360.0,
+      "y": -192.0,
+      "isClosed": false,
+      "parameters": []
+    }
+  ],
+  "wires": [
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L2",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P2_IN",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L3",
+      "endComponentId": "breaker_3p_1",
+      "endTerminalId": "P3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P1_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L1_IN",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P2_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L2_IN",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "breaker_3p_1",
+      "startTerminalId": "P3_OUT",
+      "endComponentId": "fuse_3p_1",
+      "endTerminalId": "L3_IN",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L1_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L1",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L2_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L3_OUT",
+      "endComponentId": "km_1",
+      "endTerminalId": "L3",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L1_OUT",
+      "endComponentId": "km_2",
+      "endTerminalId": "L1",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L2_OUT",
+      "endComponentId": "km_2",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "fuse_3p_1",
+      "startTerminalId": "L3_OUT",
+      "endComponentId": "km_2",
+      "endTerminalId": "L3",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T1",
+      "endComponentId": "motor_1",
+      "endTerminalId": "U",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T2",
+      "endComponentId": "motor_1",
+      "endTerminalId": "V",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "T3",
+      "endComponentId": "motor_1",
+      "endTerminalId": "W",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_2",
+      "startTerminalId": "T1",
+      "endComponentId": "motor_2",
+      "endTerminalId": "U",
+      "color": "#F2C71F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_2",
+      "startTerminalId": "T2",
+      "endComponentId": "motor_2",
+      "endTerminalId": "V",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_2",
+      "startTerminalId": "T3",
+      "endComponentId": "motor_2",
+      "endTerminalId": "W",
+      "color": "#F21F1F",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "PE",
+      "endComponentId": "motor_1",
+      "endTerminalId": "PE",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "PE",
+      "endComponentId": "motor_2",
+      "endTerminalId": "PE",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "power_3p_1",
+      "startTerminalId": "L1",
+      "endComponentId": "stop_1",
+      "endTerminalId": "11",
+      "color": "#B91C1C",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "start_1",
+      "endTerminalId": "23",
+      "color": "#B91C1C",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "start_1",
+      "startTerminalId": "24",
+      "endComponentId": "km_1",
+      "endTerminalId": "A1",
+      "color": "#B91C1C",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "km_1",
+      "endTerminalId": "13",
+      "color": "#B91C1C",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "14",
+      "endComponentId": "start_1",
+      "endTerminalId": "24",
+      "color": "#B91C1C",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "A1",
+      "endComponentId": "kt_1",
+      "endTerminalId": "A1",
+      "color": "#B91C1C",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_1",
+      "startTerminalId": "A2",
+      "endComponentId": "power_3p_1",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "kt_1",
+      "startTerminalId": "A2",
+      "endComponentId": "power_3p_1",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "kt_1",
+      "endTerminalId": "15",
+      "color": "#2563EB",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "kt_1",
+      "startTerminalId": "18",
+      "endComponentId": "km_2",
+      "endTerminalId": "A1",
+      "color": "#2563EB",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "stop_1",
+      "startTerminalId": "12",
+      "endComponentId": "km_2",
+      "endTerminalId": "13",
+      "color": "#2563EB",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_2",
+      "startTerminalId": "14",
+      "endComponentId": "kt_1",
+      "endTerminalId": "18",
+      "color": "#2563EB",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    },
+    {
+      "startComponentId": "km_2",
+      "startTerminalId": "A2",
+      "endComponentId": "power_3p_1",
+      "endTerminalId": "L2",
+      "color": "#14A640",
+      "style": "Orthogonal",
+      "manualRoutePoints": [],
+      "manualRouteHorizontal": false,
+      "manualRouteAxis": 0.0
+    }
+  ]
+}
