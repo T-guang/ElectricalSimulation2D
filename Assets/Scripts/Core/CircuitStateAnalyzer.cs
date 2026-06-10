@@ -111,6 +111,7 @@ namespace ElectricalSim.Core
             BuildComponentStates(components, unionFind, rootLabels, rootSources, result);
             ApplyContactorMainContactStates(result, contactorCoilStates);
             FinalizeDeferredMotorStates(result);
+            FinalizeLimitSwitchAnalysis(result);
             BuildLoadPathExplanations(components, result);
             FinalizeBreakerControlAnalysis(result);
             return result;
@@ -352,6 +353,16 @@ namespace ElectricalSim.Core
                         ConnectIfExists(component, "95", "96", unionFind);
                     }
 
+                    continue;
+                }
+
+                if (IsLimitSwitchComponent(component))
+                {
+                    ConnectIfExists(
+                        component,
+                        component.IsClosed ? "23" : "11",
+                        component.IsClosed ? "24" : "12",
+                        unionFind);
                     continue;
                 }
 
@@ -739,6 +750,38 @@ namespace ElectricalSim.Core
             }
         }
 
+        private static void FinalizeLimitSwitchAnalysis(CircuitStateResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            var limitSwitchCount = 0;
+            var triggeredCount = 0;
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                var component = result.Components[i];
+                if (!component.IsLimitSwitch)
+                {
+                    continue;
+                }
+
+                limitSwitchCount++;
+                if (component.IsLimitSwitchTriggered)
+                {
+                    triggeredCount++;
+                }
+            }
+
+            result.HasLimitSwitches = limitSwitchCount > 0;
+            result.HasSimultaneouslyTriggeredLimitSwitches = triggeredCount > 1;
+            if (result.HasSimultaneouslyTriggeredLimitSwitches)
+            {
+                AddUnique(result.Warnings, "检测到两个或更多 SQ 行程开关同时触发，机械位置状态不合理或接线/状态设置异常；不应将其解释为正常自动往返状态。");
+            }
+        }
+
         private void AddPowerLabels(
             IReadOnlyList<CircuitComponent> components,
             TerminalUnionFind unionFind,
@@ -951,6 +994,19 @@ namespace ElectricalSim.Core
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
                     info.IsContactor = true;
                     AnalyzeContactorCoil(component, info, result);
+                }
+                else if (IsLimitSwitchComponent(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupControl;
+                    info.IsLimitSwitch = true;
+                    info.IsLimitSwitchTriggered = component.IsClosed;
+                    info.State = component.IsClosed ? "Triggered" : "NotTriggered";
+                    info.LimitSwitchContactDescription = component.IsClosed
+                        ? "已触发：11/12 常闭触点断开，23/24 常开触点导通"
+                        : "未触发：11/12 常闭触点导通，23/24 常开触点断开";
+                    info.Judgement = component.IsClosed
+                        ? "当前已触发该限位，常闭触点断开，常开触点闭合。"
+                        : "当前未到达该限位位置，常闭触点保持导通。";
                 }
                 else if (component.Definition.kind == ComponentKind.TwoWaySwitch || DefinitionContains(component, "TwoWay", "DoubleThrow", "双控"))
                 {
@@ -1719,10 +1775,36 @@ namespace ElectricalSim.Core
                     DefinitionContains(component, "Contactor", "KM", "接触器", "交流接触器"));
         }
 
+        private static bool IsLimitSwitchComponent(CircuitComponent component)
+        {
+            if (component == null ||
+                component.Definition == null ||
+                component.GetTerminal("11") == null ||
+                component.GetTerminal("12") == null ||
+                component.GetTerminal("23") == null ||
+                component.GetTerminal("24") == null)
+            {
+                return false;
+            }
+
+            var definitionName = component.Definition.name ?? string.Empty;
+            return DefinitionContains(
+                    component,
+                    "LimitSwitch",
+                    "TravelSwitch",
+                    "PositionSwitch",
+                    "Switch_Limit",
+                    "行程开关",
+                    "限位开关") ||
+                definitionName.StartsWith("SQ", StringComparison.OrdinalIgnoreCase) ||
+                definitionName.IndexOf("_SQ", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private static bool IsCompoundPushButton(CircuitComponent component)
         {
             return component != null &&
                 component.Definition != null &&
+                !IsLimitSwitchComponent(component) &&
                 component.Definition.kind == ComponentKind.PushButton &&
                 component.GetTerminal("11") != null &&
                 component.GetTerminal("12") != null &&
@@ -2129,6 +2211,8 @@ namespace ElectricalSim.Core
         public bool HasPowerConflict;
         public bool HasContactorInterlockConflict;
         public bool HasCompoundButtonInterlockConflict;
+        public bool HasLimitSwitches;
+        public bool HasSimultaneouslyTriggeredLimitSwitches;
         public bool ContainsUnsupportedThreePhaseCircuit;
         public bool HasThreePhaseCircuit;
         public bool HasHouseholdControlSwitch;
@@ -2167,6 +2251,11 @@ namespace ElectricalSim.Core
             AppendMessages(builder, "五、错误", Errors);
             AppendMessages(builder, "六、警告", Warnings);
             AppendMessages(builder, "七、教学提示", Infos);
+            if (HasLimitSwitches)
+            {
+                AppendLimitSwitchAnalysis(builder);
+            }
+
             if (includeDebug)
             {
                 AppendDebugTerminalLabels(builder);
@@ -2245,6 +2334,11 @@ namespace ElectricalSim.Core
             AppendContactorCoilAnalysis(builder);
             AppendContactorMainContactAnalysis(builder);
             AppendContactorAuxiliaryContactAnalysis(builder);
+            if (HasLimitSwitches)
+            {
+                AppendLimitSwitchAnalysis(builder);
+            }
+
             AppendThreePhaseMotorAnalysis(builder);
 
             if (includeDebug)
@@ -2386,6 +2480,44 @@ namespace ElectricalSim.Core
 
             builder.AppendLine("- V1.4 从全部接触器未吸合状态开始有限轮迭代，最多 5 轮；不读取接触器或电机 RUN 状态。");
             builder.AppendLine("- 仅当停止回路闭合、没有方向互锁/按钮联锁冲突，且单接触器自锁结构仍存在历史歧义时，才提示静态快照无法确认此前是否进入保持状态。");
+        }
+
+        private void AppendLimitSwitchAnalysis(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【通用现象分析 V1.5：SQ 行程开关状态】");
+            var index = 1;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!component.IsLimitSwitch)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(index + ". " + component.DisplayName);
+                builder.AppendLine("   - 当前状态：" + (component.IsLimitSwitchTriggered ? "已触发" : "未触发"));
+                builder.AppendLine("   - 11/12 常闭触点：" + (component.IsLimitSwitchTriggered ? "断开" : "导通"));
+                builder.AppendLine("   - 23/24 常开触点：" + (component.IsLimitSwitchTriggered ? "导通" : "断开"));
+                if (!string.IsNullOrWhiteSpace(component.Judgement))
+                {
+                    builder.AppendLine("   - 说明：" + component.Judgement);
+                }
+
+                index++;
+            }
+
+            if (index == 1)
+            {
+                builder.AppendLine("- 未检测到 SQ 行程开关。");
+            }
+
+            if (HasSimultaneouslyTriggeredLimitSwitches)
+            {
+                builder.AppendLine("- 异常：检测到两个或更多 SQ 同时触发，机械位置状态不合理；当前不能解释为正常自动往返状态。");
+            }
+
+            builder.AppendLine("- 自动往返基础分析仅根据 SQ 当前触发状态改变控制回路路径，不模拟机械连续运动，也不会自动改变 SQ 状态。");
         }
 
         private static void AppendMainContactPair(
@@ -2713,6 +2845,9 @@ namespace ElectricalSim.Core
         public bool IsBreaker;
         public bool IsThreePhaseMotor;
         public bool IsContactor;
+        public bool IsLimitSwitch;
+        public bool IsLimitSwitchTriggered;
+        public string LimitSwitchContactDescription;
         public bool IsContactorCoilEnergizedByAnalyzer;
         public string CoilStatus;
         public string CoilVoltageDescription;

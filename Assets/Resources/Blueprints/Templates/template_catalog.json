@@ -134,6 +134,15 @@
       "description": "使用复合按钮的常闭触点和接触器辅助常闭触点共同实现正反转双重连锁，防止正反转接触器同时吸合，提高三相异步电动机正反转控制的安全性。",
       "resourcePath": "Blueprints/Templates/motor_forward_reverse_double_interlock_template",
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
+    },
+    {
+      "templateId": "motor_auto_reciprocating_control",
+      "templateName": "自动往返电动机控制电路",
+      "category": "工业电路",
+      "difficulty": "中高级",
+      "description": "使用左右行程开关、正反转接触器、自锁与互锁实现自动往返控制。用于验证 SQ 限位触发后控制回路切换。",
+      "resourcePath": "Blueprints/Templates/motor_auto_reciprocating_control_template",
+      "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     }
   ]
 }
