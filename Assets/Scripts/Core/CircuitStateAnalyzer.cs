@@ -9,6 +9,9 @@ namespace ElectricalSim.Core
         public const string VoltageNone = "None";
         public const string VoltageL = "L";
         public const string VoltageN = "N";
+        public const string VoltageL1 = "L1";
+        public const string VoltageL2 = "L2";
+        public const string VoltageL3 = "L3";
         public const string VoltagePE = "PE";
         public const string VoltageConflict = "Conflict";
 
@@ -21,26 +24,60 @@ namespace ElectricalSim.Core
             IReadOnlyList<CircuitComponent> components,
             IReadOnlyList<WireView> wires)
         {
-            terminalsByKey.Clear();
             friendlyNamesByInstanceId.Clear();
+            BuildFriendlyNames(components);
+
+            var preliminaryResult = AnalyzePass(components, wires, null);
+            var contactorCoilStates = CollectContactorCoilStates(preliminaryResult);
+            return AnalyzePass(components, wires, contactorCoilStates);
+        }
+
+        private CircuitStateResult AnalyzePass(
+            IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires,
+            IReadOnlyDictionary<string, bool> contactorCoilStates)
+        {
+            terminalsByKey.Clear();
             wiredTerminalKeys.Clear();
             connectionGraph.Clear();
 
             var result = new CircuitStateResult();
-            BuildFriendlyNames(components);
             var unionFind = new TerminalUnionFind();
             RegisterTerminals(components, unionFind, result);
             AddWireConnections(wires, unionFind, result);
             AddInternalConnections(components, unionFind);
+            AddDynamicContactorMainContacts(components, unionFind, contactorCoilStates, result);
 
             var rootLabels = new Dictionary<string, HashSet<string>>();
             var rootSources = new Dictionary<string, List<string>>();
             AddPowerLabels(components, unionFind, rootLabels, rootSources, result);
             DetectPowerConflicts(rootLabels, result);
             BuildComponentStates(components, unionFind, rootLabels, rootSources, result);
+            ApplyContactorMainContactStates(result, contactorCoilStates);
+            FinalizeDeferredMotorStates(result);
             BuildLoadPathExplanations(components, result);
             FinalizeBreakerControlAnalysis(result);
             return result;
+        }
+
+        private static Dictionary<string, bool> CollectContactorCoilStates(CircuitStateResult result)
+        {
+            var states = new Dictionary<string, bool>();
+            if (result == null)
+            {
+                return states;
+            }
+
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                var component = result.Components[i];
+                if (component.IsContactor)
+                {
+                    states[component.InstanceId] = component.IsContactorCoilEnergizedByAnalyzer;
+                }
+            }
+
+            return states;
         }
 
         private void RegisterTerminals(
@@ -155,6 +192,52 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
+                if (IsThermalRelay(component))
+                {
+                    ConnectIfExists(component, "L1", "T1", unionFind);
+                    ConnectIfExists(component, "L2", "T2", unionFind);
+                    ConnectIfExists(component, "L3", "T3", unionFind);
+                    if (component.IsClosed)
+                    {
+                        ConnectIfExists(component, "95", "96", unionFind);
+                    }
+
+                    continue;
+                }
+
+                if (IsCompoundPushButton(component))
+                {
+                    ConnectIfExists(component, component.IsClosed ? "23" : "11", component.IsClosed ? "24" : "12", unionFind);
+                    continue;
+                }
+
+                if (component.Definition.kind == ComponentKind.PushButton)
+                {
+                    if (component.IsClosed)
+                    {
+                        ConnectIfExists(component, "23", "24", unionFind);
+                        ConnectIfExists(component, "11", "12", unionFind);
+                    }
+
+                    continue;
+                }
+
+                if (IsContactorComponent(component))
+                {
+                    ConnectIfExists(component, "21", "22", unionFind);
+                    continue;
+                }
+
+                if (IsKnifeSwitch(component))
+                {
+                    if (component.IsClosed)
+                    {
+                        ConnectKnownPairs(component, unionFind, false);
+                    }
+
+                    continue;
+                }
+
                 if (component.Definition.kind == ComponentKind.Breaker || IsBreaker(component))
                 {
                     if (component.IsClosed)
@@ -167,7 +250,11 @@ namespace ElectricalSim.Core
 
                 if (component.Definition.kind == ComponentKind.Fuse || DefinitionContains(component, "Fuse", "熔断器", "保险"))
                 {
-                    ConnectKnownPairs(component, unionFind, true);
+                    if (!component.Definition.togglable || component.IsClosed)
+                    {
+                        ConnectKnownPairs(component, unionFind, true);
+                    }
+
                     continue;
                 }
 
@@ -178,6 +265,88 @@ namespace ElectricalSim.Core
                         ConnectKnownPairs(component, unionFind, true);
                     }
                 }
+            }
+        }
+
+        private void AddDynamicContactorMainContacts(
+            IReadOnlyList<CircuitComponent> components,
+            TerminalUnionFind unionFind,
+            IReadOnlyDictionary<string, bool> contactorCoilStates,
+            CircuitStateResult result)
+        {
+            if (components == null || contactorCoilStates == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (!IsContactorComponent(component) ||
+                    !contactorCoilStates.TryGetValue(SafeInstanceId(component), out var isEnergized) ||
+                    !isEnergized)
+                {
+                    continue;
+                }
+
+                var connectedL1 = ConnectIfExists(component, "L1", "T1", unionFind);
+                var connectedL2 = ConnectIfExists(component, "L2", "T2", unionFind);
+                var connectedL3 = ConnectIfExists(component, "L3", "T3", unionFind);
+                if (!connectedL1 || !connectedL2 || !connectedL3)
+                {
+                    AddUnique(result.Warnings, DisplayName(component) + " 缺少完整的 L1/T1、L2/T2、L3/T3 主触点端子，V1.3 无法完整传播三相标签。");
+                }
+            }
+        }
+
+        private static void ApplyContactorMainContactStates(
+            CircuitStateResult result,
+            IReadOnlyDictionary<string, bool> contactorCoilStates)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                var component = result.Components[i];
+                if (!component.IsContactor)
+                {
+                    continue;
+                }
+
+                var isClosed = contactorCoilStates != null &&
+                    contactorCoilStates.TryGetValue(component.InstanceId, out var isEnergized) &&
+                    isEnergized;
+                component.IsContactorMainContactsClosedByAnalyzer = isClosed;
+                component.MainContactStatus = isClosed ? "Closed" : "Open";
+                component.MainContactDescription = isClosed
+                    ? "根据 V1.2 线圈得电结果，V1.3 将该接触器三组主触点作为闭合处理。"
+                    : "接触器线圈未得电，因此 V1.3 不闭合该接触器主触点。";
+            }
+        }
+
+        private static void FinalizeDeferredMotorStates(CircuitStateResult result)
+        {
+            if (result == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                var component = result.Components[i];
+                if (!component.IsMotorDeferredByContactorOutput)
+                {
+                    continue;
+                }
+
+                component.State = "Stopped";
+                component.Judgement =
+                    "该电机接在接触器输出侧，但当前未通过 V1.3 已闭合主触点获得完整三相标签，因此当前未得电。";
+                component.Infos.Clear();
+                component.Infos.Add("这表示当前上级接触器主触点未闭合，不判定为电机接线缺相。");
             }
         }
 
@@ -193,7 +362,6 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            var reportedThreePhase = false;
             for (var i = 0; i < components.Count; i++)
             {
                 var component = components[i];
@@ -204,13 +372,22 @@ namespace ElectricalSim.Core
 
                 if (component.GetTerminal("L1") != null || component.Definition.sourcePhaseCount >= 3)
                 {
+                    result.HasThreePhaseCircuit = true;
                     result.ContainsUnsupportedThreePhaseCircuit = true;
-                    if (!reportedThreePhase)
+                    var missingPhases = new List<string>();
+                    if (component.GetTerminal("L1") == null) missingPhases.Add("L1");
+                    if (component.GetTerminal("L2") == null) missingPhases.Add("L2");
+                    if (component.GetTerminal("L3") == null) missingPhases.Add("L3");
+                    if (missingPhases.Count > 0)
                     {
-                        result.Infos.Add("当前电路包含三相工业元件，V0 暂不进行三相工业现象分析。");
-                        reportedThreePhase = true;
+                        result.Warnings.Add(DisplayName(component) + " 缺少三相核心端子：" + string.Join("、", missingPhases.ToArray()) + "。");
                     }
 
+                    AddPowerLabel(component.GetTerminal("L1"), VoltageL1, unionFind, rootLabels, rootSources);
+                    AddPowerLabel(component.GetTerminal("L2"), VoltageL2, unionFind, rootLabels, rootSources);
+                    AddPowerLabel(component.GetTerminal("L3"), VoltageL3, unionFind, rootLabels, rootSources);
+                    AddPowerLabel(component.GetTerminal("N"), VoltageN, unionFind, rootLabels, rootSources);
+                    AddPowerLabel(component.GetTerminal("PE"), VoltagePE, unionFind, rootLabels, rootSources);
                     continue;
                 }
 
@@ -280,12 +457,47 @@ namespace ElectricalSim.Core
                     AddUnique(result.Errors, "检测到 L 与 N 位于同一导通节点，存在短路风险。");
                 }
 
-                if ((labels.Contains(VoltageL) || labels.Contains(VoltageN)) && labels.Contains(VoltagePE))
+                DetectPhasePairConflict(labels, VoltageL1, VoltageL2, result);
+                DetectPhasePairConflict(labels, VoltageL1, VoltageL3, result);
+                DetectPhasePairConflict(labels, VoltageL2, VoltageL3, result);
+
+                if ((labels.Contains(VoltageL1) || labels.Contains(VoltageL2) || labels.Contains(VoltageL3)) &&
+                    labels.Contains(VoltageN))
+                {
+                    result.HasShortCircuit = true;
+                    result.HasPowerConflict = true;
+                    AddUnique(result.Errors, "检测到三相相线与 N 位于同一导通节点，存在短路风险。");
+                }
+
+                if ((labels.Contains(VoltageL) || labels.Contains(VoltageL1) || labels.Contains(VoltageL2) ||
+                    labels.Contains(VoltageL3)) && labels.Contains(VoltagePE))
+                {
+                    result.HasShortCircuit = true;
+                    result.HasPowerConflict = true;
+                    AddUnique(result.Errors, "检测到相线与 PE 位于同一导通节点，存在接地短路风险。");
+                }
+                else if (labels.Contains(VoltageN) && labels.Contains(VoltagePE))
                 {
                     result.HasPowerConflict = true;
-                    AddUnique(result.Warnings, "检测到电源导体与 PE 存在连接，请检查接地或短路风险。");
+                    AddUnique(result.Warnings, "检测到 N 与 PE 相连，请确认是否为规范接地/接零关系，V1.0 暂不做复杂接地系统判断。");
                 }
             }
+        }
+
+        private static void DetectPhasePairConflict(
+            HashSet<string> labels,
+            string phaseA,
+            string phaseB,
+            CircuitStateResult result)
+        {
+            if (!labels.Contains(phaseA) || !labels.Contains(phaseB))
+            {
+                return;
+            }
+
+            result.HasShortCircuit = true;
+            result.HasPowerConflict = true;
+            AddUnique(result.Errors, "检测到 " + phaseA + " 与 " + phaseB + " 位于同一导通节点，存在相间短路风险。");
         }
 
         private void BuildComponentStates(
@@ -339,6 +551,18 @@ namespace ElectricalSim.Core
                     info.SummaryGroup = ComponentStateInfo.GroupLoad;
                     AnalyzeSinglePhaseLoad(component, info, result, true);
                 }
+                else if (IsThreePhaseMotorComponent(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupLoad;
+                    info.IsThreePhaseMotor = true;
+                    AnalyzeThreePhaseMotor(component, components, unionFind, info, result);
+                }
+                else if (IsContactorComponent(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupControl;
+                    info.IsContactor = true;
+                    AnalyzeContactorCoil(component, info, result);
+                }
                 else if (component.Definition.kind == ComponentKind.TwoWaySwitch || DefinitionContains(component, "TwoWay", "DoubleThrow", "双控"))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
@@ -355,6 +579,14 @@ namespace ElectricalSim.Core
                         ? "当前导通：" + FindFirstTerminalPair(component, " → ")
                         : "当前状态：" + FindFirstTerminalPair(component, " 与 ") + " 不导通";
                 }
+                else if (IsThermalRelay(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupControl;
+                    info.State = "Conducting";
+                    info.Judgement = component.IsClosed
+                        ? "V1.2 按当前状态传播热继电器 95/96 控制触点；主回路仍按 V1.0 静态传播。"
+                        : "热继电器当前断开，95/96 控制触点不导通；主回路仍按 V1.0 静态传播。";
+                }
                 else if (component.Definition.kind == ComponentKind.Breaker || IsBreaker(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
@@ -368,7 +600,10 @@ namespace ElectricalSim.Core
                 else if (component.Definition.kind == ComponentKind.Fuse || DefinitionContains(component, "Fuse", "熔断器", "保险"))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
-                    info.State = "Conducting";
+                    info.State = !component.Definition.togglable || component.IsClosed ? "Conducting" : "Open";
+                    info.ConductionExplanation = info.State == "Conducting"
+                        ? "当前状态：熔断器输入端与输出端导通"
+                        : "当前状态：熔断器已断开，输入端与输出端不导通";
                 }
                 else if (component.Definition.kind == ComponentKind.PowerSource)
                 {
@@ -384,6 +619,313 @@ namespace ElectricalSim.Core
 
                 result.Components.Add(info);
             }
+        }
+
+        private void AnalyzeThreePhaseMotor(
+            CircuitComponent motor,
+            IReadOnlyList<CircuitComponent> components,
+            TerminalUnionFind unionFind,
+            ComponentStateInfo info,
+            CircuitStateResult result)
+        {
+            var uId = FindExistingTerminalId(motor, "U", "U1");
+            var vId = FindExistingTerminalId(motor, "V", "V1");
+            var wId = FindExistingTerminalId(motor, "W", "W1");
+            if (uId == null || vId == null || wId == null)
+            {
+                info.State = "Unknown";
+                info.MotorIssues.Add("检测到电机元件，但未找到完整 U/V/W 三相输入端子，V1.1 暂不分析该电机。");
+                return;
+            }
+
+            var u = VoltageAt(info, uId);
+            var v = VoltageAt(info, vId);
+            var w = VoltageAt(info, wId);
+            if (u == VoltageConflict || v == VoltageConflict || w == VoltageConflict)
+            {
+                info.State = "Fault";
+                info.Judgement = "电机端子存在电压冲突或相间短路风险，电机不能运行。";
+                info.MotorIssues.Add(info.Judgement);
+                AddComponentError(info, result, info.Judgement);
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            var invalidTerminals = new List<string>();
+            AddInvalidMotorPhase(invalidTerminals, uId, u);
+            AddInvalidMotorPhase(invalidTerminals, vId, v);
+            AddInvalidMotorPhase(invalidTerminals, wId, w);
+            if (invalidTerminals.Count > 0)
+            {
+                if ((u == VoltageNone || v == VoltageNone || w == VoltageNone) &&
+                    IsMotorFedThroughContactorOutputs(motor, components, unionFind, out var contactorNames))
+                {
+                    info.State = "Unknown";
+                    info.IsMotorDeferredByContactorOutput = true;
+                    info.MotorFeederContactorNames = contactorNames;
+                    info.Judgement =
+                        "该电机已接在接触器 " + contactorNames +
+                        " 的 T1/T2/T3 输出侧。当前 V1.1 只判断已经传播到电机端子的三相标签，" +
+                        "V1.2 虽可单独判断接触器线圈状态，但尚未传播主触点动态闭合，因此暂不判断该电机是否缺相或运行。";
+                    info.Infos.Add("待 V1.3 完成接触器主触点动态传播后，再判断该电机实际三相状态。");
+                    AnalyzeMotorPe(motor, info, result);
+                    return;
+                }
+
+                info.State = "Stopped";
+                info.Judgement = "电机未获得完整有效三相，当前不运行。";
+                info.MotorIssues.Add(string.Join("；", invalidTerminals.ToArray()) + "。");
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            var phases = new HashSet<string> { u, v, w };
+            if (phases.Count != 3)
+            {
+                info.State = "Fault";
+                info.Judgement = "电机三相输入存在重复相，U/V/W 未获得完整的 L1/L2/L3，电机不能正常运行。";
+                info.MotorIssues.Add(info.Judgement);
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            if (IsForwardSequence(u, v, w))
+            {
+                info.State = "Forward";
+                info.Judgement = "电机获得完整三相，当前相序为正向相序，判断为正转。";
+            }
+            else if (IsReverseSequence(u, v, w))
+            {
+                info.State = "Reverse";
+                info.Judgement = "电机获得完整三相，但相序与正转相反，判断为反转。";
+            }
+            else
+            {
+                info.State = "Unknown";
+                info.Judgement = "电机获得三相标签，但当前相序暂无法识别。";
+            }
+
+            AnalyzeMotorPe(motor, info, result);
+        }
+
+        private bool IsMotorFedThroughContactorOutputs(
+            CircuitComponent motor,
+            IReadOnlyList<CircuitComponent> components,
+            TerminalUnionFind unionFind,
+            out string contactorNames)
+        {
+            contactorNames = string.Empty;
+            if (motor == null || components == null || unionFind == null)
+            {
+                return false;
+            }
+
+            var motorTerminalIds = new[]
+            {
+                FindExistingTerminalId(motor, "U", "U1"),
+                FindExistingTerminalId(motor, "V", "V1"),
+                FindExistingTerminalId(motor, "W", "W1")
+            };
+            var matchedContactors = new HashSet<string>();
+
+            for (var motorIndex = 0; motorIndex < motorTerminalIds.Length; motorIndex++)
+            {
+                var motorTerminal = motor.GetTerminal(motorTerminalIds[motorIndex]);
+                var motorRoot = motorTerminal != null ? unionFind.Find(TerminalKey(motorTerminal)) : null;
+                if (motorRoot == null)
+                {
+                    return false;
+                }
+
+                var matchedOutput = false;
+                for (var componentIndex = 0; componentIndex < components.Count && !matchedOutput; componentIndex++)
+                {
+                    var component = components[componentIndex];
+                    if (!IsContactorComponent(component))
+                    {
+                        continue;
+                    }
+
+                    var outputIds = new[] { "T1", "T2", "T3" };
+                    for (var outputIndex = 0; outputIndex < outputIds.Length; outputIndex++)
+                    {
+                        var output = component.GetTerminal(outputIds[outputIndex]);
+                        if (output == null || unionFind.Find(TerminalKey(output)) != motorRoot)
+                        {
+                            continue;
+                        }
+
+                        matchedOutput = true;
+                        matchedContactors.Add(DisplayName(component));
+                        break;
+                    }
+                }
+
+                if (!matchedOutput)
+                {
+                    return false;
+                }
+            }
+
+            contactorNames = matchedContactors.Count > 0
+                ? string.Join("、", new List<string>(matchedContactors).ToArray())
+                : "KM";
+            return true;
+        }
+
+        private static void AddInvalidMotorPhase(List<string> issues, string terminalId, string voltage)
+        {
+            if (IsPhaseLabel(voltage))
+            {
+                return;
+            }
+
+            issues.Add(voltage == VoltageNone
+                ? terminalId + " 端未获得三相电源标签，存在缺相"
+                : terminalId + " 端获得 " + voltage + "，不是有效三相相线");
+        }
+
+        private static void AnalyzeMotorPe(
+            CircuitComponent motor,
+            ComponentStateInfo info,
+            CircuitStateResult result)
+        {
+            var peId = FindExistingTerminalId(motor, "PE");
+            if (peId == null)
+            {
+                info.PeStatus = "未设置 PE 端子";
+                return;
+            }
+
+            var pe = VoltageAt(info, peId);
+            if (pe == VoltagePE)
+            {
+                info.PeStatus = "PE 保护接地已连接";
+            }
+            else if (pe == VoltageNone)
+            {
+                info.PeStatus = "PE 保护接地未连接";
+                AddComponentWarning(info, result, "电机 PE 保护接地未连接，存在安全隐患。");
+            }
+            else
+            {
+                info.PeStatus = "PE 端接入 " + pe;
+                AddComponentError(info, result, "电机 PE 端接入了非 PE 标签 " + pe + "，存在严重安全风险。");
+            }
+        }
+
+        private static void AnalyzeContactorCoil(
+            CircuitComponent contactor,
+            ComponentStateInfo info,
+            CircuitStateResult result)
+        {
+            if (contactor.GetTerminal("A1") == null || contactor.GetTerminal("A2") == null)
+            {
+                info.State = "CoilUnknown";
+                info.CoilStatus = "CoilUnknown";
+                info.CoilVoltageDescription = "该接触器缺少 A1/A2 线圈端子，无法判断线圈得电。";
+                AddComponentWarning(info, result, info.CoilVoltageDescription);
+                return;
+            }
+
+            var a1 = VoltageAt(info, "A1");
+            var a2 = VoltageAt(info, "A2");
+            if (a1 == VoltageConflict || a2 == VoltageConflict)
+            {
+                info.State = "CoilFault";
+                info.CoilStatus = "CoilFault";
+                info.CoilVoltageDescription = "线圈端子存在电压冲突或短路风险，不能吸合。";
+                AddComponentError(info, result, info.CoilVoltageDescription);
+                return;
+            }
+
+            if (a1 == VoltagePE || a2 == VoltagePE)
+            {
+                info.State = "CoilFault";
+                info.CoilStatus = "CoilFault";
+                info.CoilVoltageDescription = "接触器线圈端子接入 PE，存在严重安全风险。";
+                AddComponentError(info, result, info.CoilVoltageDescription);
+                return;
+            }
+
+            if (IsValidCoilVoltage(a1, a2))
+            {
+                info.State = "CoilEnergized";
+                info.CoilStatus = "CoilEnergized";
+                info.IsContactorCoilEnergizedByAnalyzer = true;
+                info.CoilVoltageDescription = "A1/A2 之间形成 " + a1 + "-" + a2 + " 有效控制电压。";
+                info.Judgement = "接触器线圈得电，应吸合。";
+                return;
+            }
+
+            info.State = "CoilOff";
+            info.CoilStatus = "CoilOff";
+            if (a1 == VoltageNone || a2 == VoltageNone)
+            {
+                info.CoilVoltageDescription = "当前启动按钮或控制路径未闭合，A1 或 A2 未获得有效电源标签。";
+            }
+            else if (a1 == a2)
+            {
+                info.CoilVoltageDescription = "A1/A2 同为 " + a1 + "，没有形成有效控制电压。";
+            }
+            else
+            {
+                info.CoilVoltageDescription = "A1/A2 未形成可识别的有效控制电压。";
+            }
+        }
+
+        private static bool IsValidCoilVoltage(string a1, string a2)
+        {
+            return IsThreePhaseLine(a1) && IsThreePhaseLine(a2) && a1 != a2 ||
+                IsLineOrPhase(a1) && a2 == VoltageN ||
+                IsLineOrPhase(a2) && a1 == VoltageN;
+        }
+
+        private static bool IsLineOrPhase(string voltage)
+        {
+            return voltage == VoltageL || IsThreePhaseLine(voltage);
+        }
+
+        private static bool IsThreePhaseLine(string voltage)
+        {
+            return voltage == VoltageL1 || voltage == VoltageL2 || voltage == VoltageL3;
+        }
+
+        private static bool IsForwardSequence(string u, string v, string w)
+        {
+            return u == VoltageL1 && v == VoltageL2 && w == VoltageL3 ||
+                u == VoltageL2 && v == VoltageL3 && w == VoltageL1 ||
+                u == VoltageL3 && v == VoltageL1 && w == VoltageL2;
+        }
+
+        private static bool IsReverseSequence(string u, string v, string w)
+        {
+            return u == VoltageL1 && v == VoltageL3 && w == VoltageL2 ||
+                u == VoltageL3 && v == VoltageL2 && w == VoltageL1 ||
+                u == VoltageL2 && v == VoltageL1 && w == VoltageL3;
+        }
+
+        private static bool IsPhaseLabel(string label)
+        {
+            return label == VoltageL1 || label == VoltageL2 || label == VoltageL3;
+        }
+
+        private static string FindExistingTerminalId(CircuitComponent component, params string[] candidates)
+        {
+            if (component == null || candidates == null)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                if (component.GetTerminal(candidates[i]) != null)
+                {
+                    return candidates[i];
+                }
+            }
+
+            return null;
         }
 
         private bool AreMeterTerminalsWired(CircuitComponent component)
@@ -403,10 +945,10 @@ namespace ElectricalSim.Core
 
         private void AnalyzeBreaker(CircuitComponent component, ComponentStateInfo info, CircuitStateResult result)
         {
-            var inputIds = new[] { "IN", "L_IN", "P_IN", "P1_IN", "P2_IN", "P3_IN", "P4_IN" };
-            var outputIds = new[] { "OUT", "L_OUT", "P_OUT", "P1_OUT", "P2_OUT", "P3_OUT", "P4_OUT" };
-            info.BreakerInputHasSupply = HasVoltage(info, inputIds, VoltageL) || HasVoltage(info, inputIds, VoltageN);
-            info.BreakerOutputHasSupply = HasVoltage(info, outputIds, VoltageL) || HasVoltage(info, outputIds, VoltageN);
+            var inputIds = new[] { "IN", "L_IN", "P_IN", "P1_IN", "P2_IN", "P3_IN", "P4_IN", "L1_IN", "L2_IN", "L3_IN", "N_IN" };
+            var outputIds = new[] { "OUT", "L_OUT", "P_OUT", "P1_OUT", "P2_OUT", "P3_OUT", "P4_OUT", "L1_OUT", "L2_OUT", "L3_OUT", "N_OUT" };
+            info.BreakerInputHasSupply = HasAnySupplyVoltage(info, inputIds);
+            info.BreakerOutputHasSupply = HasAnySupplyVoltage(info, outputIds);
             info.BreakerAllInputsHaveSupply = AllExistingTerminalsHaveVoltage(component, info, inputIds);
             info.BreakerHasCompleteExternalConnections =
                 AllExistingTerminalsAreWired(component, inputIds) &&
@@ -420,6 +962,16 @@ namespace ElectricalSim.Core
             {
                 AddComponentInfo(info, result, "空气开关当前断开，输入侧电源标签不会传播到输出侧。");
             }
+        }
+
+        private static bool HasAnySupplyVoltage(ComponentStateInfo info, string[] terminalIds)
+        {
+            return HasVoltage(info, terminalIds, VoltageL) ||
+                HasVoltage(info, terminalIds, VoltageN) ||
+                HasVoltage(info, terminalIds, VoltageL1) ||
+                HasVoltage(info, terminalIds, VoltageL2) ||
+                HasVoltage(info, terminalIds, VoltageL3) ||
+                HasVoltage(info, terminalIds, VoltagePE);
         }
 
         private bool AllExistingTerminalsAreWired(CircuitComponent component, string[] terminalIds)
@@ -552,7 +1104,19 @@ namespace ElectricalSim.Core
             for (var i = 0; i < sourceParts.Length; i++)
             {
                 var source = sourceParts[i].Trim();
-                if (source.EndsWith(".L", StringComparison.OrdinalIgnoreCase))
+                if (source.EndsWith(".L1", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourceLabels.Add(VoltageL1);
+                }
+                else if (source.EndsWith(".L2", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourceLabels.Add(VoltageL2);
+                }
+                else if (source.EndsWith(".L3", StringComparison.OrdinalIgnoreCase))
+                {
+                    sourceLabels.Add(VoltageL3);
+                }
+                else if (source.EndsWith(".L", StringComparison.OrdinalIgnoreCase))
                 {
                     sourceLabels.Add(VoltageL);
                 }
@@ -614,11 +1178,8 @@ namespace ElectricalSim.Core
             if (line == VoltageN && neutral == VoltageL)
             {
                 info.State = stoppedState;
-                info.Judgement = loadName + " L/N 接反，当前系统按规范端子判断为" + (isFan ? "停止" : "不亮") + "。";
-                AddComponentWarning(info, result, loadName + " L/N 接反。当前系统按规范端子判断，L 端应接火线、N 端应接零线，因此判断为" + (isFan ? "停止" : "不亮") + "。");
-                AddComponentInfo(info, result, isFan
-                    ? "风扇应按规范连接 L/N 端子。"
-                    : "真实普通灯泡在部分情况下可能仍会发光，但接线不规范，实训系统按规范端子进行判定。");
+                info.Judgement = loadName + "火线和零线接反，不符合规范接线要求，因此不作为正常" + (isFan ? "运行" : "亮灯") + "处理。";
+                AddComponentWarning(info, result, loadName + "火线和零线接反，不符合规范接线要求。");
                 return;
             }
 
@@ -753,6 +1314,38 @@ namespace ElectricalSim.Core
             return DefinitionContains(component, "EnergyMeter", "ElectricMeter", "电能表", "电表", "单相电能表");
         }
 
+        private static bool IsThermalRelay(CircuitComponent component)
+        {
+            return component != null &&
+                component.GetTerminal("95") != null &&
+                component.GetTerminal("96") != null &&
+                DefinitionContains(component, "ThermalRelay", "Thermal_Relay", "热继");
+        }
+
+        private static bool IsContactorComponent(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                (component.Definition.kind == ComponentKind.ContactorCoil ||
+                    DefinitionContains(component, "Contactor", "KM", "接触器", "交流接触器"));
+        }
+
+        private static bool IsCompoundPushButton(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.Definition.kind == ComponentKind.PushButton &&
+                component.GetTerminal("11") != null &&
+                component.GetTerminal("12") != null &&
+                component.GetTerminal("23") != null &&
+                component.GetTerminal("24") != null;
+        }
+
+        private static bool IsKnifeSwitch(CircuitComponent component)
+        {
+            return DefinitionContains(component, "KnifeSwitch", "Knife_Switch", "刀开关", "隔离开关", "QS");
+        }
+
         private static bool IsLamp(CircuitComponent component)
         {
             return component.Definition.kind == ComponentKind.Lamp ||
@@ -763,6 +1356,21 @@ namespace ElectricalSim.Core
         {
             return component.Definition.kind == ComponentKind.Fan ||
                 DefinitionContains(component, "Fan", "风扇", "电风扇");
+        }
+
+        private static bool IsThreePhaseMotorComponent(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null)
+            {
+                return false;
+            }
+
+            var hasAnyThreePhaseTerminal =
+                component.GetTerminal("U") != null || component.GetTerminal("U1") != null ||
+                component.GetTerminal("V") != null || component.GetTerminal("V1") != null ||
+                component.GetTerminal("W") != null || component.GetTerminal("W1") != null;
+            return hasAnyThreePhaseTerminal &&
+                DefinitionContains(component, "Motor_ThreePhase", "ThreePhaseMotor", "Three_Phase_Motor", "三相异步电动机", "三相电机", "电动机");
         }
 
         private static bool DefinitionContains(CircuitComponent component, params string[] keywords)
@@ -1022,6 +1630,9 @@ namespace ElectricalSim.Core
             connected |= ConnectIfExists(component, "P2_IN", "P2_OUT", unionFind);
             connected |= ConnectIfExists(component, "P3_IN", "P3_OUT", unionFind);
             connected |= ConnectIfExists(component, "P4_IN", "P4_OUT", unionFind);
+            connected |= ConnectIfExists(component, "L1_IN", "L1_OUT", unionFind);
+            connected |= ConnectIfExists(component, "L2_IN", "L2_OUT", unionFind);
+            connected |= ConnectIfExists(component, "L3_IN", "L3_OUT", unionFind);
 
             if (!connected && fallbackToFirstPair && component.Terminals != null && component.Terminals.Count == 2)
             {
@@ -1128,6 +1739,7 @@ namespace ElectricalSim.Core
         public bool HasShortCircuit;
         public bool HasPowerConflict;
         public bool ContainsUnsupportedThreePhaseCircuit;
+        public bool HasThreePhaseCircuit;
         public bool HasHouseholdControlSwitch;
         public bool HasValidClosedBreakerControl;
         public bool HasProperlyConnectedBreaker;
@@ -1143,10 +1755,9 @@ namespace ElectricalSim.Core
             var builder = new StringBuilder();
             builder.AppendLine("【通用现象分析 V0.1.1】");
 
-            if (ContainsUnsupportedThreePhaseCircuit)
+            if (HasThreePhaseCircuit)
             {
-                builder.AppendLine("当前电路包含三相工业元件，V0.1.1 暂不进行三相工业现象分析。");
-                return builder.ToString().TrimEnd();
+                return ToThreePhaseReadableText(includeDebug);
             }
 
             var loadCount = CountGroup(ComponentStateInfo.GroupLoad);
@@ -1171,6 +1782,285 @@ namespace ElectricalSim.Core
             }
 
             return builder.ToString().TrimEnd();
+        }
+
+        private string ToThreePhaseReadableText(bool includeDebug)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("【通用现象分析 V1.0：工业三相标签传播】");
+            builder.AppendLine();
+            builder.AppendLine("一、总体结论");
+            builder.AppendLine(HasShortCircuit ? "- 检测到三相电源标签冲突或短路风险。" : "- 未发现三相相间短路。");
+            builder.AppendLine("- 共分析 " + Components.Count + " 个元件的端子标签。");
+            builder.AppendLine("- V1.0 当前仅进行三相电压标签传播，不判断接触器吸合、电机运行、自锁或互锁。");
+
+            builder.AppendLine();
+            builder.AppendLine("二、三相电源");
+            var sourceCount = 0;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!HasThreePhaseSourceTerminals(component))
+                {
+                    continue;
+                }
+
+                sourceCount++;
+                builder.AppendLine(sourceCount + ". " + component.DisplayName);
+                AppendTerminal(builder, component, "L1");
+                AppendTerminal(builder, component, "L2");
+                AppendTerminal(builder, component, "L3");
+                AppendTerminal(builder, component, "N");
+                AppendTerminal(builder, component, "PE");
+            }
+
+            if (sourceCount == 0)
+            {
+                builder.AppendLine("- 未检测到可识别的三相电源端子。");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("三、工业元件端子标签（不含三相电机，电机状态见 V1.1）");
+            var itemIndex = 1;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (HasThreePhaseSourceTerminals(component) || component.IsThreePhaseMotor)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(itemIndex + ". " + component.DisplayName);
+                foreach (var terminal in component.TerminalVoltages)
+                {
+                    AppendTerminal(builder, component, terminal.Key);
+                }
+
+                itemIndex++;
+            }
+
+            if (itemIndex == 1)
+            {
+                builder.AppendLine("- 无其他工业元件。");
+            }
+
+            AppendMessages(builder, "四、错误", Errors);
+            AppendMessages(builder, "五、警告", Warnings);
+            builder.AppendLine();
+            builder.AppendLine("六、阶段说明");
+            builder.AppendLine("- 3P 空开和可切换熔断器按当前 ON/OFF 状态传播标签；不可切换熔断器按默认导通处理。");
+            builder.AppendLine("- 热继电器传播 L1/T1、L2/T2、L3/T3 主回路标签，并按当前状态传播 95/96 控制触点。");
+            builder.AppendLine("- 接触器线圈与主触点由 V1.2/V1.3 分阶段推导，不属于 V1.0 静态传播。");
+            AppendContactorCoilAnalysis(builder);
+            AppendContactorMainContactAnalysis(builder);
+            AppendThreePhaseMotorAnalysis(builder);
+
+            if (includeDebug)
+            {
+                AppendDebugTerminalLabels(builder);
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private void AppendContactorCoilAnalysis(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【通用现象分析 V1.2：接触器线圈状态】");
+            var index = 1;
+            var energizedCount = 0;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!component.IsContactor)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(index + ". " + component.DisplayName);
+                AppendTerminal(builder, component, "A1");
+                AppendTerminal(builder, component, "A2");
+                builder.AppendLine("   - 状态：" + ReadableState(component.CoilStatus));
+                if (!string.IsNullOrWhiteSpace(component.CoilVoltageDescription))
+                {
+                    builder.AppendLine("   - 说明：" + component.CoilVoltageDescription);
+                }
+
+                if (!string.IsNullOrWhiteSpace(component.Judgement))
+                {
+                    builder.AppendLine("   - 判断：" + component.Judgement);
+                }
+
+                if (component.IsContactorCoilEnergizedByAnalyzer)
+                {
+                    energizedCount++;
+                }
+
+                index++;
+            }
+
+            if (index == 1)
+            {
+                builder.AppendLine("- 未检测到具有 A1/A2 线圈端子的接触器。");
+            }
+
+            builder.AppendLine("- V1.2 当前只判断接触器 A1/A2 线圈是否获得有效控制电压。");
+            builder.AppendLine("- V1.2.1 为了判断线圈控制路径，将接触器 21/22 常闭辅助触点按未吸合状态处理为导通。");
+            builder.AppendLine("- 本阶段不传播接触器主触点，也不判断 13/14 自锁和 21/22 动态互锁。");
+            if (energizedCount > 1)
+            {
+                builder.AppendLine("- 阶段提醒：检测到多个接触器线圈同时获得启动路径；完整的 21/22 动态互锁稳定分析留到 V1.4。");
+            }
+        }
+
+        private void AppendContactorMainContactAnalysis(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【通用现象分析 V1.3：接触器主触点状态】");
+            var index = 1;
+            var closedCount = 0;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!component.IsContactor)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(index + ". " + component.DisplayName);
+                builder.AppendLine("   - 线圈状态：" + ReadableState(component.CoilStatus));
+                builder.AppendLine("   - 主触点状态：" + ReadableState(component.MainContactStatus));
+                AppendMainContactPair(builder, component, "L1", "T1");
+                AppendMainContactPair(builder, component, "L2", "T2");
+                AppendMainContactPair(builder, component, "L3", "T3");
+                if (!string.IsNullOrWhiteSpace(component.MainContactDescription))
+                {
+                    builder.AppendLine("   - 说明：" + component.MainContactDescription);
+                }
+
+                if (component.IsContactorMainContactsClosedByAnalyzer)
+                {
+                    closedCount++;
+                }
+
+                index++;
+            }
+
+            if (index == 1)
+            {
+                builder.AppendLine("- 未检测到接触器主触点。");
+            }
+
+            builder.AppendLine("- V1.3 当前根据 V1.2 推导出的接触器线圈状态，动态传播 L1/T1、L2/T2、L3/T3 主触点。");
+            builder.AppendLine("- 本阶段不处理 13/14 自锁保持，也不处理 21/22 动态互锁断开。");
+            if (closedCount > 1)
+            {
+                builder.AppendLine("- 阶段提醒：多个接触器主触点同时按闭合传播，完整的 21/22 动态互锁稳定分析留到 V1.4。");
+            }
+        }
+
+        private static void AppendMainContactPair(
+            StringBuilder builder,
+            ComponentStateInfo component,
+            string inputTerminal,
+            string outputTerminal)
+        {
+            if (!component.TerminalVoltages.ContainsKey(inputTerminal) ||
+                !component.TerminalVoltages.ContainsKey(outputTerminal))
+            {
+                return;
+            }
+
+            builder.AppendLine(
+                "   - " + inputTerminal + "/" + outputTerminal + "：" +
+                (component.IsContactorMainContactsClosedByAnalyzer ? "导通" : "断开"));
+        }
+
+        private void AppendThreePhaseMotorAnalysis(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【通用现象分析 V1.1：三相电机状态】");
+            var index = 1;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!component.IsThreePhaseMotor)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(index + ". " + component.DisplayName);
+                if (component.IsMotorDeferredByContactorOutput)
+                {
+                    builder.AppendLine("   - U/V/W：已接至接触器 " + component.MotorFeederContactorNames + " 的 T1/T2/T3 输出侧");
+                    builder.AppendLine("   - 当前状态：V1.3 未发现已闭合的上级接触器主触点，因此 U/V/W 当前未获得三相标签；这不判定为电机接线缺相。");
+                    AppendMotorTerminal(builder, component, "PE");
+                }
+                else
+                {
+                    AppendMotorTerminal(builder, component, "U", "U1");
+                    AppendMotorTerminal(builder, component, "V", "V1");
+                    AppendMotorTerminal(builder, component, "W", "W1");
+                    AppendMotorTerminal(builder, component, "PE");
+                }
+
+                builder.AppendLine("   - 状态：" + ReadableState(component.State));
+                if (!string.IsNullOrWhiteSpace(component.Judgement))
+                {
+                    builder.AppendLine("   - 说明：" + component.Judgement);
+                }
+
+                for (var issueIndex = 0; issueIndex < component.MotorIssues.Count; issueIndex++)
+                {
+                    builder.AppendLine("   - 问题：" + component.MotorIssues[issueIndex]);
+                }
+
+                for (var infoIndex = 0; infoIndex < component.Infos.Count; infoIndex++)
+                {
+                    builder.AppendLine("   - 阶段说明：" + component.Infos[infoIndex]);
+                }
+
+                if (!string.IsNullOrWhiteSpace(component.PeStatus))
+                {
+                    builder.AppendLine("   - PE：" + component.PeStatus);
+                }
+
+                index++;
+            }
+
+            if (index == 1)
+            {
+                builder.AppendLine("- 未检测到具有 U/V/W 端子的三相电机。");
+            }
+
+            builder.AppendLine("- V1.1 当前只判断已经获得三相标签的电机端子。");
+            builder.AppendLine("- 电机经接触器供电时，V1.1 使用 V1.3 主触点传播后的最终标签判断方向；上级主触点未闭合时不把 U/V/W 的 None 判定为接线缺相。");
+        }
+
+        private static void AppendMotorTerminal(
+            StringBuilder builder,
+            ComponentStateInfo component,
+            params string[] candidates)
+        {
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                if (!component.TerminalVoltages.ContainsKey(candidates[i]))
+                {
+                    continue;
+                }
+
+                AppendTerminal(builder, component, candidates[i]);
+                return;
+            }
+        }
+
+        private static bool HasThreePhaseSourceTerminals(ComponentStateInfo component)
+        {
+            return component != null &&
+                component.TerminalVoltages.ContainsKey("L1") &&
+                component.TerminalVoltages.ContainsKey("L2") &&
+                component.TerminalVoltages.ContainsKey("L3") &&
+                component.State == "Normal";
         }
 
         private int CountGroup(string group)
@@ -1349,6 +2239,22 @@ namespace ElectricalSim.Core
                     return "COM→L1 导通";
                 case "TwoWayL2":
                     return "COM→L2 导通";
+                case "Forward":
+                    return "正转";
+                case "Reverse":
+                    return "反转";
+                case "Fault":
+                    return "故障 / 不能运行";
+                case "Unknown":
+                    return "暂无法判断";
+                case "CoilEnergized":
+                    return "线圈得电，应吸合";
+                case "CoilOff":
+                    return "线圈未得电";
+                case "CoilFault":
+                    return "线圈故障 / 接线风险";
+                case "CoilUnknown":
+                    return "线圈状态暂无法判断";
                 default:
                     return state;
             }
@@ -1370,9 +2276,20 @@ namespace ElectricalSim.Core
         public string ConductionExplanation;
         public string LinePathExplanation;
         public string NeutralPathExplanation;
+        public string PeStatus;
         public bool IsTwoWaySwitch;
         public bool IsHouseholdSwitch;
         public bool IsBreaker;
+        public bool IsThreePhaseMotor;
+        public bool IsContactor;
+        public bool IsContactorCoilEnergizedByAnalyzer;
+        public string CoilStatus;
+        public string CoilVoltageDescription;
+        public bool IsContactorMainContactsClosedByAnalyzer;
+        public string MainContactStatus;
+        public string MainContactDescription;
+        public bool IsMotorDeferredByContactorOutput;
+        public string MotorFeederContactorNames;
         public bool BreakerInputHasSupply;
         public bool BreakerOutputHasSupply;
         public bool BreakerHasCompleteExternalConnections;
@@ -1383,6 +2300,7 @@ namespace ElectricalSim.Core
         public readonly List<string> Warnings = new List<string>();
         public readonly List<string> Errors = new List<string>();
         public readonly List<string> Infos = new List<string>();
+        public readonly List<string> MotorIssues = new List<string>();
     }
 
     internal sealed class TerminalUnionFind

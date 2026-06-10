@@ -294,6 +294,7 @@ namespace ElectricalSim.AI
         {
             if (IndustrialCircuitExplainer.TryExplain(workspace, out var industrialExplanation))
             {
+                industrialExplanation = ApplyCurrentCircuitName(industrialExplanation);
                 AddAssistantMessage(industrialExplanation);
                 return;
             }
@@ -313,6 +314,12 @@ namespace ElectricalSim.AI
             {
                 if (IndustrialCircuitRuleAnalyzer.TryAnalyze(workspace, out var industrialResult) && industrialResult.IsIndustrial)
                 {
+                    var currentCircuitName = ResolveCurrentCircuitName();
+                    if (!string.IsNullOrWhiteSpace(currentCircuitName))
+                    {
+                        industrialResult.CircuitType = currentCircuitName;
+                    }
+
                     AddAssistantMessage(industrialResult.FormatForAssistant());
                     AppendCircuitStateAnalysis();
                     var industrialSummary = "工业电路检查完成：";
@@ -357,6 +364,47 @@ namespace ElectricalSim.AI
             }
         }
 
+        private string ApplyCurrentCircuitName(string text)
+        {
+            var currentCircuitName = ResolveCurrentCircuitName();
+            if (string.IsNullOrWhiteSpace(currentCircuitName) || string.IsNullOrWhiteSpace(text))
+            {
+                return text;
+            }
+
+            const string marker = "电路类型：";
+            var markerIndex = text.IndexOf(marker, StringComparison.Ordinal);
+            if (markerIndex < 0)
+            {
+                return text;
+            }
+
+            var lineEnd = text.IndexOf('\n', markerIndex);
+            return lineEnd < 0
+                ? text.Substring(0, markerIndex) + marker + currentCircuitName
+                : text.Substring(0, markerIndex) + marker + currentCircuitName + text.Substring(lineEnd);
+        }
+
+        private static string ResolveCurrentCircuitName()
+        {
+            if (ElectricalSim.UI.TemplateEditSession.HasSystemTemplateLoaded &&
+                !string.IsNullOrWhiteSpace(ElectricalSim.UI.TemplateEditSession.CurrentTemplateName))
+            {
+                return ElectricalSim.UI.TemplateEditSession.CurrentTemplateName;
+            }
+
+            var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
+            if (practiceController != null &&
+                practiceController.IsPracticeActive &&
+                practiceController.CurrentTemplateItem != null &&
+                !string.IsNullOrWhiteSpace(practiceController.CurrentTemplateItem.templateName))
+            {
+                return practiceController.CurrentTemplateItem.templateName;
+            }
+
+            return string.Empty;
+        }
+
         private void AppendCircuitStateAnalysis()
         {
             try
@@ -365,8 +413,8 @@ namespace ElectricalSim.AI
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("CircuitStateAnalyzer V0.1.1 failed: " + exception.Message);
-                AddAssistantMessage("【通用现象分析 V0.1.1】\n通用现象分析 V0.1.1 暂时无法完成：" + exception.Message);
+                Debug.LogWarning("CircuitStateAnalyzer failed: " + exception.Message);
+                AddAssistantMessage("【通用现象分析】\n通用现象分析暂时无法完成：" + exception.Message);
             }
         }
 
