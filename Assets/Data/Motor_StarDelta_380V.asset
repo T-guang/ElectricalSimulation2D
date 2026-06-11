@@ -21,6 +21,7 @@ MonoBehaviour:
   size: {x: 110, y: 130}
   startsClosed: 0
   togglable: 0
+  allowSameComponentJumper: 1
   controlledByTag: 
   outputTag: 
   sourceVoltage: 0
@@ -39,20 +40,35 @@ MonoBehaviour:
   - id: U1
     label: U1
     role: 4
-    normalizedPosition: {x: 0.88, y: 0.8}
+    normalizedPosition: {x: 0.2, y: 1}
     color: {r: 0.95, g: 0.78, b: 0.12, a: 1}
   - id: V1
     label: V1
     role: 4
-    normalizedPosition: {x: 0.88, y: 0.6}
+    normalizedPosition: {x: 0.5, y: 1}
     color: {r: 0.08, g: 0.65, b: 0.25, a: 1}
   - id: W1
     label: W1
     role: 4
-    normalizedPosition: {x: 0.88, y: 0.4}
+    normalizedPosition: {x: 0.8, y: 1}
     color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
   - id: U2
     label: U2
     role: 5
-    normalizedPosition: {x: 0.88, y: 0.2}
-    color: {r: 0.1, g: 0.35, b: 0.95, a: 1}
+    normalizedPosition: {x: 0.2, y: 0}
+    color: {r: 0.95, g: 0.78, b: 0.12, a: 1}
+  - id: V2
+    label: V2
+    role: 5
+    normalizedPosition: {x: 0.5, y: 0}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}
+  - id: W2
+    label: W2
+    role: 5
+    normalizedPosition: {x: 0.8, y: 0}
+    color: {r: 0.95, g: 0.12, b: 0.12, a: 1}
+  - id: PE
+    label: PE
+    role: 3
+    normalizedPosition: {x: 1, y: 0.5}
+    color: {r: 0.08, g: 0.65, b: 0.25, a: 1}

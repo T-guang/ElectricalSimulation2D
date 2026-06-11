@@ -1086,6 +1086,14 @@ namespace ElectricalSim.Core
                     info.SummaryGroup = ComponentStateInfo.GroupLoad;
                     AnalyzeSinglePhaseLoad(component, info, result, true);
                 }
+                else if (IsStarDeltaMotorComponent(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupLoad;
+                    info.IsThreePhaseMotor = true;
+                    info.IsStarDeltaMotor = true;
+                    result.HasStarDeltaMotors = true;
+                    AnalyzeStarDeltaMotor(component, unionFind, info, result);
+                }
                 else if (IsThreePhaseMotorComponent(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupLoad;
@@ -1263,6 +1271,135 @@ namespace ElectricalSim.Core
             }
 
             AnalyzeMotorPe(motor, info, result);
+        }
+
+        private static void AnalyzeStarDeltaMotor(
+            CircuitComponent motor,
+            TerminalUnionFind unionFind,
+            ComponentStateInfo info,
+            CircuitStateResult result)
+        {
+            var requiredTerminals = new[] { "U1", "V1", "W1", "U2", "V2", "W2" };
+            for (var i = 0; i < requiredTerminals.Length; i++)
+            {
+                if (motor.GetTerminal(requiredTerminals[i]) != null)
+                {
+                    continue;
+                }
+
+                info.State = "Unknown";
+                info.StarDeltaConnectionMode = "Incomplete";
+                info.Judgement = "星三角电机缺少完整的 U1/V1/W1/U2/V2/W2 绕组端子，V1.7 无法判断连接方式。";
+                info.MotorIssues.Add(info.Judgement);
+                AddComponentWarning(info, result, info.Judgement);
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            info.IsStarPointConnected =
+                AreMotorTerminalsConnected(motor, "U2", "V2", unionFind) &&
+                AreMotorTerminalsConnected(motor, "V2", "W2", unionFind);
+            info.IsDeltaConnectionDetected =
+                AreMotorTerminalsConnected(motor, "U1", "W2", unionFind) &&
+                AreMotorTerminalsConnected(motor, "V1", "U2", unionFind) &&
+                AreMotorTerminalsConnected(motor, "W1", "V2", unionFind);
+
+            if (info.IsStarPointConnected && info.IsDeltaConnectionDetected)
+            {
+                info.State = "StarDeltaConflict";
+                info.StarDeltaConnectionMode = "Conflict";
+                info.Judgement = "危险：星形连接与三角形连接同时存在，疑似星三角短接，不能作为正常运行状态。";
+                info.MotorIssues.Add(info.Judgement);
+                AddComponentError(info, result, info.Judgement);
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            var u1 = VoltageAt(info, "U1");
+            var v1 = VoltageAt(info, "V1");
+            var w1 = VoltageAt(info, "W1");
+            if (u1 == VoltageConflict || v1 == VoltageConflict || w1 == VoltageConflict)
+            {
+                info.State = "Fault";
+                info.StarDeltaConnectionMode = info.IsStarPointConnected ? "Star" :
+                    info.IsDeltaConnectionDetected ? "Delta" : "Unknown";
+                info.Judgement = "星三角电机输入端存在电压冲突或相间短路风险，不能启动。";
+                info.MotorIssues.Add(info.Judgement);
+                AddComponentError(info, result, info.Judgement);
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            var invalidTerminals = new List<string>();
+            AddInvalidMotorPhase(invalidTerminals, "U1", u1);
+            AddInvalidMotorPhase(invalidTerminals, "V1", v1);
+            AddInvalidMotorPhase(invalidTerminals, "W1", w1);
+            if (invalidTerminals.Count > 0)
+            {
+                info.State = "Stopped";
+                info.StarDeltaConnectionMode = info.IsStarPointConnected ? "Star" :
+                    info.IsDeltaConnectionDetected ? "Delta" : "Unknown";
+                info.Judgement = "星三角电机未获得完整有效三相，当前不能正常启动。";
+                info.MotorIssues.Add(string.Join("；", invalidTerminals.ToArray()) + "。");
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            var phases = new HashSet<string> { u1, v1, w1 };
+            if (phases.Count != 3)
+            {
+                info.State = "Fault";
+                info.StarDeltaConnectionMode = info.IsStarPointConnected ? "Star" :
+                    info.IsDeltaConnectionDetected ? "Delta" : "Unknown";
+                info.Judgement = "星三角电机 U1/V1/W1 存在重复相，三相输入异常，不能正常启动。";
+                info.MotorIssues.Add(info.Judgement);
+                AddComponentWarning(info, result, info.Judgement);
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            if (info.IsStarPointConnected)
+            {
+                info.State = "StarConnected";
+                info.StarDeltaConnectionMode = "Star";
+                info.Judgement = "U2/V2/W2 已短接成星点，U1/V1/W1 获得完整三相，星形启动条件成立。";
+            }
+            else if (info.IsDeltaConnectionDetected)
+            {
+                info.State = "DeltaConnected";
+                info.StarDeltaConnectionMode = "Delta";
+                info.Judgement = "检测到标准 U1-W2、V1-U2、W1-V2 三角连接，三角运行条件成立。";
+            }
+            else
+            {
+                info.State = "Stopped";
+                info.StarDeltaConnectionMode = "Unknown";
+                info.Judgement = "U1/V1/W1 已获得完整三相，但未检测到完整星形或标准三角形绕组连接，当前不判定为可运行。";
+                info.MotorIssues.Add(info.Judgement);
+                AddComponentWarning(info, result, info.Judgement);
+            }
+
+            if (info.State == "StarConnected" || info.State == "DeltaConnected")
+            {
+                info.Infos.Add(IsForwardSequence(u1, v1, w1)
+                    ? "U1/V1/W1 当前为标准正向相序 L1/L2/L3。"
+                    : "检测到完整三相输入，但相序与标准正转不同，请结合后续星三角模板确认方向。");
+            }
+
+            AnalyzeMotorPe(motor, info, result);
+        }
+
+        private static bool AreMotorTerminalsConnected(
+            CircuitComponent motor,
+            string terminalA,
+            string terminalB,
+            TerminalUnionFind unionFind)
+        {
+            var a = motor.GetTerminal(terminalA);
+            var b = motor.GetTerminal(terminalB);
+            return a != null &&
+                b != null &&
+                unionFind.Find(TerminalKey(a)) == unionFind.Find(TerminalKey(b));
         }
 
         private bool IsMotorFedThroughContactorOutputs(
@@ -2084,6 +2221,17 @@ namespace ElectricalSim.Core
                 DefinitionContains(component, "Motor_ThreePhase", "ThreePhaseMotor", "Three_Phase_Motor", "三相异步电动机", "三相电机", "电动机");
         }
 
+        private static bool IsStarDeltaMotorComponent(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.Definition.kind == ComponentKind.Motor &&
+                component.GetTerminal("U1") != null &&
+                component.GetTerminal("V1") != null &&
+                component.GetTerminal("W1") != null &&
+                DefinitionContains(component, "Motor_StarDelta", "StarDelta", "Star_Delta", "星三角");
+        }
+
         private static bool DefinitionContains(CircuitComponent component, params string[] keywords)
         {
             if (component == null || keywords == null)
@@ -2454,6 +2602,7 @@ namespace ElectricalSim.Core
         public bool HasLimitSwitches;
         public bool HasSimultaneouslyTriggeredLimitSwitches;
         public bool HasTimerRelays;
+        public bool HasStarDeltaMotors;
         public bool ContainsUnsupportedThreePhaseCircuit;
         public bool HasThreePhaseCircuit;
         public bool HasHouseholdControlSwitch;
@@ -2588,6 +2737,11 @@ namespace ElectricalSim.Core
             if (HasTimerRelays)
             {
                 AppendTimerRelayAnalysis(builder);
+            }
+
+            if (HasStarDeltaMotors)
+            {
+                AppendStarDeltaMotorAnalysis(builder);
             }
 
             AppendThreePhaseMotorAnalysis(builder);
@@ -2884,7 +3038,7 @@ namespace ElectricalSim.Core
             for (var i = 0; i < Components.Count; i++)
             {
                 var component = Components[i];
-                if (!component.IsThreePhaseMotor)
+                if (!component.IsThreePhaseMotor || component.IsStarDeltaMotor)
                 {
                     continue;
                 }
@@ -2935,6 +3089,74 @@ namespace ElectricalSim.Core
 
             builder.AppendLine("- V1.1 当前只判断已经获得三相标签的电机端子。");
             builder.AppendLine("- 电机经接触器供电时，V1.1 使用 V1.3 主触点传播后的最终标签判断方向；上级主触点未闭合时不把 U/V/W 的 None 判定为接线缺相。");
+        }
+
+        private void AppendStarDeltaMotorAnalysis(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("【通用现象分析 V1.7：星三角电机状态】");
+            var index = 1;
+            for (var i = 0; i < Components.Count; i++)
+            {
+                var component = Components[i];
+                if (!component.IsStarDeltaMotor)
+                {
+                    continue;
+                }
+
+                builder.AppendLine(index + ". " + component.DisplayName);
+                AppendMotorTerminal(builder, component, "U1");
+                AppendMotorTerminal(builder, component, "V1");
+                AppendMotorTerminal(builder, component, "W1");
+                AppendMotorTerminal(builder, component, "U2");
+                AppendMotorTerminal(builder, component, "V2");
+                AppendMotorTerminal(builder, component, "W2");
+                AppendMotorTerminal(builder, component, "PE");
+                builder.AppendLine("   - 星点 U2/V2/W2：" + (component.IsStarPointConnected ? "已短接" : "未形成完整星点"));
+                builder.AppendLine("   - 标准三角连接：" + (component.IsDeltaConnectionDetected ? "已检测到" : "未检测到"));
+                builder.AppendLine("   - 当前连接方式：" + StarDeltaConnectionText(component.StarDeltaConnectionMode));
+                builder.AppendLine("   - 状态：" + ReadableState(component.State));
+                if (!string.IsNullOrWhiteSpace(component.Judgement))
+                {
+                    builder.AppendLine("   - 说明：" + component.Judgement);
+                }
+
+                for (var issueIndex = 0; issueIndex < component.MotorIssues.Count; issueIndex++)
+                {
+                    builder.AppendLine("   - 问题：" + component.MotorIssues[issueIndex]);
+                }
+
+                for (var infoIndex = 0; infoIndex < component.Infos.Count; infoIndex++)
+                {
+                    builder.AppendLine("   - 相序说明：" + component.Infos[infoIndex]);
+                }
+
+                if (!string.IsNullOrWhiteSpace(component.PeStatus))
+                {
+                    builder.AppendLine("   - PE：" + component.PeStatus);
+                }
+
+                index++;
+            }
+
+            builder.AppendLine("- V1.7 当前识别六端子电机的星形、标准三角形及星三角同时存在风险；本阶段不计算启动电流、转速或转矩。");
+        }
+
+        private static string StarDeltaConnectionText(string mode)
+        {
+            switch (mode)
+            {
+                case "Star":
+                    return "星形连接";
+                case "Delta":
+                    return "三角形连接";
+                case "Conflict":
+                    return "星三角冲突";
+                case "Incomplete":
+                    return "端子不完整";
+                default:
+                    return "未知 / 未形成完整连接";
+            }
         }
 
         private static void AppendMotorTerminal(
@@ -3159,6 +3381,12 @@ namespace ElectricalSim.Core
                     return "互锁冲突 / 操作冲突";
                 case "TimerUnsupported":
                     return "暂未支持断电延时分析";
+                case "StarConnected":
+                    return "星形启动条件成立";
+                case "DeltaConnected":
+                    return "三角运行条件成立";
+                case "StarDeltaConflict":
+                    return "危险：星形与三角形连接同时存在";
                 default:
                     return state;
             }
@@ -3185,6 +3413,10 @@ namespace ElectricalSim.Core
         public bool IsHouseholdSwitch;
         public bool IsBreaker;
         public bool IsThreePhaseMotor;
+        public bool IsStarDeltaMotor;
+        public bool IsStarPointConnected;
+        public bool IsDeltaConnectionDetected;
+        public string StarDeltaConnectionMode;
         public bool IsContactor;
         public bool IsLimitSwitch;
         public bool IsLimitSwitchTriggered;

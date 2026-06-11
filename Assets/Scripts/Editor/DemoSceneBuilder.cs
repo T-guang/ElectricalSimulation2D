@@ -471,8 +471,12 @@ namespace ElectricalSim.EditorTools
             definitions.Add(CreateIndustrial("Contactor_KM_380V", "\u4ea4\u6d41\u63a5\u89e6\u5668(KM)\n(380V)", ComponentKind.ContactorCoil, new Color(0.82f, 0.86f, 0.9f), new Color(0.2f, 0.45f, 1f), false, false, ContactorTerminals()));
             definitions.Add(CreateIndustrial("Motor_ThreePhase_380V", "\u4e09\u76f8\u5f02\u6b65\u7535\u52a8\u673a\n(380V)", ComponentKind.Motor, new Color(0.74f, 0.88f, 1f), new Color(0.18f, 0.56f, 1f), false, false,
                 T("U", "U", TerminalRole.Input, 0.88f, 0.78f, Yellow()), T("V", "V", TerminalRole.Input, 0.88f, 0.55f, Green()), T("W", "W", TerminalRole.Input, 0.88f, 0.32f, Red()), T("PE", "PE", TerminalRole.ProtectiveEarth, 1f, 0.08f, Green())));
-            definitions.Add(CreateIndustrial("Motor_StarDelta_380V", "\u661f\u4e09\u89d2\u7535\u673a\n(380V)", ComponentKind.Motor, new Color(0.74f, 0.88f, 1f), new Color(0.18f, 0.56f, 1f), false, false,
-                T("U1", "U1", TerminalRole.Input, 0.88f, 0.8f, Yellow()), T("V1", "V1", TerminalRole.Input, 0.88f, 0.6f, Green()), T("W1", "W1", TerminalRole.Input, 0.88f, 0.4f, Red()), T("U2", "U2", TerminalRole.Output, 0.88f, 0.2f, Blue())));
+            var starDeltaMotor = CreateIndustrial("Motor_StarDelta_380V", "\u661f\u4e09\u89d2\u7535\u673a\n(380V)", ComponentKind.Motor, new Color(0.74f, 0.88f, 1f), new Color(0.18f, 0.56f, 1f), false, false,
+                T("U1", "U1", TerminalRole.Input, 0.2f, 1f, Yellow()), T("V1", "V1", TerminalRole.Input, 0.5f, 1f, Green()), T("W1", "W1", TerminalRole.Input, 0.8f, 1f, Red()),
+                T("U2", "U2", TerminalRole.Output, 0.2f, 0f, Yellow()), T("V2", "V2", TerminalRole.Output, 0.5f, 0f, Green()), T("W2", "W2", TerminalRole.Output, 0.8f, 0f, Red()),
+                T("PE", "PE", TerminalRole.ProtectiveEarth, 1f, 0.5f, Green()));
+            starDeltaMotor.allowSameComponentJumper = true;
+            definitions.Add(starDeltaMotor);
             definitions.Add(CreateIndustrial("ThermalRelay_FR_380V", "\u70ed\u7ee7\u7535\u5668(FR)\n(380V)", ComponentKind.Breaker, new Color(0.28f, 0.3f, 0.32f), new Color(0.85f, 0.18f, 0.16f), true, true, ThermalRelayTerminals()));
             definitions.Add(CreateIndustrial("SolenoidValve_24V", "\u7535\u78c1\u9600\n(24V)", ComponentKind.Indicator, new Color(0.86f, 0.9f, 0.94f), new Color(0.16f, 0.5f, 0.95f), false, false, CoilTerminals()));
             definitions.Add(CreateIndustrial("Timer_OnDelay_220V", "\u901a\u7535\u5ef6\u65f6\u65f6\u95f4\u7ee7\u7535\u5668(KT)\n(220V)", ComponentKind.ContactorCoil, new Color(0.9f, 0.94f, 0.96f), new Color(1f, 0.25f, 0.12f), false, true, TimerRelayTerminals()));
@@ -677,6 +681,7 @@ namespace ElectricalSim.EditorTools
             definition.size = new Vector2(110f, 130f);
             definition.startsClosed = startsClosed;
             definition.togglable = togglable;
+            definition.allowSameComponentJumper = false;
             definition.terminals = new List<TerminalDefinition>(terminals);
             ConfigureElectricalProfile(definition, assetName, kind);
             EditorUtility.SetDirty(definition);

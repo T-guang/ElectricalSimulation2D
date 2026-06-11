@@ -267,11 +267,41 @@ namespace ElectricalSim.Core
             currentPoints.Add(start);
             currentPoints.Add(startExit.Point);
 
-            AddAutomaticMiddlePoints(startExit, endExit);
+            if (StartTerminal.Owner == EndTerminal.Owner)
+            {
+                AddSameComponentJumperMiddlePoints(startExit, endExit);
+            }
+            else
+            {
+                AddAutomaticMiddlePoints(startExit, endExit);
+            }
 
             currentPoints.Add(endExit.Point);
             currentPoints.Add(end);
             NormalizeOrthogonalPoints(currentPoints, false);
+        }
+
+        private void AddSameComponentJumperMiddlePoints(TerminalExit startExit, TerminalExit endExit)
+        {
+            var lane = ResolveLaneDistance() + Mathf.Abs(routeOffset);
+            List<Vector2> route;
+            if (startExit.Side == TerminalExitSide.Top && endExit.Side == TerminalExitSide.Top)
+            {
+                route = BuildCorridor(startExit.Point, endExit.Point, true, startExit.Bounds.yMax + lane);
+            }
+            else if (startExit.Side == TerminalExitSide.Bottom && endExit.Side == TerminalExitSide.Bottom)
+            {
+                route = BuildCorridor(startExit.Point, endExit.Point, true, startExit.Bounds.yMin - lane);
+            }
+            else
+            {
+                route = BuildCorridor(startExit.Point, endExit.Point, false, startExit.Bounds.xMax + lane);
+            }
+
+            for (var i = 1; i < route.Count - 1; i++)
+            {
+                currentPoints.Add(route[i]);
+            }
         }
 
         private void RebuildManualRouteAsSixPoints(bool horizontal, float axis)

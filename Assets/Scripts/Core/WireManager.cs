@@ -20,9 +20,48 @@ namespace ElectricalSim.Core
 
         public WorkspaceController Workspace => workspace;
 
+        public bool CanCreateWire(TerminalView start, TerminalView end, out string rejectionReason)
+        {
+            rejectionReason = null;
+            if (start == null || end == null)
+            {
+                rejectionReason = "导线端点无效。";
+                return false;
+            }
+
+            if (start == end)
+            {
+                rejectionReason = "不能将端子连接到自身。";
+                return false;
+            }
+
+            if (start.Owner != end.Owner)
+            {
+                return true;
+            }
+
+            var component = start.Owner;
+            if (component == null ||
+                component.Definition == null ||
+                !component.Definition.allowSameComponentJumper ||
+                component.Definition.name.IndexOf("Motor_StarDelta", System.StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                rejectionReason = "当前元件不允许同一器件内部端子跳线。";
+                return false;
+            }
+
+            if (!IsStarDeltaJumperTerminal(start.TerminalId) || !IsStarDeltaJumperTerminal(end.TerminalId))
+            {
+                rejectionReason = "星三角电机只允许 U1/V1/W1/U2/V2/W2 参与跳线，PE 不参与。";
+                return false;
+            }
+
+            return true;
+        }
+
         public WireView CreateWire(TerminalView start, TerminalView end, Color color, WireStyle style)
         {
-            if (start == null || end == null || start == end || start.Owner == end.Owner)
+            if (!CanCreateWire(start, end, out _))
             {
                 return null;
             }
@@ -46,6 +85,16 @@ namespace ElectricalSim.Core
             wires.Add(wire);
             ReflowOffsets();
             return wire;
+        }
+
+        private static bool IsStarDeltaJumperTerminal(string terminalId)
+        {
+            return terminalId == "U1" ||
+                terminalId == "V1" ||
+                terminalId == "W1" ||
+                terminalId == "U2" ||
+                terminalId == "V2" ||
+                terminalId == "W2";
         }
 
         public void DeleteWire(WireView wire)

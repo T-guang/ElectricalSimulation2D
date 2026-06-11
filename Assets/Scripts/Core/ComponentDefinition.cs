@@ -18,6 +18,7 @@ namespace ElectricalSim.Core
         [Header("Electrical")]
         public bool startsClosed;
         public bool togglable;
+        public bool allowSameComponentJumper;
         public string controlledByTag;
         public string outputTag;
 

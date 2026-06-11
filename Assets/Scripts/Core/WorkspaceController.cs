@@ -240,6 +240,15 @@ namespace ElectricalSim.Core
                 return;
             }
 
+            if (!wireManager.CanCreateWire(pendingTerminal, terminal, out var rejectionReason))
+            {
+                pendingTerminal.SetSelected(false);
+                pendingTerminal = null;
+                HidePreviewLine();
+                SetStatus(rejectionReason);
+                return;
+            }
+
             RecordHistoryCheckpoint();
             wireManager.CreateWire(pendingTerminal, terminal, ResolveWireColor(pendingTerminal, terminal), CurrentWireStyle);
             pendingTerminal.SetSelected(false);
