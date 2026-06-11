@@ -243,6 +243,11 @@ namespace ElectricalSim.Core
                     return IsThreePhaseMotorEnergized(component);
                 }
 
+                if (IsStarDeltaMotorComponent(component))
+                {
+                    return IsStarDeltaMotorEnergized(component);
+                }
+
                 return HasPhaseAndNeutral(component, powered, neutral);
             }
 
@@ -613,6 +618,48 @@ namespace ElectricalSim.Core
             allPhases.UnionWith(vPhases);
             allPhases.UnionWith(wPhases);
             return allPhases.Count >= 3;
+        }
+
+        private static bool IsStarDeltaMotorComponent(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.Definition.kind == ComponentKind.Motor &&
+                component.GetTerminal("U1") != null &&
+                component.GetTerminal("V1") != null &&
+                component.GetTerminal("W1") != null &&
+                component.GetTerminal("U2") != null &&
+                component.GetTerminal("V2") != null &&
+                component.GetTerminal("W2") != null;
+        }
+
+        private bool IsStarDeltaMotorEnergized(CircuitComponent motor)
+        {
+            var u1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("U1"));
+            var v1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("V1"));
+            var w1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("W1"));
+            if (u1Phases.Count != 1 || v1Phases.Count != 1 || w1Phases.Count != 1)
+            {
+                return false;
+            }
+
+            var allPhases = new HashSet<string>(u1Phases);
+            allPhases.UnionWith(v1Phases);
+            allPhases.UnionWith(w1Phases);
+            if (allPhases.Count != 3)
+            {
+                return false;
+            }
+
+            var starConnected =
+                AreConnected(motor.GetTerminal("U2"), motor.GetTerminal("V2")) &&
+                AreConnected(motor.GetTerminal("V2"), motor.GetTerminal("W2"));
+            var deltaConnected =
+                AreConnected(motor.GetTerminal("U1"), motor.GetTerminal("W2")) &&
+                AreConnected(motor.GetTerminal("V1"), motor.GetTerminal("U2")) &&
+                AreConnected(motor.GetTerminal("W1"), motor.GetTerminal("V2"));
+
+            return starConnected != deltaConnected;
         }
 
         private void UpdateMotorDirection(CircuitComponent component, bool active)

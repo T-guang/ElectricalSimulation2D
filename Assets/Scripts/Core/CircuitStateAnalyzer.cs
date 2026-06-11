@@ -35,12 +35,22 @@ namespace ElectricalSim.Core
             var stabilized = false;
             var hasInterlockConflict = false;
             var conflictContactorIds = new HashSet<string>();
+            var observedStarDeltaConflictMotorIds = new HashSet<string>();
+            var observedSimultaneousStarDeltaContactors = false;
+            CaptureExplicitStarDeltaConflictEvidence(
+                components,
+                wires,
+                observedStarDeltaConflictMotorIds);
             Dictionary<string, bool> lastCurrentStates = null;
             Dictionary<string, bool> lastCurrentTimerStates = null;
 
             for (var iteration = 0; iteration < MaxContactorStateIterations; iteration++)
             {
                 finalResult = AnalyzePass(components, wires, previousStates, previousTimerStates);
+                CaptureStarDeltaConflictEvidence(
+                    finalResult,
+                    observedStarDeltaConflictMotorIds,
+                    ref observedSimultaneousStarDeltaContactors);
                 var currentStates = CollectContactorCoilStates(finalResult);
                 var currentTimerStates = CollectTimerRelayCoilStates(finalResult);
                 lastCurrentStates = currentStates;
@@ -91,10 +101,245 @@ namespace ElectricalSim.Core
                     wires,
                     previousStates,
                     lastCurrentTimerStates ?? previousTimerStates);
+                CaptureStarDeltaConflictEvidence(
+                    finalResult,
+                    observedStarDeltaConflictMotorIds,
+                    ref observedSimultaneousStarDeltaContactors);
             }
 
             ApplyContactorAuxiliaryContactStates(components, finalResult, previousStates, conflictContactorIds);
+            ApplyPreservedStarDeltaConflictEvidence(
+                finalResult,
+                observedStarDeltaConflictMotorIds,
+                observedSimultaneousStarDeltaContactors);
             return finalResult;
+        }
+
+        private static void CaptureExplicitStarDeltaConflictEvidence(
+            IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires,
+            HashSet<string> conflictMotorIds)
+        {
+            if (components == null || wires == null || conflictMotorIds == null)
+            {
+                return;
+            }
+
+            var wireTopology = new TerminalUnionFind();
+            for (var componentIndex = 0; componentIndex < components.Count; componentIndex++)
+            {
+                var component = components[componentIndex];
+                if (component == null || component.Terminals == null)
+                {
+                    continue;
+                }
+
+                for (var terminalIndex = 0; terminalIndex < component.Terminals.Count; terminalIndex++)
+                {
+                    wireTopology.Add(TerminalKey(component.Terminals[terminalIndex]));
+                }
+            }
+
+            for (var wireIndex = 0; wireIndex < wires.Count; wireIndex++)
+            {
+                var wire = wires[wireIndex];
+                if (wire == null || wire.StartTerminal == null || wire.EndTerminal == null)
+                {
+                    continue;
+                }
+
+                wireTopology.Union(TerminalKey(wire.StartTerminal), TerminalKey(wire.EndTerminal));
+            }
+
+            for (var motorIndex = 0; motorIndex < components.Count; motorIndex++)
+            {
+                var motor = components[motorIndex];
+                if (!IsStarDeltaMotorComponent(motor))
+                {
+                    continue;
+                }
+
+                var hasExplicitStarPoint =
+                    AreMotorTerminalsConnected(motor, "U2", "V2", wireTopology) &&
+                    AreMotorTerminalsConnected(motor, "V2", "W2", wireTopology);
+                var hasExplicitDelta =
+                    AreMotorTerminalsConnected(motor, "U1", "W2", wireTopology) &&
+                    AreMotorTerminalsConnected(motor, "V1", "U2", wireTopology) &&
+                    AreMotorTerminalsConnected(motor, "W1", "V2", wireTopology);
+
+                var hasConfiguredStarContactor = false;
+                var hasConfiguredDeltaContactor = false;
+                for (var componentIndex = 0; componentIndex < components.Count; componentIndex++)
+                {
+                    var contactor = components[componentIndex];
+                    if (!IsContactorComponent(contactor))
+                    {
+                        continue;
+                    }
+
+                    if (IsStarContactorInstanceId(SafeInstanceId(contactor)))
+                    {
+                        hasConfiguredStarContactor |= HasStandardStarContactorWiring(motor, contactor, wireTopology);
+                    }
+
+                    if (IsDeltaContactorInstanceId(SafeInstanceId(contactor)))
+                    {
+                        hasConfiguredDeltaContactor |= HasStandardDeltaContactorWiring(motor, contactor, wireTopology);
+                    }
+                }
+
+                if ((hasExplicitStarPoint && (hasExplicitDelta || hasConfiguredDeltaContactor)) ||
+                    (hasExplicitDelta && hasConfiguredStarContactor))
+                {
+                    conflictMotorIds.Add(SafeInstanceId(motor));
+                }
+            }
+        }
+
+        private static bool HasStandardStarContactorWiring(
+            CircuitComponent motor,
+            CircuitComponent contactor,
+            TerminalUnionFind wireTopology)
+        {
+            return AreTerminalsConnected(motor, "U2", contactor, "L1", wireTopology) &&
+                AreTerminalsConnected(motor, "V2", contactor, "L2", wireTopology) &&
+                AreTerminalsConnected(motor, "W2", contactor, "L3", wireTopology) &&
+                AreComponentTerminalsConnected(contactor, "T1", "T2", wireTopology) &&
+                AreComponentTerminalsConnected(contactor, "T2", "T3", wireTopology);
+        }
+
+        private static bool HasStandardDeltaContactorWiring(
+            CircuitComponent motor,
+            CircuitComponent contactor,
+            TerminalUnionFind wireTopology)
+        {
+            return AreTerminalsConnected(motor, "U1", contactor, "L1", wireTopology) &&
+                AreTerminalsConnected(motor, "W2", contactor, "T1", wireTopology) &&
+                AreTerminalsConnected(motor, "V1", contactor, "L2", wireTopology) &&
+                AreTerminalsConnected(motor, "U2", contactor, "T2", wireTopology) &&
+                AreTerminalsConnected(motor, "W1", contactor, "L3", wireTopology) &&
+                AreTerminalsConnected(motor, "V2", contactor, "T3", wireTopology);
+        }
+
+        private static bool AreTerminalsConnected(
+            CircuitComponent firstComponent,
+            string firstTerminalId,
+            CircuitComponent secondComponent,
+            string secondTerminalId,
+            TerminalUnionFind unionFind)
+        {
+            var first = firstComponent != null ? firstComponent.GetTerminal(firstTerminalId) : null;
+            var second = secondComponent != null ? secondComponent.GetTerminal(secondTerminalId) : null;
+            return first != null &&
+                second != null &&
+                unionFind.Find(TerminalKey(first)) == unionFind.Find(TerminalKey(second));
+        }
+
+        private static bool AreComponentTerminalsConnected(
+            CircuitComponent component,
+            string firstTerminalId,
+            string secondTerminalId,
+            TerminalUnionFind unionFind)
+        {
+            return AreTerminalsConnected(component, firstTerminalId, component, secondTerminalId, unionFind);
+        }
+
+        private static void CaptureStarDeltaConflictEvidence(
+            CircuitStateResult result,
+            HashSet<string> conflictMotorIds,
+            ref bool simultaneousStarDeltaContactors)
+        {
+            if (result == null || conflictMotorIds == null)
+            {
+                return;
+            }
+
+            var starContactorClosed = false;
+            var deltaContactorClosed = false;
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                var component = result.Components[i];
+                if (component.IsStarDeltaMotor &&
+                    (component.State == "StarDeltaConflict" ||
+                     (component.IsStarPointConnected && component.IsDeltaConnectionDetected)))
+                {
+                    conflictMotorIds.Add(component.InstanceId);
+                }
+
+                if (!component.IsContactor || !component.IsContactorMainContactsClosedByAnalyzer)
+                {
+                    continue;
+                }
+
+                starContactorClosed |= IsStarContactorInstanceId(component.InstanceId);
+                deltaContactorClosed |= IsDeltaContactorInstanceId(component.InstanceId);
+            }
+
+            if (!starContactorClosed || !deltaContactorClosed)
+            {
+                return;
+            }
+
+            simultaneousStarDeltaContactors = true;
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                if (result.Components[i].IsStarDeltaMotor)
+                {
+                    conflictMotorIds.Add(result.Components[i].InstanceId);
+                }
+            }
+        }
+
+        private static void ApplyPreservedStarDeltaConflictEvidence(
+            CircuitStateResult result,
+            HashSet<string> conflictMotorIds,
+            bool simultaneousStarDeltaContactors)
+        {
+            if (result == null || conflictMotorIds == null || conflictMotorIds.Count == 0)
+            {
+                return;
+            }
+
+            const string topologyDanger =
+                "危险：星形连接与三角形连接同时存在，疑似星三角短接，可能造成相间短路。";
+            const string contactorDanger =
+                "危险：星形接触器 KMY 与三角形接触器 KMD 同时闭合，存在星三角短接风险。";
+
+            for (var i = 0; i < result.Components.Count; i++)
+            {
+                var component = result.Components[i];
+                if (!component.IsStarDeltaMotor || !conflictMotorIds.Contains(component.InstanceId))
+                {
+                    continue;
+                }
+
+                component.State = "StarDeltaConflict";
+                component.StarDeltaConnectionMode = "Conflict";
+                component.IsStarPointConnected = true;
+                component.IsDeltaConnectionDetected = true;
+                component.Judgement = simultaneousStarDeltaContactors
+                    ? contactorDanger + topologyDanger
+                    : topologyDanger;
+                AddUnique(component.MotorIssues, component.Judgement);
+                AddComponentError(component, result, component.Judgement);
+            }
+
+            result.HasPowerConflict = true;
+            result.HasShortCircuit = true;
+        }
+
+        private static bool IsStarContactorInstanceId(string instanceId)
+        {
+            return string.Equals(instanceId, "km_star", StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(instanceId) &&
+                 instanceId.IndexOf("kmy", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static bool IsDeltaContactorInstanceId(string instanceId)
+        {
+            return string.Equals(instanceId, "km_delta", StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(instanceId) &&
+                 instanceId.IndexOf("kmd", StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         private CircuitStateResult AnalyzePass(
@@ -672,6 +917,13 @@ namespace ElectricalSim.Core
                 info.IsCompoundButtonInterlockConflict = result.HasCompoundButtonInterlockConflict;
                 info.IsInactiveDirectionInForwardReversePair =
                     info.HasSelfHoldStructure && contactorCount > 1 && !isEnergized;
+                info.HasSelfHoldHistoryAmbiguity =
+                    info.HasSelfHoldStructure &&
+                    !hasOpenStopControl &&
+                    !isEnergized &&
+                    !isInterlockConflict &&
+                    !result.HasCompoundButtonInterlockConflict &&
+                    !info.IsInactiveDirectionInForwardReversePair;
                 info.SelfHoldStatus = BuildSelfHoldStatus(
                     info,
                     isEnergized,
@@ -731,7 +983,7 @@ namespace ElectricalSim.Core
                     : "当前方向未启动或控制路径未闭合；线圈未得电，13/14 未闭合，不处于自锁保持状态";
             }
 
-            return "检测到 13/14 自锁结构；当前停止回路闭合且启动按钮未形成确定启动状态，静态快照无法确认此前是否已吸合进入保持状态";
+            return "检测到接触器 13/14 自锁结构。当前检查面板为静态拓扑分析，不读取画布 RUN 历史；若该接触器此前已经吸合，则可能通过自锁支路保持运行。请以冷启动状态或重置运行状态后再判断是否会自行启动";
         }
 
         private static int CountContactors(IReadOnlyList<CircuitComponent> components)
@@ -2447,7 +2699,7 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                var name = DisplayName(component);
+                var name = FriendlyDisplayName(component);
                 totals[name] = totals.TryGetValue(name, out var count) ? count + 1 : 1;
             }
 
@@ -2460,10 +2712,31 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                var name = DisplayName(component);
+                var name = FriendlyDisplayName(component);
                 indexes[name] = indexes.TryGetValue(name, out var index) ? index + 1 : 1;
                 friendlyNamesByInstanceId[SafeInstanceId(component)] = totals[name] > 1 ? name + " #" + indexes[name] : name;
             }
+        }
+
+        private static string FriendlyDisplayName(CircuitComponent component)
+        {
+            var instanceId = SafeInstanceId(component);
+            if (instanceId.Equals("km_main", StringComparison.OrdinalIgnoreCase))
+            {
+                return "主接触器 KM";
+            }
+
+            if (instanceId.Equals("km_star", StringComparison.OrdinalIgnoreCase))
+            {
+                return "星形接触器 KMY";
+            }
+
+            if (instanceId.Equals("km_delta", StringComparison.OrdinalIgnoreCase))
+            {
+                return "三角形接触器 KMD";
+            }
+
+            return DisplayName(component);
         }
 
         private static string ShortId(string instanceId)
@@ -2782,6 +3055,11 @@ namespace ElectricalSim.Core
                     builder.AppendLine("   - 判断：" + component.Judgement);
                 }
 
+                if (component.HasSelfHoldHistoryAmbiguity)
+                {
+                    builder.AppendLine("   - 静态分析说明：" + SelfHoldHistoryExplanation());
+                }
+
                 if (component.IsContactorCoilEnergizedByAnalyzer)
                 {
                     energizedCount++;
@@ -2826,6 +3104,11 @@ namespace ElectricalSim.Core
                 if (!string.IsNullOrWhiteSpace(component.MainContactDescription))
                 {
                     builder.AppendLine("   - 说明：" + component.MainContactDescription);
+                }
+
+                if (component.HasSelfHoldHistoryAmbiguity)
+                {
+                    builder.AppendLine("   - 静态分析说明：" + SelfHoldHistoryExplanation());
                 }
 
                 if (component.IsContactorMainContactsClosedByAnalyzer)
@@ -2876,11 +3159,13 @@ namespace ElectricalSim.Core
             if (HasContactorInterlockConflict)
             {
                 builder.AppendLine("- 检测到正反转方向同时启动或互锁状态无法稳定；该状态属于互锁冲突操作，V1.4 已阻止相关主触点作为正常闭合状态传播。");
+                builder.AppendLine("- 历史运行说明：" + InterlockHistoryExplanation());
             }
 
             if (HasCompoundButtonInterlockConflict)
             {
                 builder.AppendLine("- 检测到两个方向复合按钮同时按下；按钮联锁使两个接触器线圈均不能作为正常得电状态，13/14 均不闭合。");
+                builder.AppendLine("- 历史运行说明：" + InterlockHistoryExplanation());
             }
 
             builder.AppendLine("- V1.4 从全部接触器未吸合状态开始有限轮迭代，最多 5 轮；不读取接触器或电机 RUN 状态。");
@@ -3064,6 +3349,19 @@ namespace ElectricalSim.Core
                     builder.AppendLine("   - 说明：" + component.Judgement);
                 }
 
+                if (component.State == "Stopped" &&
+                    component.IsMotorDeferredByContactorOutput &&
+                    HasAnySelfHoldHistoryAmbiguity())
+                {
+                    builder.AppendLine("   - 静态分析说明：" + SelfHoldHistoryExplanation());
+                }
+                else if (component.State == "Stopped" &&
+                    component.IsMotorDeferredByContactorOutput &&
+                    (HasContactorInterlockConflict || HasCompoundButtonInterlockConflict))
+                {
+                    builder.AppendLine("   - 静态分析说明：" + InterlockHistoryExplanation());
+                }
+
                 for (var issueIndex = 0; issueIndex < component.MotorIssues.Count; issueIndex++)
                 {
                     builder.AppendLine("   - 问题：" + component.MotorIssues[issueIndex]);
@@ -3091,6 +3389,29 @@ namespace ElectricalSim.Core
             builder.AppendLine("- 电机经接触器供电时，V1.1 使用 V1.3 主触点传播后的最终标签判断方向；上级主触点未闭合时不把 U/V/W 的 None 判定为接线缺相。");
         }
 
+        private bool HasAnySelfHoldHistoryAmbiguity()
+        {
+            for (var i = 0; i < Components.Count; i++)
+            {
+                if (Components[i].HasSelfHoldHistoryAmbiguity)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string SelfHoldHistoryExplanation()
+        {
+            return "检测到接触器 13/14 自锁结构。当前检查面板为静态拓扑分析，不读取画布 RUN 历史；若该接触器此前已经吸合，则可能通过自锁支路保持运行。请以冷启动状态或重置运行状态后再判断是否会自行启动。";
+        }
+
+        private static string InterlockHistoryExplanation()
+        {
+            return "检测到正反转控制冲突或互锁状态异常。当前静态分析不读取历史运行保持；若正转或反转接触器此前已经吸合，画布运行态可能继续保持。建议停止按钮 OFF 后复位，再重新测试。";
+        }
+
         private void AppendStarDeltaMotorAnalysis(StringBuilder builder)
         {
             builder.AppendLine();
@@ -3105,6 +3426,11 @@ namespace ElectricalSim.Core
                 }
 
                 builder.AppendLine(index + ". " + component.DisplayName);
+                if (component.State == "StarDeltaConflict" && !string.IsNullOrWhiteSpace(component.Judgement))
+                {
+                    builder.AppendLine("   - 危险提示：" + component.Judgement);
+                }
+
                 AppendMotorTerminal(builder, component, "U1");
                 AppendMotorTerminal(builder, component, "V1");
                 AppendMotorTerminal(builder, component, "W1");
@@ -3116,7 +3442,7 @@ namespace ElectricalSim.Core
                 builder.AppendLine("   - 标准三角连接：" + (component.IsDeltaConnectionDetected ? "已检测到" : "未检测到"));
                 builder.AppendLine("   - 当前连接方式：" + StarDeltaConnectionText(component.StarDeltaConnectionMode));
                 builder.AppendLine("   - 状态：" + ReadableState(component.State));
-                if (!string.IsNullOrWhiteSpace(component.Judgement))
+                if (component.State != "StarDeltaConflict" && !string.IsNullOrWhiteSpace(component.Judgement))
                 {
                     builder.AppendLine("   - 说明：" + component.Judgement);
                 }
@@ -3442,6 +3768,7 @@ namespace ElectricalSim.Core
         public bool IsSelfHoldCutByStopOrControlOpen;
         public bool IsInactiveDirectionInForwardReversePair;
         public bool IsCompoundButtonInterlockConflict;
+        public bool HasSelfHoldHistoryAmbiguity;
         public string SelfHoldStatus;
         public string InterlockStatus;
         public bool IsMotorDeferredByContactorOutput;

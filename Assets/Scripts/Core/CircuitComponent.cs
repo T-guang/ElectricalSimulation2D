@@ -43,11 +43,31 @@ namespace ElectricalSim.Core
 
             if (title != null)
             {
-                title.text = definition.displayName;
+                title.text = ResolveInstanceDisplayName(definition.displayName, InstanceId);
             }
 
             BuildTerminals();
             RefreshVisual();
+        }
+
+        private static string ResolveInstanceDisplayName(string defaultName, string instanceId)
+        {
+            if (string.Equals(instanceId, "km_main", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "主接触器 KM";
+            }
+
+            if (string.Equals(instanceId, "km_star", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "星形接触器 KMY";
+            }
+
+            if (string.Equals(instanceId, "km_delta", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "三角形接触器 KMD";
+            }
+
+            return defaultName;
         }
 
         public TerminalView GetTerminal(string terminalId)
