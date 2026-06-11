@@ -149,7 +149,7 @@
       "templateName": "两电机时间继电器顺序启动控制电路",
       "category": "工业电路",
       "difficulty": "中高级",
-      "description": "使用通电延时时间继电器 KT 实现两台三相异步电动机顺序启动。M1 先启动，KT 得电计时；延时到达后 KT 延时常开触点闭合，KM2 得电，M2 启动。",
+      "description": "M1 先启动，KT 使用 ON/OFF 手动模拟延时：OFF 表示延时未到，ON 表示延时到达；延时到达后 KM2/M2 启动。真实秒级计时将在后续版本中支持。",
       "resourcePath": "Blueprints/Templates/motor_sequential_start_timer_template",
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     }

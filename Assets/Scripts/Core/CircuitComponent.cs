@@ -126,7 +126,12 @@ namespace ElectricalSim.Core
             workspace?.RecordHistoryCheckpoint();
             IsClosed = !IsClosed;
             RefreshVisual();
-            workspace?.MarkSimulationDirty("开关状态已改变，点击开始仿真刷新结果。");
+            var statusMessage = IsOnDelayTimerRelay()
+                ? "时间继电器手动模拟延时状态已切换：KT " +
+                  (IsClosed ? "ON（延时到达）" : "OFF（延时未到）") +
+                  "。点击开始仿真刷新结果。"
+                : "开关状态已改变，点击开始仿真刷新结果。";
+            workspace?.MarkSimulationDirty(statusMessage);
         }
 
         public void OnPointerClick(PointerEventData eventData)
@@ -262,6 +267,11 @@ namespace ElectricalSim.Core
                     stateLabel.text = IsClosed ? "L-L1" : "L-L2";
                     stateLabel.color = new Color(0.05f, 0.42f, 0.9f);
                 }
+                else if (IsOnDelayTimerRelay())
+                {
+                    stateLabel.text = IsClosed ? "到达" : "未到";
+                    stateLabel.color = IsClosed ? new Color(0.05f, 0.55f, 0.24f) : new Color(0.65f, 0.1f, 0.1f);
+                }
                 else if (Definition.togglable)
                 {
                     stateLabel.text = IsClosed ? "ON" : "OFF";
@@ -273,6 +283,13 @@ namespace ElectricalSim.Core
                     stateLabel.color = new Color(0.05f, 0.45f, 0.95f);
                 }
             }
+        }
+
+        private bool IsOnDelayTimerRelay()
+        {
+            return Definition != null &&
+                   !string.IsNullOrWhiteSpace(Definition.name) &&
+                   Definition.name.IndexOf("Timer_OnDelay", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private string GetRunStateText()

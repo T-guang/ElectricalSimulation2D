@@ -3,7 +3,7 @@
   "templateName": "两电机时间继电器顺序启动控制电路",
   "category": "工业电路",
   "difficulty": "中高级",
-  "description": "使用通电延时时间继电器 KT 实现两台三相异步电动机顺序启动。启动后 M1 先运行，KT 得电计时；延时到达后 KT 延时常开触点闭合，KM2 得电，M2 启动。",
+  "description": "使用通电延时时间继电器 KT 实现两台三相异步电动机顺序启动。启动后 M1 先运行，KT 线圈得电；当前版本使用 KT 的 ON/OFF 手动模拟延时状态：OFF 表示延时未到，此时 KM2 不启动；ON 表示延时到达，此时 KT.15/18 导通，KM2 得电，M2 启动。真实秒级计时将在后续版本中支持。",
   "components": [
     {
       "instanceId": "power_3p_1",
