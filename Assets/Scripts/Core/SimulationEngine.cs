@@ -22,6 +22,11 @@ namespace ElectricalSim.Core
             this.simulationDeltaTime = Mathf.Max(0f, simulationDeltaTime);
         }
 
+        public static void ResetRuntimeState()
+        {
+            selfHoldEligibleContactors.Clear();
+        }
+
         public string Run()
         {
             StabilizeDynamicControlDevices();

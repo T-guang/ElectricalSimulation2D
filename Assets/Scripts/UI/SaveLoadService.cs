@@ -300,7 +300,7 @@ namespace ElectricalSim.UI
             }
 
             workspace.WireManager.RefreshAll();
-            workspace.MarkSimulationDirty();
+            workspace.MarkTopologyDirty();
             workspace.ClearHistory();
         }
 

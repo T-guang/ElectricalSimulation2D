@@ -160,7 +160,7 @@ namespace ElectricalSim.Core
             }
 
             components.Add(component);
-            MarkSimulationDirty();
+            MarkTopologyDirty();
             return component;
         }
 
@@ -246,7 +246,7 @@ namespace ElectricalSim.Core
             pendingTerminal = null;
             HidePreviewLine();
             wireManager.RefreshAll();
-            MarkSimulationDirty("已完成接线，点击开始仿真查看结果。");
+            MarkTopologyDirty("已完成接线，点击开始仿真查看结果。");
         }
 
         public Vector2 Snap(Vector2 position)
@@ -329,6 +329,29 @@ namespace ElectricalSim.Core
             }
         }
 
+        public void MarkTopologyDirty(string message = null)
+        {
+            simulationDirty = true;
+            ClearRuntimeLatchedStates();
+
+            if (IsSimulationRunning)
+            {
+                EvaluateSimulation();
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                SetStatus(message);
+            }
+        }
+
+        public void ClearRuntimeLatchedStates()
+        {
+            SimulationEngine.ResetRuntimeState();
+            ClearSimulationResult();
+        }
+
         public void ClearSimulationResult()
         {
             foreach (var component in components)
@@ -356,7 +379,7 @@ namespace ElectricalSim.Core
             ClearSelection();
             RecordHistoryCheckpoint();
             wireManager.Clear();
-            MarkSimulationDirty("已删除所有导线，点击开始仿真重新检查。");
+            MarkTopologyDirty("已删除所有导线，点击开始仿真重新检查。");
         }
 
         public void SelectComponent(CircuitComponent component)
@@ -443,7 +466,7 @@ namespace ElectricalSim.Core
                 selectedWire.SetSelected(false);
                 wireManager.DeleteWire(selectedWire);
                 selectedWire = null;
-                MarkSimulationDirty("已删除选中导线，点击开始仿真重新检查。");
+                MarkTopologyDirty("已删除选中导线，点击开始仿真重新检查。");
                 return;
             }
 
@@ -477,7 +500,7 @@ namespace ElectricalSim.Core
             Destroy(selectedComponent.gameObject);
             selectedComponent = null;
             wireManager.RefreshAll();
-            MarkSimulationDirty("已删除选中元件及相关导线，点击开始仿真重新检查。");
+            MarkTopologyDirty("已删除选中元件及相关导线，点击开始仿真重新检查。");
         }
 
         public void ClearDrawing()
@@ -518,7 +541,7 @@ namespace ElectricalSim.Core
             componentParameterView?.Hide();
             HidePreviewLine();
             wireManager.Clear();
-            MarkSimulationDirty();
+            MarkTopologyDirty();
             SetStatus("画布已清空。");
         }
 
@@ -953,7 +976,7 @@ namespace ElectricalSim.Core
 
             wireManager.RefreshAll();
             restoringHistory = false;
-            MarkSimulationDirty();
+            MarkTopologyDirty();
         }
 
         private void CancelPendingWire(string status)

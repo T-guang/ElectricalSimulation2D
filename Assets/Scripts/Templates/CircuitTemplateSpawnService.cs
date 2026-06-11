@@ -84,7 +84,7 @@ namespace ElectricalSim.Templates
             }
 
             workspace.WireManager.RefreshAll();
-            workspace.MarkSimulationDirty();
+            workspace.MarkTopologyDirty();
             message = "已加载模板：" + template.templateName;
             workspace.SetStatus(message);
             return true;

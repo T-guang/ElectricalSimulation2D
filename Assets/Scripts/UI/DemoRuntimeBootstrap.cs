@@ -58,7 +58,7 @@ namespace ElectricalSim.UI
             CreateWire(fanView, "N", breakerView, "P2_OUT", new Color(0.1f, 0.35f, 0.95f));
 
             workspace.WireManager.RefreshAll();
-            workspace.MarkSimulationDirty();
+            workspace.MarkTopologyDirty();
             workspace.ClearHistory();
             workspace.SetStatus("默认家庭照明示例：电能表经过 2P 空开和单开开关控制灯泡/风扇。双击开关或空开可切换通断。");
         }
