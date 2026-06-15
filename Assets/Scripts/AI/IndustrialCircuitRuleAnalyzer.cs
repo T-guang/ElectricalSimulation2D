@@ -51,7 +51,10 @@ namespace ElectricalSim.AI
 
             facts.HasSelfHold = facts.Contactors.Any(c => HasTerminalWire(facts, c, "13") || HasTerminalWire(facts, c, "14"));
             facts.HasThermalControlContact = facts.ThermalRelays.Any(r => HasTerminalWire(facts, r, "95") || HasTerminalWire(facts, r, "96"));
-            facts.HasMutualInterlock = facts.Contactors.Count >= 2 && HasMutualInterlockWiring(facts, facts.Contactors[0], facts.Contactors[1]);
+            facts.IsForwardReverseControl = HasForwardReverseRoles(facts.Components);
+            facts.HasMutualInterlock = facts.IsForwardReverseControl &&
+                facts.Contactors.Count >= 2 &&
+                HasMutualInterlockWiring(facts, facts.Contactors[0], facts.Contactors[1]);
             facts.HasButtonInterlock = facts.CompoundButtons.Count >= 2 && HasCompoundButtonInterlockWiring(facts);
             facts.IsIndustrial = facts.PowerSources.Count > 0 || facts.Motors.Count > 0 || facts.Contactors.Count > 0 || facts.ThermalRelays.Count > 0;
             facts.CircuitType = ResolveCircuitType(facts);
@@ -83,9 +86,13 @@ namespace ElectricalSim.AI
             foreach (var motor in facts.Motors)
             {
                 var missing = new List<string>();
-                if (!HasTerminalWire(facts, motor, "U")) missing.Add("U");
-                if (!HasTerminalWire(facts, motor, "V")) missing.Add("V");
-                if (!HasTerminalWire(facts, motor, "W")) missing.Add("W");
+                var isStarDeltaMotor = motor.GetTerminal("U1") != null;
+                var first = isStarDeltaMotor ? "U1" : "U";
+                var second = isStarDeltaMotor ? "V1" : "V";
+                var third = isStarDeltaMotor ? "W1" : "W";
+                if (!HasTerminalWire(facts, motor, first)) missing.Add(first);
+                if (!HasTerminalWire(facts, motor, second)) missing.Add(second);
+                if (!HasTerminalWire(facts, motor, third)) missing.Add(third);
                 if (missing.Count > 0)
                 {
                     result.Errors.Add("三相异步电动机 " + DisplayName(motor) + " 的 " + string.Join("/", missing) + " 端子未接入主回路。 ");
@@ -110,14 +117,8 @@ namespace ElectricalSim.AI
                 }
             }
 
-            if (facts.Contactors.Count >= 2)
+            if (facts.IsForwardReverseControl && facts.Contactors.Count >= 2)
             {
-                var energized = facts.Contactors.Where(c => c.IsEnergized).ToList();
-                if (energized.Count > 1)
-                {
-                    result.Errors.Add("检测到两个方向接触器同时吸合，正反转主回路存在短路风险，请检查互锁触点 21/22。 ");
-                }
-
                 if (!facts.HasMutualInterlock)
                 {
                     result.Warnings.Add("正反转控制回路未检测到完整的 21/22 电气互锁。KM1 线圈支路应串入 KM2 的 21/22，KM2 线圈支路应串入 KM1 的 21/22。 ");
@@ -142,7 +143,7 @@ namespace ElectricalSim.AI
 
         private static void AddTeachingTips(IndustrialCircuitFacts facts, CircuitAnalysisResult result)
         {
-            if (facts.Contactors.Count >= 2)
+            if (facts.IsForwardReverseControl && facts.Contactors.Count >= 2)
             {
                 result.TeachingTips.Add("正反转电路应把主回路和控制回路分开理解：主回路决定电机相序，控制回路决定哪个接触器吸合。 ");
                 result.TeachingTips.Add("21/22 是接触器辅助常闭触点，一侧接触器吸合后应切断另一侧线圈回路，防止两个方向同时吸合。 ");
@@ -164,7 +165,7 @@ namespace ElectricalSim.AI
 
         private static string ResolveCircuitType(IndustrialCircuitFacts facts)
         {
-            if (facts.Contactors.Count >= 2 && facts.Motors.Count > 0)
+            if (facts.IsForwardReverseControl && facts.Contactors.Count >= 2 && facts.Motors.Count > 0)
             {
                 return facts.HasMutualInterlock ? "电气互锁正反转控制电路" : "电动机正反转控制电路";
             }
@@ -305,7 +306,35 @@ namespace ElectricalSim.AI
         {
             return component != null && component.Definition != null &&
                 component.Definition.kind == ComponentKind.Motor &&
-                component.GetTerminal("U") != null && component.GetTerminal("V") != null && component.GetTerminal("W") != null;
+                (component.GetTerminal("U") != null && component.GetTerminal("V") != null && component.GetTerminal("W") != null ||
+                 component.GetTerminal("U1") != null && component.GetTerminal("V1") != null && component.GetTerminal("W1") != null);
+        }
+
+        private static bool HasForwardReverseRoles(List<CircuitComponent> components)
+        {
+            var hasForward = false;
+            var hasReverse = false;
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (component == null || component.Definition == null)
+                {
+                    continue;
+                }
+
+                var identity = component.InstanceId + " " + component.Definition.name + " " + DisplayName(component);
+                hasForward |= ContainsRole(identity, "forward", "正转", "km_f");
+                hasReverse |= ContainsRole(identity, "reverse", "反转", "km_r");
+            }
+
+            return hasForward && hasReverse;
+        }
+
+        private static bool ContainsRole(string identity, string english, string chinese, string alias)
+        {
+            return identity.IndexOf(english, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                identity.Contains(chinese) ||
+                identity.IndexOf(alias, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool IsContactor(CircuitComponent component)
@@ -391,5 +420,6 @@ namespace ElectricalSim.AI
         public bool HasThermalControlContact;
         public bool HasMutualInterlock;
         public bool HasButtonInterlock;
+        public bool IsForwardReverseControl;
     }
 }

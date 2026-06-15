@@ -320,8 +320,9 @@ namespace ElectricalSim.AI
                         industrialResult.CircuitType = currentCircuitName;
                     }
 
-                    AddAssistantMessage(industrialResult.FormatForAssistant());
-                    AppendCircuitStateAnalysis();
+                    var industrialStateResult = AnalyzeCircuitState();
+                    var industrialDebugDetails = industrialResult.FormatForAssistant() + "\n\n" + industrialStateResult.ToReadableText();
+                    AddAssistantMessage(TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails));
                     var industrialSummary = "工业电路检查完成：";
                     if (industrialResult.ErrorCount > 0)
                     {
@@ -342,9 +343,10 @@ namespace ElectricalSim.AI
                 var checker = new CircuitRuleChecker(workspace);
                 var result = checker.Check();
                 var stateResult = AnalyzeCircuitState();
-                var displayResult = FilterBreakerDirectControlFalsePositives(result, stateResult);
-                AddAssistantMessage(CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult));
-                AddAssistantMessage(stateResult.ToReadableText());
+                var displayResult = FilterCheckPanelFalsePositives(result, stateResult);
+                var debugDetails = CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
+                    "\n\n" + stateResult.ToReadableText();
+                AddAssistantMessage(TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails));
                 
                 string summary = "电路检查完成：";
                 if (displayResult.ErrorCount > 0 || displayResult.WarningCount > 0)
@@ -424,7 +426,7 @@ namespace ElectricalSim.AI
             return analyzer.Analyze(workspace.Components, workspace.WireManager != null ? workspace.WireManager.Wires : null);
         }
 
-        private static CircuitCheckResult FilterBreakerDirectControlFalsePositives(
+        private static CircuitCheckResult FilterCheckPanelFalsePositives(
             CircuitCheckResult ruleResult,
             CircuitStateResult stateResult)
         {
@@ -434,6 +436,8 @@ namespace ElectricalSim.AI
             }
 
             var filtered = new CircuitCheckResult();
+            var hasTwoWaySwitch = HasTwoWaySwitch(stateResult);
+            var requireBreaker = ShouldRequireBreakerForCurrentTemplate();
             for (var i = 0; i < ruleResult.issues.Count; i++)
             {
                 var issue = ruleResult.issues[i];
@@ -445,7 +449,25 @@ namespace ElectricalSim.AI
                     !stateResult.HasHouseholdControlSwitch &&
                     (issue.code == "LoadLivePathWithoutSwitch" ||
                      issue.code == "ParallelLoadBypassedControl");
-                if (isBreakerCompletenessFalsePositive || isBreakerDirectControlFalsePositive)
+                var isOptionalBreakerReminder = issue != null &&
+                    issue.code == "NO_BREAKER" &&
+                    !requireBreaker;
+                var isTwoWayControlFalsePositive = issue != null &&
+                    hasTwoWaySwitch &&
+                    (issue.code == "LoadLivePathWithoutSwitch" ||
+                     issue.code == "ParallelLoadBypassedControl" ||
+                     issue.code == "SwitchBypassed" ||
+                     issue.code == "SingleSwitchTerminalMiswired" ||
+                     issue.code == "OPEN_DEVICE");
+                var isStoppedLoadControlFalsePositive = issue != null &&
+                    (issue.code == "LoadLivePathWithoutSwitch" ||
+                     issue.code == "ParallelLoadBypassedControl") &&
+                    IsStoppedLoadIssue(issue, stateResult);
+                if (isBreakerCompletenessFalsePositive ||
+                    isBreakerDirectControlFalsePositive ||
+                    isOptionalBreakerReminder ||
+                    isTwoWayControlFalsePositive ||
+                    isStoppedLoadControlFalsePositive)
                 {
                     continue;
                 }
@@ -454,6 +476,58 @@ namespace ElectricalSim.AI
             }
 
             return filtered;
+        }
+
+        private static bool HasTwoWaySwitch(CircuitStateResult stateResult)
+        {
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                if (stateResult.Components[i].IsTwoWaySwitch)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsStoppedLoadIssue(CircuitIssue issue, CircuitStateResult stateResult)
+        {
+            if (issue == null || string.IsNullOrWhiteSpace(issue.componentId))
+            {
+                return false;
+            }
+
+            var component = stateResult.FindComponent(issue.componentId);
+            if (component == null || component.SummaryGroup != ComponentStateInfo.GroupLoad)
+            {
+                return false;
+            }
+
+            return component.State != "On" &&
+                component.State != "Running" &&
+                component.State != "Forward" &&
+                component.State != "Reverse" &&
+                component.State != "StarConnected" &&
+                component.State != "DeltaConnected";
+        }
+
+        private static bool ShouldRequireBreakerForCurrentTemplate()
+        {
+            var identity = ElectricalSim.UI.TemplateEditSession.CurrentTemplateId + " " +
+                ElectricalSim.UI.TemplateEditSession.CurrentTemplateName;
+            var practiceController = ElectricalSim.Practice.PracticeSessionController.Instance;
+            if (practiceController != null &&
+                practiceController.IsPracticeActive &&
+                practiceController.CurrentTemplateItem != null)
+            {
+                identity += " " + practiceController.CurrentTemplateItem.templateId +
+                    " " + practiceController.CurrentTemplateItem.templateName;
+            }
+
+            return identity.IndexOf("breaker", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                identity.Contains("空气开关") ||
+                identity.Contains("空开");
         }
         private void SubmitPracticeCheck()
         {

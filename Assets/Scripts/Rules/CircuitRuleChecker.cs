@@ -261,6 +261,7 @@ namespace ElectricalSim.Rules
 
         private void CheckSwitchOnPhaseBranch()
         {
+            var switchExternalGraph = BuildExternalSwitchGraph();
             foreach (var load in loads)
             {
                 if (IsThreePhaseMotor(load))
@@ -294,7 +295,7 @@ namespace ElectricalSim.Rules
                 var switchOnPhasePath = false;
                 foreach (var sw in switches)
                 {
-                    if (IsSwitchOnPhasePath(sw, loadL))
+                    if (IsSwitchOnPhasePath(sw, loadL, switchExternalGraph))
                     {
                         switchOnPhasePath = true;
                         break;
@@ -438,6 +439,7 @@ namespace ElectricalSim.Rules
 
         private void CheckBypassedDevices()
         {
+            var switchExternalGraph = BuildExternalSwitchGraph();
             foreach (var load in loads)
             {
                 if (IsThreePhaseMotor(load))
@@ -459,7 +461,7 @@ namespace ElectricalSim.Rules
                 {
                     foreach (var sw in switches)
                     {
-                        if (!sw.IsClosed && IsSwitchOnPhasePath(sw, loadL))
+                        if (!sw.IsClosed && IsSwitchOnPhasePath(sw, loadL, switchExternalGraph))
                         {
                             AddIssue(CircuitIssueSeverity.Warning, "SwitchBypassed", 
                                 LoadName(load) + "在" + sw.Definition.displayName + " OFF 时仍然处于通电状态。", 
@@ -486,13 +488,16 @@ namespace ElectricalSim.Rules
             }
         }
 
-        private bool IsSwitchOnPhasePath(CircuitComponent sw, TerminalView loadL)
+        private bool IsSwitchOnPhasePath(
+            CircuitComponent sw,
+            TerminalView loadL,
+            Dictionary<string, HashSet<string>> switchExternalGraph)
         {
             var input = sw.GetTerminal("L");
             var output = sw.GetTerminal("L1") ?? sw.GetTerminal("L2");
             return input != null && output != null &&
-                   CanReachAnyPowerTerminal(input, TerminalRole.Phase, structuralGraph) &&
-                   AreConnected(output, loadL, structuralGraph);
+                   CanReachAnyPowerTerminal(input, TerminalRole.Phase, switchExternalGraph) &&
+                   AreConnected(output, loadL, switchExternalGraph);
         }
 
         private bool IsBreakerOnPhasePath(CircuitComponent breaker, TerminalView loadL)
