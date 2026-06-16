@@ -173,9 +173,9 @@ namespace ElectricalSim.Core
             IsClosed = !IsClosed;
             RefreshVisual();
             var statusMessage = IsOnDelayTimerRelay()
-                ? "时间继电器手动模拟延时状态已切换：KT " +
-                  (IsClosed ? "ON（延时到达）" : "OFF（延时未到）") +
-                  "。点击开始仿真刷新结果。"
+                ? "时间继电器旧手动状态已切换：KT " +
+                  (IsClosed ? "ON（兼容旧图纸状态）" : "OFF（兼容旧图纸状态）") +
+                  "。V2.1.2 起延时触点以运行态计时为准。"
                 : "开关状态已改变，点击开始仿真刷新结果。";
             workspace?.MarkSimulationDirty(statusMessage);
         }
@@ -315,19 +315,102 @@ namespace ElectricalSim.Core
                 }
                 else if (IsOnDelayTimerRelay())
                 {
-                    stateLabel.text = IsClosed ? "到达" : "未到";
-                    stateLabel.color = IsClosed ? new Color(0.05f, 0.55f, 0.24f) : new Color(0.65f, 0.1f, 0.1f);
+                    ConfigureOnDelayTimerStateLabel(stateLabel);
+                    stateLabel.text = GetOnDelayTimerRuntimeText();
+                    stateLabel.color = GetOnDelayTimerRuntimeColor();
                 }
                 else if (Definition.togglable)
                 {
+                    ConfigureDefaultStateLabel(stateLabel);
+                    stateLabel.fontSize = 18;
                     stateLabel.text = IsClosed ? "ON" : "OFF";
                     stateLabel.color = IsClosed ? new Color(0.05f, 0.55f, 0.24f) : new Color(0.65f, 0.1f, 0.1f);
                 }
                 else
                 {
+                    ConfigureDefaultStateLabel(stateLabel);
+                    stateLabel.fontSize = 18;
                     stateLabel.text = IsEnergized ? GetRunStateText() : "";
                     stateLabel.color = new Color(0.05f, 0.45f, 0.95f);
                 }
+            }
+        }
+
+        private static void ConfigureDefaultStateLabel(Text label)
+        {
+            if (label == null)
+            {
+                return;
+            }
+
+            label.lineSpacing = 1f;
+            label.horizontalOverflow = HorizontalWrapMode.Wrap;
+            label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.resizeTextForBestFit = false;
+        }
+
+        private static void ConfigureOnDelayTimerStateLabel(Text label)
+        {
+            if (label == null)
+            {
+                return;
+            }
+
+            label.fontSize = 11;
+            label.lineSpacing = 0.85f;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
+            label.resizeTextForBestFit = true;
+            label.resizeTextMinSize = 8;
+            label.resizeTextMaxSize = 11;
+
+            var rect = label.rectTransform;
+            if (rect != null)
+            {
+                rect.anchorMin = new Vector2(-0.15f, 0.2f);
+                rect.anchorMax = new Vector2(1.15f, 0.8f);
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+            }
+        }
+
+        private string GetOnDelayTimerRuntimeText()
+        {
+            var manualState = IsClosed ? "旧手动:到达" : "旧手动:未到";
+            if (!RuntimeStateManager.Shared.TryGetTimerState(InstanceId, out var timerState) || timerState == null)
+            {
+                return manualState + "\nKT: Reset 0.0 / " + ResolveDelaySeconds().ToString("0.0") + "s，线圈未得电";
+            }
+
+            var coilText = timerState.IsCoilEnergized ? "得电" : "未得电";
+            return manualState + "\n" +
+                   "KT: " + timerState.Phase + " " +
+                   timerState.ElapsedSeconds.ToString("0.0") + " / " +
+                   timerState.DelaySeconds.ToString("0.0") + "s，线圈" +
+                   coilText;
+        }
+
+        private float ResolveDelaySeconds()
+        {
+            var parameter = GetParameter("delaySeconds");
+            return parameter != null ? Mathf.Max(0f, parameter.value) : 3f;
+        }
+
+        private Color GetOnDelayTimerRuntimeColor()
+        {
+            if (!RuntimeStateManager.Shared.TryGetTimerState(InstanceId, out var timerState) || timerState == null)
+            {
+                return IsClosed ? new Color(0.05f, 0.55f, 0.24f) : new Color(0.65f, 0.1f, 0.1f);
+            }
+
+            switch (timerState.Phase)
+            {
+                case TimerRuntimePhase.Elapsed:
+                    return new Color(0.05f, 0.55f, 0.24f);
+                case TimerRuntimePhase.Timing:
+                    return new Color(0.85f, 0.46f, 0.08f);
+                default:
+                    return new Color(0.65f, 0.1f, 0.1f);
             }
         }
 

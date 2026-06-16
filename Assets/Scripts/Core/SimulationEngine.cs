@@ -12,6 +12,7 @@ namespace ElectricalSim.Core
         private readonly HashSet<CircuitComponent> closedContactors = new HashSet<CircuitComponent>();
         private readonly HashSet<CircuitComponent> energizedOnDelayTimers = new HashSet<CircuitComponent>();
         private readonly float simulationDeltaTime;
+        private bool timerRuntimeAdvancedThisRun;
         private const int MaxContactorStabilizationIterations = 4;
         private static readonly Dictionary<int, bool> selfHoldEligibleContactors = new Dictionary<int, bool>();
 
@@ -104,6 +105,7 @@ namespace ElectricalSim.Core
         {
             closedContactors.Clear();
             energizedOnDelayTimers.Clear();
+            timerRuntimeAdvancedThisRun = false;
             SeedClosedContactorsFromRuntimeState();
             BuildGraph();
 
@@ -111,17 +113,56 @@ namespace ElectricalSim.Core
             {
                 var previousContactors = new HashSet<CircuitComponent>(closedContactors);
                 var previousTimers = new HashSet<CircuitComponent>(energizedOnDelayTimers);
+                var previousTimerContacts = CaptureOnDelayTimerElapsedStates();
 
                 UpdateClosedContactors();
                 UpdateEnergizedOnDelayTimers();
+                var currentTimerContacts = CaptureOnDelayTimerElapsedStates();
                 if (previousContactors.SetEquals(closedContactors) &&
-                    previousTimers.SetEquals(energizedOnDelayTimers))
+                    previousTimers.SetEquals(energizedOnDelayTimers) &&
+                    AreTimerContactStatesEqual(previousTimerContacts, currentTimerContacts))
                 {
                     break;
                 }
 
                 BuildGraph();
             }
+        }
+
+        private Dictionary<string, bool> CaptureOnDelayTimerElapsedStates()
+        {
+            var states = new Dictionary<string, bool>();
+            foreach (var component in components)
+            {
+                if (!IsOnDelayTimerRelay(component))
+                {
+                    continue;
+                }
+
+                states[component.InstanceId] = IsOnDelayTimerElapsed(component);
+            }
+
+            return states;
+        }
+
+        private static bool AreTimerContactStatesEqual(
+            IReadOnlyDictionary<string, bool> previousStates,
+            IReadOnlyDictionary<string, bool> currentStates)
+        {
+            if (previousStates == null || currentStates == null || previousStates.Count != currentStates.Count)
+            {
+                return false;
+            }
+
+            foreach (var pair in previousStates)
+            {
+                if (!currentStates.TryGetValue(pair.Key, out var current) || current != pair.Value)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static void ApplyMeasurement(CircuitComponent component, bool active, float systemVoltage)
@@ -312,18 +353,85 @@ namespace ElectricalSim.Core
             }
 
             ResolveMutualInterlockConflicts();
+            SuppressStarDeltaConflictContactors();
+        }
+
+        private void SuppressStarDeltaConflictContactors()
+        {
+            if (!HasAnyStarDeltaMotorConflict())
+            {
+                return;
+            }
+
+            closedContactors.RemoveWhere(IsStarOrDeltaContactor);
+        }
+
+        private bool HasAnyStarDeltaMotorConflict()
+        {
+            foreach (var component in components)
+            {
+                if (IsStarDeltaMotorComponent(component) && HasStarDeltaMotorConflict(component))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void UpdateEnergizedOnDelayTimers()
         {
             energizedOnDelayTimers.Clear();
+            var timerDelta = timerRuntimeAdvancedThisRun ? 0f : simulationDeltaTime;
             foreach (var component in components)
             {
-                if (IsOnDelayTimerRelay(component) && IsCoilEnergized(component))
+                if (!IsOnDelayTimerRelay(component))
+                {
+                    continue;
+                }
+
+                var coilEnergized = IsCoilEnergized(component);
+                UpdateOnDelayTimerRuntimeState(component, coilEnergized, timerDelta);
+                if (coilEnergized)
                 {
                     energizedOnDelayTimers.Add(component);
                 }
             }
+
+            timerRuntimeAdvancedThisRun = true;
+        }
+
+        private static void UpdateOnDelayTimerRuntimeState(CircuitComponent component, bool coilEnergized, float deltaSeconds)
+        {
+            var runtimeState = RuntimeStateManager.Shared.GetOrCreateTimerState(component != null ? component.InstanceId : null);
+            if (runtimeState == null)
+            {
+                return;
+            }
+
+            var delaySeconds = Mathf.Max(0f, ResolveParameterValue(component, "delaySeconds", 3f));
+            runtimeState.DelaySeconds = delaySeconds;
+
+            if (!coilEnergized)
+            {
+                runtimeState.Reset();
+                runtimeState.DelaySeconds = delaySeconds;
+                return;
+            }
+
+            runtimeState.IsCoilEnergized = true;
+
+            if (delaySeconds <= 0f)
+            {
+                runtimeState.ElapsedSeconds = 0f;
+                runtimeState.Phase = TimerRuntimePhase.Elapsed;
+                return;
+            }
+
+            var elapsedSeconds = Mathf.Max(0f, runtimeState.ElapsedSeconds);
+            elapsedSeconds = Mathf.Min(delaySeconds, elapsedSeconds + Mathf.Max(0f, deltaSeconds));
+            runtimeState.ElapsedSeconds = elapsedSeconds;
+            runtimeState.Phase = elapsedSeconds >= delaySeconds ? TimerRuntimePhase.Elapsed : TimerRuntimePhase.Timing;
         }
 
         private static bool IsContactorComponent(CircuitComponent component)
@@ -377,6 +485,15 @@ namespace ElectricalSim.Core
             var displayName = component.Definition.displayName ?? string.Empty;
             return id.IndexOf("Timer_OnDelay", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
                 displayName.Contains("通电延时");
+        }
+
+        private static bool IsOnDelayTimerElapsed(CircuitComponent component)
+        {
+            return component != null &&
+                RuntimeStateManager.Shared.TryGetTimerState(component.InstanceId, out var timerState) &&
+                timerState != null &&
+                timerState.IsCoilEnergized &&
+                timerState.Phase == TimerRuntimePhase.Elapsed;
         }
 
         private static bool IsTimerRelayComponent(CircuitComponent component)
@@ -636,6 +753,11 @@ namespace ElectricalSim.Core
 
         private bool IsStarDeltaMotorEnergized(CircuitComponent motor)
         {
+            if (HasStarDeltaMotorConflict(motor))
+            {
+                return false;
+            }
+
             var u1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("U1"));
             var v1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("V1"));
             var w1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("W1"));
@@ -661,6 +783,162 @@ namespace ElectricalSim.Core
                 AreConnected(motor.GetTerminal("W1"), motor.GetTerminal("V2"));
 
             return starConnected != deltaConnected;
+        }
+
+        private bool HasStarDeltaMotorConflict(CircuitComponent motor)
+        {
+            if (!IsStarDeltaMotorComponent(motor))
+            {
+                return false;
+            }
+
+            var dynamicStarConnected =
+                AreConnected(motor.GetTerminal("U2"), motor.GetTerminal("V2")) &&
+                AreConnected(motor.GetTerminal("V2"), motor.GetTerminal("W2"));
+            var dynamicDeltaConnected =
+                AreConnected(motor.GetTerminal("U1"), motor.GetTerminal("W2")) &&
+                AreConnected(motor.GetTerminal("V1"), motor.GetTerminal("U2")) &&
+                AreConnected(motor.GetTerminal("W1"), motor.GetTerminal("V2"));
+
+            if (dynamicStarConnected && dynamicDeltaConnected)
+            {
+                return true;
+            }
+
+            var explicitStarPoint =
+                AreWireConnected(motor.GetTerminal("U2"), motor.GetTerminal("V2")) &&
+                AreWireConnected(motor.GetTerminal("V2"), motor.GetTerminal("W2"));
+            var explicitDelta =
+                AreWireConnected(motor.GetTerminal("U1"), motor.GetTerminal("W2")) &&
+                AreWireConnected(motor.GetTerminal("V1"), motor.GetTerminal("U2")) &&
+                AreWireConnected(motor.GetTerminal("W1"), motor.GetTerminal("V2"));
+
+            return explicitStarPoint && (explicitDelta || HasConfiguredDeltaContactor(motor)) ||
+                explicitDelta && HasConfiguredStarContactor(motor);
+        }
+
+        private bool HasConfiguredStarContactor(CircuitComponent motor)
+        {
+            foreach (var component in components)
+            {
+                if (IsContactorComponent(component) &&
+                    IsStarContactorInstanceId(component.InstanceId) &&
+                    HasStandardStarContactorWiring(motor, component))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasConfiguredDeltaContactor(CircuitComponent motor)
+        {
+            foreach (var component in components)
+            {
+                if (IsContactorComponent(component) &&
+                    IsDeltaContactorInstanceId(component.InstanceId) &&
+                    HasStandardDeltaContactorWiring(motor, component))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasStandardStarContactorWiring(CircuitComponent motor, CircuitComponent contactor)
+        {
+            return AreWireConnected(motor.GetTerminal("U2"), contactor.GetTerminal("L1")) &&
+                AreWireConnected(motor.GetTerminal("V2"), contactor.GetTerminal("L2")) &&
+                AreWireConnected(motor.GetTerminal("W2"), contactor.GetTerminal("L3")) &&
+                AreWireConnected(contactor.GetTerminal("T1"), contactor.GetTerminal("T2")) &&
+                AreWireConnected(contactor.GetTerminal("T2"), contactor.GetTerminal("T3"));
+        }
+
+        private bool HasStandardDeltaContactorWiring(CircuitComponent motor, CircuitComponent contactor)
+        {
+            return AreWireConnected(motor.GetTerminal("U1"), contactor.GetTerminal("L1")) &&
+                AreWireConnected(motor.GetTerminal("W2"), contactor.GetTerminal("T1")) &&
+                AreWireConnected(motor.GetTerminal("V1"), contactor.GetTerminal("L2")) &&
+                AreWireConnected(motor.GetTerminal("U2"), contactor.GetTerminal("T2")) &&
+                AreWireConnected(motor.GetTerminal("W1"), contactor.GetTerminal("L3")) &&
+                AreWireConnected(motor.GetTerminal("V2"), contactor.GetTerminal("T3"));
+        }
+
+        private bool AreWireConnected(TerminalView start, TerminalView end)
+        {
+            if (start == null || end == null)
+            {
+                return false;
+            }
+
+            if (start == end)
+            {
+                return true;
+            }
+
+            var visited = new HashSet<TerminalView>();
+            var queue = new Queue<TerminalView>();
+            visited.Add(start);
+            queue.Enqueue(start);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                foreach (var wire in wires)
+                {
+                    if (wire == null || wire.StartTerminal == null || wire.EndTerminal == null)
+                    {
+                        continue;
+                    }
+
+                    TerminalView next = null;
+                    if (wire.StartTerminal == current)
+                    {
+                        next = wire.EndTerminal;
+                    }
+                    else if (wire.EndTerminal == current)
+                    {
+                        next = wire.StartTerminal;
+                    }
+
+                    if (next == null || !visited.Add(next))
+                    {
+                        continue;
+                    }
+
+                    if (next == end)
+                    {
+                        return true;
+                    }
+
+                    queue.Enqueue(next);
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsStarOrDeltaContactor(CircuitComponent component)
+        {
+            return component != null &&
+                (IsStarContactorInstanceId(component.InstanceId) ||
+                 IsDeltaContactorInstanceId(component.InstanceId));
+        }
+
+        private static bool IsStarContactorInstanceId(string instanceId)
+        {
+            return string.Equals(instanceId, "km_star", System.StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(instanceId) &&
+                 instanceId.IndexOf("kmy", System.StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static bool IsDeltaContactorInstanceId(string instanceId)
+        {
+            return string.Equals(instanceId, "km_delta", System.StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrWhiteSpace(instanceId) &&
+                 instanceId.IndexOf("kmd", System.StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         private void UpdateMotorDirection(CircuitComponent component, bool active)
@@ -922,7 +1200,7 @@ namespace ElectricalSim.Core
 
             if (IsOnDelayTimerRelay(component))
             {
-                if (energizedOnDelayTimers.Contains(component) && component.IsClosed)
+                if (IsOnDelayTimerElapsed(component))
                 {
                     ConnectById(component, "15", "18");
                 }
