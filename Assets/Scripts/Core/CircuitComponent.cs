@@ -35,6 +35,7 @@ namespace ElectricalSim.Core
             workspace = owner;
             rectTransform = GetComponent<RectTransform>();
             IsClosed = definition.startsClosed;
+            parameterSet.SetParameters(definition.parameters);
 
             if (body != null)
             {
@@ -77,7 +78,32 @@ namespace ElectricalSim.Core
 
         public void SetParameters(IEnumerable<ComponentParameter> parameters)
         {
+            if (!HasAnyParameter(parameters) &&
+                parameterSet.parameters != null &&
+                parameterSet.parameters.Count > 0)
+            {
+                return;
+            }
+
             parameterSet.SetParameters(parameters);
+        }
+
+        private static bool HasAnyParameter(IEnumerable<ComponentParameter> parameters)
+        {
+            if (parameters == null)
+            {
+                return false;
+            }
+
+            foreach (var parameter in parameters)
+            {
+                if (parameter != null && !string.IsNullOrWhiteSpace(parameter.key))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public ComponentParameter GetParameter(string key)

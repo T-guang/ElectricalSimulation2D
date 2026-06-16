@@ -34,6 +34,7 @@ namespace ElectricalSim.Core
         public bool canBurnOut;
         public bool canTrip;
         public string parameterNote;
+        public List<ComponentParameter> parameters = new List<ComponentParameter>();
 
         public List<TerminalDefinition> terminals = new List<TerminalDefinition>();
     }

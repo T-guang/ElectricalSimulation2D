@@ -34,6 +34,14 @@ MonoBehaviour:
   canBurnOut: 1
   canTrip: 0
   parameterNote: "380V \u7EBF\u5708/\u7EE7\u7535\u5668\uFF1A\u7535\u538B\u5339\u914D\u65F6\u5438\u5408\u3002"
+  parameters:
+  - key: delaySeconds
+    displayName: "\u5EF6\u65F6\u65F6\u95F4"
+    value: 3
+    unit: s
+    min: 0
+    max: 999
+    editable: 1
   terminals:
   - id: A1
     label: A1
