@@ -24,6 +24,7 @@ namespace ElectricalSim.Core
 
         public static void ResetRuntimeState()
         {
+            RuntimeStateManager.Shared.ResetAll("SimulationEngine.ResetRuntimeState");
             selfHoldEligibleContactors.Clear();
         }
 

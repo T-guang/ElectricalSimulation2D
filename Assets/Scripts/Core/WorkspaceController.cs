@@ -308,6 +308,7 @@ namespace ElectricalSim.Core
             IsSimulationRunning = false;
             simulationRefreshTimer = 0f;
             simulationDirty = true;
+            SimulationEngine.ResetRuntimeState();
             ClearSimulationResult();
             SetStatus("仿真已结束，当前可继续编辑电路。");
         }
@@ -505,6 +506,7 @@ namespace ElectricalSim.Core
                 selectedMeasurementTarget = null;
             }
 
+            RuntimeStateManager.Shared.RemoveComponentState(selectedComponent.InstanceId);
             components.Remove(selectedComponent);
             Destroy(selectedComponent.gameObject);
             selectedComponent = null;
