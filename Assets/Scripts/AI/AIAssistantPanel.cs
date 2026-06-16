@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using ElectricalSim.Core;
 using ElectricalSim.Rules;
 using UnityEngine;
@@ -111,7 +113,7 @@ namespace ElectricalSim.AI
             rootLayout.childForceExpandHeight = false;
 
             var header = CreatePanelSection("Header", root, HeaderHeight, 0f, new Color(0.90f, 0.94f, 1f, 1f));
-            titleText = CreateText("Title", header, "AI 助教", 18, TextAnchor.MiddleLeft);
+            titleText = CreateText("Title", header, "检查助手", 18, TextAnchor.MiddleLeft);
             titleText.fontStyle = FontStyle.Bold;
             titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
             titleText.rectTransform.offsetMax = new Vector2(-14f, 0f);
@@ -127,7 +129,7 @@ namespace ElectricalSim.AI
             actionLayout.childForceExpandHeight = false;
 
             modeText = CreateLayoutText("ModeText", quickActions, "当前模式：本地助教", 13, TextAnchor.MiddleLeft, 22f);
-            switchModeButton = CreateButton("SwitchModeButton", quickActions, "切换AI模式", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
+            switchModeButton = CreateButton("SwitchModeButton", quickActions, "切换检查模式", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
             explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.16f, 0.45f, 0.95f), Color.white, 30f);
             checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
             submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", new Color(0.12f, 0.65f, 0.25f), Color.white, 30f);
@@ -250,7 +252,7 @@ namespace ElectricalSim.AI
                 RefreshModeLabel();
                 if (notify)
                 {
-                    AddAssistantMessage("已切换到真实 AI 助教。当前版本仅保留远程服务结构，真实请求将在后续接入后端。");
+                AddAssistantMessage("已切换到真实检查助手。当前版本仅保留远程服务结构，真实请求将在后续接入后端。");
                 }
                 return;
             }
@@ -321,7 +323,10 @@ namespace ElectricalSim.AI
                     }
 
                     var industrialStateResult = AnalyzeCircuitState();
-                    var industrialDebugDetails = industrialResult.FormatForAssistant() + "\n\n" + industrialStateResult.ToReadableText();
+                    ApplyRuntimeDisplayOverrides(industrialStateResult);
+                    var industrialDebugDetails = BuildRuntimeDisplaySummary(industrialStateResult) +
+                        "\n\n" + industrialResult.FormatForAssistant() +
+                        "\n\n" + industrialStateResult.ToReadableText();
                     AddAssistantMessage(TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails));
                     var industrialSummary = "工业电路检查完成：";
                     if (industrialResult.ErrorCount > 0)
@@ -343,8 +348,10 @@ namespace ElectricalSim.AI
                 var checker = new CircuitRuleChecker(workspace);
                 var result = checker.Check();
                 var stateResult = AnalyzeCircuitState();
+                ApplyRuntimeDisplayOverrides(stateResult);
                 var displayResult = FilterCheckPanelFalsePositives(result, stateResult);
-                var debugDetails = CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
+                var debugDetails = BuildRuntimeDisplaySummary(stateResult) +
+                    "\n\n" + CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
                     "\n\n" + stateResult.ToReadableText();
                 AddAssistantMessage(TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails));
                 
@@ -411,7 +418,9 @@ namespace ElectricalSim.AI
         {
             try
             {
-                AddAssistantMessage(AnalyzeCircuitState().ToReadableText());
+                var result = AnalyzeCircuitState();
+                ApplyRuntimeDisplayOverrides(result);
+                AddAssistantMessage(BuildRuntimeDisplaySummary(result) + "\n\n" + result.ToReadableText());
             }
             catch (Exception exception)
             {
@@ -424,6 +433,326 @@ namespace ElectricalSim.AI
         {
             var analyzer = new CircuitStateAnalyzer();
             return analyzer.Analyze(workspace.Components, workspace.WireManager != null ? workspace.WireManager.Wires : null);
+        }
+
+        private void ApplyRuntimeDisplayOverrides(CircuitStateResult stateResult)
+        {
+            if (stateResult == null || workspace == null || workspace.Components == null)
+            {
+                return;
+            }
+
+            var liveComponents = new Dictionary<string, CircuitComponent>();
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component != null && !string.IsNullOrWhiteSpace(component.InstanceId))
+                {
+                    liveComponents[component.InstanceId] = component;
+                }
+            }
+
+            var hasStarDeltaMotor = HasStarDeltaMotor(stateResult);
+            var starContactorEnergized = false;
+            var deltaContactorEnergized = false;
+
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var info = stateResult.Components[i];
+                if (info == null ||
+                    !info.IsContactor ||
+                    string.IsNullOrWhiteSpace(info.InstanceId) ||
+                    !liveComponents.TryGetValue(info.InstanceId, out var liveComponent))
+                {
+                    continue;
+                }
+
+                if (IsStarContactor(info) && liveComponent.IsEnergized)
+                {
+                    starContactorEnergized = true;
+                }
+                else if (IsDeltaContactor(info) && liveComponent.IsEnergized)
+                {
+                    deltaContactorEnergized = true;
+                }
+            }
+
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var info = stateResult.Components[i];
+                if (info == null ||
+                    string.IsNullOrWhiteSpace(info.InstanceId) ||
+                    !liveComponents.TryGetValue(info.InstanceId, out var liveComponent))
+                {
+                    continue;
+                }
+
+                ApplyTimerRuntimeDisplayOverride(info, liveComponent);
+                ApplyCanvasRunDisplayOverride(info, liveComponent);
+                if (hasStarDeltaMotor && info.IsStarDeltaMotor)
+                {
+                    ApplyStarDeltaRuntimeStageOverride(info, starContactorEnergized, deltaContactorEnergized);
+                }
+            }
+        }
+
+        private static bool HasStarDeltaMotor(CircuitStateResult stateResult)
+        {
+            if (stateResult == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                if (stateResult.Components[i] != null && stateResult.Components[i].IsStarDeltaMotor)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void ApplyStarDeltaRuntimeStageOverride(
+            ComponentStateInfo info,
+            bool starContactorEnergized,
+            bool deltaContactorEnergized)
+        {
+            if (info == null || !info.IsStarDeltaMotor)
+            {
+                return;
+            }
+
+            if (info.State == "StarDeltaConflict" || (starContactorEnergized && deltaContactorEnergized))
+            {
+                info.State = "StarDeltaConflict";
+                info.StarDeltaConnectionMode = "Conflict";
+                if (string.IsNullOrWhiteSpace(info.Judgement))
+                {
+                    info.Judgement = "危险：星形接触器 KMY 与三角形接触器 KMD 同时闭合，存在星三角短接风险。";
+                }
+                return;
+            }
+
+            if (deltaContactorEnergized && !starContactorEnergized)
+            {
+                info.State = "DeltaConnected";
+                info.StarDeltaConnectionMode = "Delta";
+                info.Judgement = "当前 KMY 失电、KMD 得电，电机处于三角运行阶段。";
+                return;
+            }
+
+            if (starContactorEnergized && !deltaContactorEnergized)
+            {
+                info.State = "StarConnected";
+                info.StarDeltaConnectionMode = "Star";
+                info.Judgement = "当前 KMY 得电、KMD 失电，电机处于星形启动阶段。";
+            }
+        }
+
+        private static bool IsStarContactor(ComponentStateInfo info)
+        {
+            return ContainsAny(info.InstanceId, "km_star", "kmy", "star", "星形") ||
+                ContainsAny(info.DisplayName, "KMY", "star", "星形");
+        }
+
+        private static bool IsDeltaContactor(ComponentStateInfo info)
+        {
+            return ContainsAny(info.InstanceId, "km_delta", "kmd", "delta", "三角") ||
+                ContainsAny(info.DisplayName, "KMD", "delta", "三角");
+        }
+
+        private static bool ContainsAny(string text, params string[] values)
+        {
+            if (string.IsNullOrWhiteSpace(text) || values == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(values[i]) &&
+                    text.IndexOf(values[i], StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void ApplyTimerRuntimeDisplayOverride(ComponentStateInfo info, CircuitComponent component)
+        {
+            if (!info.IsOnDelayTimerRelay || component == null)
+            {
+                return;
+            }
+
+            var hasRuntimeState = RuntimeStateManager.Shared.TryGetTimerState(component.InstanceId, out var timerState) &&
+                timerState != null;
+            var phase = hasRuntimeState ? timerState.Phase : TimerRuntimePhase.Reset;
+            var elapsedSeconds = hasRuntimeState ? timerState.ElapsedSeconds : 0f;
+            var delaySeconds = hasRuntimeState ? timerState.DelaySeconds : ResolveDelaySeconds(component);
+            var coilEnergized = hasRuntimeState && timerState.IsCoilEnergized;
+            var elapsed = coilEnergized && phase == TimerRuntimePhase.Elapsed;
+
+            info.IsTimerRelayCoilEnergizedByAnalyzer = coilEnergized;
+            info.IsTimerDelayElapsed = elapsed;
+            info.IsTimerDelayedNoClosed = elapsed;
+            info.IsTimerDelayedNcClosed = !elapsed;
+            info.TimerDelayStatus = phase.ToString();
+            info.State = coilEnergized ? "CoilEnergized" : "CoilOff";
+            info.CoilStatus = info.State;
+            info.TimerContactDescription =
+                TimerPhaseDisplayText(phase) + " " + elapsedSeconds.ToString("0.0") + " / " +
+                delaySeconds.ToString("0.0") + "s，线圈" + (coilEnergized ? "得电" : "未得电") +
+                "；15/16 " + (info.IsTimerDelayedNcClosed ? "导通" : "断开") +
+                "，15/18 " + (info.IsTimerDelayedNoClosed ? "导通" : "断开") + "。";
+        }
+
+        private static void ApplyCanvasRunDisplayOverride(ComponentStateInfo info, CircuitComponent component)
+        {
+            if (component == null || info.IsOnDelayTimerRelay)
+            {
+                return;
+            }
+
+            if (info.IsContactor && info.State != "InterlockConflict")
+            {
+                info.IsContactorCoilEnergizedByAnalyzer = component.IsEnergized;
+                info.IsContactorMainContactsClosedByAnalyzer = component.IsEnergized;
+                info.CoilStatus = component.IsEnergized ? "CoilEnergized" : "CoilOff";
+                info.MainContactStatus = component.IsEnergized ? "Closed" : "Open";
+                return;
+            }
+
+            if (info.IsStarDeltaMotor)
+            {
+                if (info.State == "StarDeltaConflict")
+                {
+                    return;
+                }
+
+                if (!component.IsEnergized)
+                {
+                    info.State = "Stopped";
+                    return;
+                }
+
+                if (string.Equals(info.StarDeltaConnectionMode, "Delta", StringComparison.OrdinalIgnoreCase))
+                {
+                    info.State = "DeltaConnected";
+                }
+                else if (string.Equals(info.StarDeltaConnectionMode, "Star", StringComparison.OrdinalIgnoreCase))
+                {
+                    info.State = "StarConnected";
+                }
+                else
+                {
+                    info.State = "Running";
+                }
+                return;
+            }
+
+            if (info.IsThreePhaseMotor || info.SummaryGroup == ComponentStateInfo.GroupLoad)
+            {
+                info.State = component.IsEnergized ? "Running" : "Stopped";
+            }
+        }
+
+        private static float ResolveDelaySeconds(CircuitComponent component)
+        {
+            const float defaultDelaySeconds = 3f;
+            if (component == null)
+            {
+                return defaultDelaySeconds;
+            }
+
+            var parameter = component.GetParameter("delaySeconds");
+            return parameter != null ? Mathf.Max(0f, parameter.value) : defaultDelaySeconds;
+        }
+
+        private static string BuildRuntimeDisplaySummary(CircuitStateResult stateResult)
+        {
+            if (stateResult == null)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            builder.AppendLine("【当前画布运行态（V2.1.3）】");
+            var count = 0;
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var component = stateResult.Components[i];
+                if (component == null)
+                {
+                    continue;
+                }
+
+                if (component.IsOnDelayTimerRelay)
+                {
+                    builder.AppendLine("- " + component.DisplayName + "：" + component.TimerContactDescription);
+                    count++;
+                    continue;
+                }
+
+                if (component.IsContactor)
+                {
+                    builder.AppendLine("- " + component.DisplayName + "：线圈" +
+                        (component.IsContactorCoilEnergizedByAnalyzer ? "得电" : "未得电") +
+                        "，主触点" + (component.IsContactorMainContactsClosedByAnalyzer ? "闭合" : "断开") + "。");
+                    count++;
+                    continue;
+                }
+
+                if (component.IsThreePhaseMotor || component.IsStarDeltaMotor || component.SummaryGroup == ComponentStateInfo.GroupLoad)
+                {
+                    builder.AppendLine("- " + component.DisplayName + "：" + RuntimeDisplayState(component) + "。");
+                    count++;
+                }
+            }
+
+            if (count == 0)
+            {
+                builder.AppendLine("- 当前没有可叠加显示的运行态元件。");
+            }
+
+            builder.AppendLine("- 说明：本段用于展示当前画布运行态；结构分析仍由下方调试详情给出。");
+            return builder.ToString().TrimEnd();
+        }
+
+        private static string RuntimeDisplayState(ComponentStateInfo component)
+        {
+            switch (component.State)
+            {
+                case "Running":
+                    return "运行中";
+                case "Stopped":
+                    return "停止";
+                case "StarConnected":
+                    return "星形启动条件成立";
+                case "DeltaConnected":
+                    return "三角运行条件成立";
+                case "StarDeltaConflict":
+                    return "危险：星三角冲突";
+                default:
+                    return string.IsNullOrWhiteSpace(component.State) ? "状态未明确" : component.State;
+            }
+        }
+
+        private static string TimerPhaseDisplayText(TimerRuntimePhase phase)
+        {
+            switch (phase)
+            {
+                case TimerRuntimePhase.Timing:
+                    return "Timing / 计时中";
+                case TimerRuntimePhase.Elapsed:
+                    return "Elapsed";
+                default:
+                    return "Reset";
+            }
         }
 
         private static CircuitCheckResult FilterCheckPanelFalsePositives(
@@ -569,7 +898,7 @@ namespace ElectricalSim.AI
         {
             var summary = summaryBuilder != null ? summaryBuilder.BuildDetailedSummary() : "当前画布为空，请先搭建或加载一个电路。";
             var service = assistantService ?? new MockAIAssistantService();
-            service.Ask(question, summary, AddAssistantMessage, error => AddAssistantMessage(string.IsNullOrWhiteSpace(error) ? "AI 助教暂时不可用，请稍后再试。" : error));
+            service.Ask(question, summary, AddAssistantMessage, error => AddAssistantMessage(string.IsNullOrWhiteSpace(error) ? "检查助手暂时不可用，请稍后再试。" : error));
         }
 
         private void ClearChat()
@@ -592,7 +921,7 @@ namespace ElectricalSim.AI
 
         public void AddAssistantMessage(string message)
         {
-            AddMessage("AI 助教", message, false);
+            AddMessage("检查助手", message, false);
         }
 
         private void AddMessage(string sender, string message, bool fromUser)

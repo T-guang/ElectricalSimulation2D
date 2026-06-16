@@ -17,7 +17,7 @@ namespace ElectricalSim.AI
         public string FormatForAssistant()
         {
             var builder = new StringBuilder();
-            builder.AppendLine("AI 助教：");
+            builder.AppendLine("检查助手：");
             builder.AppendLine("当前电路检查结果");
             builder.AppendLine();
             builder.AppendLine("电路类型：" + (string.IsNullOrWhiteSpace(CircuitType) ? "工业控制电路" : CircuitType));

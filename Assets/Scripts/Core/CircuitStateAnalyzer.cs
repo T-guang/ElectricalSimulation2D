@@ -1908,8 +1908,8 @@ namespace ElectricalSim.Core
             }
             else
             {
-                info.TimerDelayStatus = "Waiting";
-                info.TimerContactDescription = "KT 线圈已得电，但延时尚未到达，延时触点保持复位状态。";
+                info.TimerDelayStatus = "Timing";
+                info.TimerContactDescription = "KT 线圈已得电并处于计时中，延时触点保持复位状态。";
             }
         }
 
@@ -3233,7 +3233,7 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                builder.AppendLine("   - 当前模式：手动模拟延时状态");
+                builder.AppendLine("   - 当前模式：真实通电延时运行态（Reset / Timing / Elapsed）");
                 AppendTerminal(builder, component, "A1");
                 AppendTerminal(builder, component, "A2");
                 builder.AppendLine("   - 线圈状态：" +
@@ -3255,15 +3255,15 @@ namespace ElectricalSim.Core
 
                 if (!component.IsTimerRelayCoilEnergizedByAnalyzer)
                 {
-                    builder.AppendLine("   - 操作说明：KT 线圈未得电时，即使手动状态为 ON，也按复位处理；15/18 不导通，15/16 导通。");
+                    builder.AppendLine("   - 操作说明：KT 线圈未得电时按 Reset 处理；15/18 不导通，15/16 导通。");
                 }
                 else if (component.IsTimerDelayElapsed)
                 {
-                    builder.AppendLine("   - 操作说明：当前使用手动模拟延时。KT ON 表示延时已经到达，15/18 导通。");
+                    builder.AppendLine("   - 操作说明：运行态达到 Elapsed 时，15/18 导通，15/16 断开；实时计时请以画布 KT 状态为准。");
                 }
                 else
                 {
-                    builder.AppendLine("   - 操作说明：当前使用手动模拟延时。KT OFF 表示延时尚未到达，15/18 暂不导通。");
+                    builder.AppendLine("   - 操作说明：运行态处于 Timing 时，15/16 保持导通，15/18 暂不导通；实时计时请以画布 KT 状态为准。");
                 }
 
                 index++;
@@ -3274,9 +3274,9 @@ namespace ElectricalSim.Core
                 builder.AppendLine("- 未检测到时间继电器 KT。");
             }
 
-            builder.AppendLine("- 当前版本使用手动模拟延时状态：KT OFF 表示延时未到，KT ON 表示延时到达。");
-            builder.AppendLine("- 只有 KT 线圈得电且延时到达时，15/18 才导通；线圈未得电时始终按复位状态处理。");
-            builder.AppendLine("- 当前暂未启用真实秒级计时；真实计时将在后续版本支持。本阶段不读取 SimulationEngine 或电机 RUN 状态。");
+            builder.AppendLine("- V2.1.2 起，OnDelay KT 使用真实通电延时运行态：Reset / Timing / Elapsed。");
+            builder.AppendLine("- 线圈得电后开始计时；Timing 时 15/16 导通、15/18 断开；Elapsed 时 15/16 断开、15/18 导通；失电后立即 Reset。");
+            builder.AppendLine("- 检查面板主要解释当前接线结构；KT 的实时 ElapsedSeconds / DelaySeconds 请以画布 KT 运行态显示为准。");
         }
 
         private static string TimerDelayStatusText(string status)
@@ -3285,8 +3285,8 @@ namespace ElectricalSim.Core
             {
                 case "Reset":
                     return "复位";
-                case "Waiting":
-                    return "延时未到";
+                case "Timing":
+                    return "计时中";
                 case "Elapsed":
                     return "延时到达";
                 case "Fault":

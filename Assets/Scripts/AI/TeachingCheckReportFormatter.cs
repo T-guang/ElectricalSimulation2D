@@ -155,7 +155,7 @@ namespace ElectricalSim.AI
                 {
                     builder.AppendLine("- " + component.DisplayName + "：线圈" +
                         (component.IsTimerRelayCoilEnergizedByAnalyzer ? "得电" : "未得电") +
-                        "，" + SafeText(component.TimerDelayStatus, "延时状态未知") +
+                        "，" + TimerDelayStatusForTeaching(component.TimerDelayStatus) +
                         "；15/16 " + (component.IsTimerDelayedNcClosed ? "导通" : "断开") +
                         "，15/18 " + (component.IsTimerDelayedNoClosed ? "导通" : "断开") + "。");
                     count++;
@@ -290,7 +290,7 @@ namespace ElectricalSim.AI
 
             if (result.HasTimerRelays)
             {
-                builder.AppendLine("- KT 当前为手动模拟延时模式：KT OFF 表示延时未到，KT ON 表示延时到达；真实秒级计时将在后续版本支持。");
+                builder.AppendLine("- 通电延时时间继电器 KT 的实时状态以画布运行态为准：线圈得电后进入 Timing，达到 delaySeconds 后进入 Elapsed；Elapsed 时 15/18 导通、15/16 断开，失电后立即 Reset。");
                 appended = true;
             }
 
@@ -514,6 +514,22 @@ namespace ElectricalSim.AI
         {
             return !string.IsNullOrWhiteSpace(text) &&
                 text.IndexOf(value, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static string TimerDelayStatusForTeaching(string status)
+        {
+            switch (status)
+            {
+                case "Reset":
+                    return "Reset / 复位";
+                case "Timing":
+                case "Waiting":
+                    return "Timing / 计时中";
+                case "Elapsed":
+                    return "Elapsed / 延时到达";
+                default:
+                    return SafeText(status, "延时状态未知");
+            }
         }
 
         private static string SafeText(string text, string fallback)

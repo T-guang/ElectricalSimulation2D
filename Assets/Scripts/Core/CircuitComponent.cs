@@ -173,9 +173,7 @@ namespace ElectricalSim.Core
             IsClosed = !IsClosed;
             RefreshVisual();
             var statusMessage = IsOnDelayTimerRelay()
-                ? "时间继电器旧手动状态已切换：KT " +
-                  (IsClosed ? "ON（兼容旧图纸状态）" : "OFF（兼容旧图纸状态）") +
-                  "。V2.1.2 起延时触点以运行态计时为准。"
+                ? "时间继电器兼容状态已切换：该字段仅用于旧图纸兼容；当前延时触点以 KT 运行态计时为准。"
                 : "开关状态已改变，点击开始仿真刷新结果。";
             workspace?.MarkSimulationDirty(statusMessage);
         }
@@ -376,15 +374,13 @@ namespace ElectricalSim.Core
 
         private string GetOnDelayTimerRuntimeText()
         {
-            var manualState = IsClosed ? "旧手动:到达" : "旧手动:未到";
             if (!RuntimeStateManager.Shared.TryGetTimerState(InstanceId, out var timerState) || timerState == null)
             {
-                return manualState + "\nKT: Reset 0.0 / " + ResolveDelaySeconds().ToString("0.0") + "s，线圈未得电";
+                return "KT: Reset 0.0 / " + ResolveDelaySeconds().ToString("0.0") + "s\n线圈未得电";
             }
 
             var coilText = timerState.IsCoilEnergized ? "得电" : "未得电";
-            return manualState + "\n" +
-                   "KT: " + timerState.Phase + " " +
+            return "KT: " + timerState.Phase + " " +
                    timerState.ElapsedSeconds.ToString("0.0") + " / " +
                    timerState.DelaySeconds.ToString("0.0") + "s，线圈" +
                    coilText;

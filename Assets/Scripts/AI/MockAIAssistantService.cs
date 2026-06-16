@@ -248,7 +248,7 @@ namespace ElectricalSim.AI
             }
             else
             {
-                sb.AppendLine("结论：我现在是第一版 AI 助教模拟模式。");
+                sb.AppendLine("结论：我现在是第一版检查助手模拟模式。");
                 sb.AppendLine();
                 sb.AppendLine("原因：");
                 sb.AppendLine("1. 当前暂未接入真实的云端大语言模型。");

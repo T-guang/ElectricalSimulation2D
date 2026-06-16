@@ -149,7 +149,7 @@
       "templateName": "两电机时间继电器顺序启动控制电路",
       "category": "工业电路",
       "difficulty": "中高级",
-      "description": "M1 先启动，KT 使用 ON/OFF 手动模拟延时：OFF 表示延时未到，ON 表示延时到达；延时到达后 KM2/M2 启动。真实秒级计时将在后续版本中支持。",
+      "description": "M1 先启动，KT 线圈得电后按延时时间自动计时；计时到达后 15/18 延时常开触点闭合，KM2/M2 自动延时启动。",
       "resourcePath": "Blueprints/Templates/motor_sequential_start_timer_template",
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     },
@@ -158,7 +158,7 @@
       "templateName": "星三角降压启动控制电路",
       "category": "工业电路",
       "difficulty": "高级",
-      "description": "使用主接触器 KM、星形接触器 KMY、三角形接触器 KMD 与通电延时时间继电器 KT 实现三相异步电动机星三角降压启动。当前版本中 KT 采用手动模拟延时状态：KT OFF 表示延时未到，此时电机处于星形启动；KT ON 表示延时到达，此时星形接触器断开、三角形接触器吸合，电机进入三角运行。",
+      "description": "使用主接触器 KM、星形接触器 KMY、三角形接触器 KMD 与通电延时时间继电器 KT 实现三相异步电动机星三角降压启动。启动后先星形启动，KT 计时到达后自动释放星形接触器并吸合三角接触器，电机进入三角运行。",
       "resourcePath": "Blueprints/Templates/motor_star_delta_start_template",
       "thumbnailPath": "Blueprints/Thumbnails/industrial_placeholder"
     }
