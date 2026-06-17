@@ -948,7 +948,72 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            SetParameterIfPresent(component, "rotationDirection", active ? ResolveThreePhaseMotorDirection(component) : 0f);
+            var rotationDirection = active ? ResolveThreePhaseMotorDirection(component) : 0f;
+            SetParameterIfPresent(component, "rotationDirection", rotationDirection);
+            UpdateAutoReciprocatingMotionDirection(component, active, rotationDirection);
+        }
+
+        private void UpdateAutoReciprocatingMotionDirection(CircuitComponent component, bool active, float rotationDirection)
+        {
+            if (!IsAutoReciprocatingMotionMotor(component))
+            {
+                return;
+            }
+
+            var motionState = RuntimeStateManager.Shared.GetOrCreateMotionState(component.InstanceId);
+            if (motionState == null)
+            {
+                return;
+            }
+
+            if (!active)
+            {
+                motionState.Direction = MotionDirection.Stopped;
+                return;
+            }
+
+            if (rotationDirection > 0.5f)
+            {
+                motionState.Direction = MotionDirection.Forward;
+            }
+            else if (rotationDirection < -0.5f)
+            {
+                motionState.Direction = MotionDirection.Reverse;
+            }
+            else
+            {
+                motionState.Direction = MotionDirection.Stopped;
+            }
+        }
+
+        private bool IsAutoReciprocatingMotionMotor(CircuitComponent component)
+        {
+            return component != null &&
+                string.Equals(component.InstanceId, "motor_1", System.StringComparison.OrdinalIgnoreCase) &&
+                IsThreePhaseMotorComponent(component) &&
+                HasComponent("sq_left") &&
+                HasComponent("sq_right") &&
+                HasComponent("km_forward") &&
+                HasComponent("km_reverse");
+        }
+
+        private bool HasComponent(string instanceId)
+        {
+            if (string.IsNullOrWhiteSpace(instanceId))
+            {
+                return false;
+            }
+
+            foreach (var component in components)
+            {
+                if (component != null &&
+                    string.Equals(component.InstanceId, instanceId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private float ResolveThreePhaseMotorDirection(CircuitComponent motor)
