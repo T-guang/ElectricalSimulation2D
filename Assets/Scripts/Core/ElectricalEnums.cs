@@ -28,6 +28,16 @@ namespace ElectricalSim.Core
         Measurement
     }
 
+    public enum ComponentSupportLevel
+    {
+        VisualOnly = 0,
+        ConnectorOnly = 1,
+        SimpleSwitchSupported = 2,
+        RuntimeSupported = 3,
+        DynamicRuntimeSupported = 4,
+        ParameterCalculationSupported = 5
+    }
+
     public enum TerminalRole
     {
         Generic,

@@ -19,6 +19,11 @@ MonoBehaviour:
   accentColor: {r: 1, g: 0.28, b: 0.24, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
+  supportLevel: 3
+  showInPalette: 1
+  unsupportedReason: ""
+  canParticipateInRuntime: 1
+  canParticipateInParameterCalculation: 0
   startsClosed: 0
   togglable: 1
   controlledByTag: 

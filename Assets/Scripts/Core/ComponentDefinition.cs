@@ -14,6 +14,11 @@ namespace ElectricalSim.Core
         public Color accentColor = new Color(0.2f, 0.45f, 1f);
         public Sprite sprite;
         public Vector2 size = new Vector2(110f, 130f);
+        public ComponentSupportLevel supportLevel = ComponentSupportLevel.RuntimeSupported;
+        public bool showInPalette = true;
+        public string unsupportedReason;
+        public bool canParticipateInRuntime = true;
+        public bool canParticipateInParameterCalculation = false;
 
         [Header("Electrical")]
         public bool startsClosed;

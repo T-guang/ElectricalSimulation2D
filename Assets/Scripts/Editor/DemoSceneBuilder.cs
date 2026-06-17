@@ -705,8 +705,106 @@ namespace ElectricalSim.EditorTools
             definition.allowSameComponentJumper = false;
             definition.terminals = new List<TerminalDefinition>(terminals);
             ConfigureElectricalProfile(definition, assetName, kind);
+            ConfigureSupportProfile(definition, assetName, kind);
             EditorUtility.SetDirty(definition);
             return definition;
+        }
+
+        private static void ConfigureSupportProfile(ComponentDefinition definition, string assetName, ComponentKind kind)
+        {
+            definition.supportLevel = ComponentSupportLevel.RuntimeSupported;
+            definition.showInPalette = true;
+            definition.unsupportedReason = string.Empty;
+            definition.canParticipateInRuntime = true;
+            definition.canParticipateInParameterCalculation = false;
+
+            if (kind == ComponentKind.TerminalBlock)
+            {
+                definition.supportLevel = ComponentSupportLevel.ConnectorOnly;
+                definition.unsupportedReason = "连接器元件，仅用于接线中转，不产生主动动作。";
+                return;
+            }
+
+            if (assetName == "PLC_Output_24V")
+            {
+                MarkVisualOnlyUnsupported(definition, "当前暂未实现 PLC 输出点位和 24V 控制逻辑。");
+                return;
+            }
+
+            if (assetName == "SwitchPower_220V")
+            {
+                MarkVisualOnlyUnsupported(definition, "当前暂未实现 AC 220V 转 DC 24V 输出传播模型。");
+                return;
+            }
+
+            if (assetName == "SolenoidValve_24V")
+            {
+                MarkVisualOnlyUnsupported(definition, "当前暂未实现 24V 电磁阀动作模型。");
+                return;
+            }
+
+            if (assetName == "StepperDriver_24V")
+            {
+                MarkVisualOnlyUnsupported(definition, "当前暂未实现 PUL / DIR / ENA 脉冲驱动逻辑。");
+                return;
+            }
+
+            if (assetName == "StepperMotor_24V")
+            {
+                MarkVisualOnlyUnsupported(definition, "当前暂未实现步进电机 A+/A-/B+/B- 绕组与脉冲运动模型，不能按普通三相电机判断。");
+                return;
+            }
+
+            if (assetName.Contains("Timer_OffDelay"))
+            {
+                MarkVisualOnlyUnsupported(definition, "当前暂未实现断电延时触点模型。");
+                return;
+            }
+
+            if (assetName == "Tool_Oscilloscope")
+            {
+                MarkVisualOnlyUnsupported(definition, "当前暂未实现示波器测量逻辑。");
+                return;
+            }
+
+            if (assetName == "KnifeSwitch_QS" ||
+                assetName == "EmergencyStop_NC" ||
+                assetName.Contains("Button_SelfLock") ||
+                assetName == "LimitSwitch_SelfLock" ||
+                assetName == "Breaker_1P" ||
+                assetName == "Breaker_4P" ||
+                assetName == "Fuse_1P")
+            {
+                definition.supportLevel = ComponentSupportLevel.SimpleSwitchSupported;
+                return;
+            }
+
+            if (assetName == "Timer_OnDelay_220V" || assetName == "Timer_OnDelay_380V" ||
+                assetName == "LimitSwitch_Compound" || assetName == "Motor_ThreePhase_380V")
+            {
+                definition.supportLevel = ComponentSupportLevel.DynamicRuntimeSupported;
+                return;
+            }
+
+            if (assetName == "Contactor_KM_220V" || assetName == "Contactor_KM_380V")
+            {
+                definition.supportLevel = ComponentSupportLevel.RuntimeSupported;
+                return;
+            }
+
+            if (assetName.StartsWith("Indicator_"))
+            {
+                definition.supportLevel = ComponentSupportLevel.RuntimeSupported;
+            }
+        }
+
+        private static void MarkVisualOnlyUnsupported(ComponentDefinition definition, string reason)
+        {
+            definition.supportLevel = ComponentSupportLevel.VisualOnly;
+            definition.showInPalette = false;
+            definition.unsupportedReason = reason;
+            definition.canParticipateInRuntime = false;
+            definition.canParticipateInParameterCalculation = false;
         }
 
         private static void ConfigureElectricalProfile(ComponentDefinition definition, string assetName, ComponentKind kind)
@@ -1741,7 +1839,7 @@ namespace ElectricalSim.EditorTools
             var index = 0;
             foreach (var definition in definitions)
             {
-                if (definition == null || definition.category != category)
+                if (definition == null || definition.category != category || !definition.showInPalette)
                 {
                     continue;
                 }

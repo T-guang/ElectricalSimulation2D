@@ -19,6 +19,11 @@ MonoBehaviour:
   accentColor: {r: 0.12, g: 0.45, b: 1, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
+  supportLevel: 0
+  showInPalette: 0
+  unsupportedReason: "当前暂未实现 AC 220V 转 DC 24V 输出传播模型。"
+  canParticipateInRuntime: 0
+  canParticipateInParameterCalculation: 0
   startsClosed: 1
   togglable: 0
   controlledByTag: 

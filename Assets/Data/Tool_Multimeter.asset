@@ -19,6 +19,11 @@ MonoBehaviour:
   accentColor: {r: 0.12, g: 0.45, b: 1, a: 1}
   sprite: {fileID: 0}
   size: {x: 260, y: 190}
+  supportLevel: 0
+  showInPalette: 1
+  unsupportedReason: "测量工具元件，不参与电气运行求解。"
+  canParticipateInRuntime: 0
+  canParticipateInParameterCalculation: 0
   startsClosed: 0
   togglable: 0
   controlledByTag: 

@@ -55,7 +55,7 @@ namespace ElectricalSim.UI
 
             foreach (var definition in catalog)
             {
-                if (definition == null || HasPaletteItem(definition))
+                if (definition == null || !definition.showInPalette || HasPaletteItem(definition))
                 {
                     continue;
                 }
@@ -209,6 +209,11 @@ namespace ElectricalSim.UI
 
         private bool Matches(int index, string query)
         {
+            if (!IsVisibleInPalette(index))
+            {
+                return false;
+            }
+
             if (string.IsNullOrWhiteSpace(query))
             {
                 return true;
@@ -216,6 +221,17 @@ namespace ElectricalSim.UI
 
             var name = index >= 0 && index < itemNames.Count ? itemNames[index] : string.Empty;
             return name.IndexOf(query, System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private bool IsVisibleInPalette(int index)
+        {
+            if (index < 0 || index >= itemRects.Count || itemRects[index] == null)
+            {
+                return false;
+            }
+
+            var item = itemRects[index].GetComponent<PaletteItem>();
+            return item == null || item.Definition == null || item.Definition.showInPalette;
         }
     }
 }
