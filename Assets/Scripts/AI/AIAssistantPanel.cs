@@ -327,7 +327,7 @@ namespace ElectricalSim.AI
                     var industrialDebugDetails = BuildRuntimeDisplaySummary(industrialStateResult) +
                         "\n\n" + industrialResult.FormatForAssistant() +
                         "\n\n" + industrialStateResult.ToReadableText();
-                    AddAssistantMessage(PrependAutoReciprocatingRuntimeSummary(
+                    AddAssistantMessage(PrependCheckPanelRuntimeNotices(
                         TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails)));
                     var industrialSummary = "工业电路检查完成：";
                     if (industrialResult.ErrorCount > 0)
@@ -354,7 +354,7 @@ namespace ElectricalSim.AI
                 var debugDetails = BuildRuntimeDisplaySummary(stateResult) +
                     "\n\n" + CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
                     "\n\n" + stateResult.ToReadableText();
-                AddAssistantMessage(PrependAutoReciprocatingRuntimeSummary(
+                AddAssistantMessage(PrependCheckPanelRuntimeNotices(
                     TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails)));
                 
                 string summary = "电路检查完成：";
@@ -422,7 +422,8 @@ namespace ElectricalSim.AI
             {
                 var result = AnalyzeCircuitState();
                 ApplyRuntimeDisplayOverrides(result);
-                AddAssistantMessage(BuildRuntimeDisplaySummary(result) + "\n\n" + result.ToReadableText());
+                AddAssistantMessage(PrependUnsupportedComponentNotice(
+                    BuildRuntimeDisplaySummary(result) + "\n\n" + result.ToReadableText()));
             }
             catch (Exception exception)
             {
@@ -728,6 +729,122 @@ namespace ElectricalSim.AI
 
             builder.AppendLine("- 说明：本段用于展示当前画布运行态；结构分析仍由下方调试详情给出。");
             return builder.ToString().TrimEnd();
+        }
+
+        private string PrependCheckPanelRuntimeNotices(string report)
+        {
+            return PrependUnsupportedComponentNotice(PrependAutoReciprocatingRuntimeSummary(report));
+        }
+
+        private string PrependUnsupportedComponentNotice(string report)
+        {
+            var notice = BuildUnsupportedComponentNotice();
+            if (string.IsNullOrWhiteSpace(notice))
+            {
+                return report;
+            }
+
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                return notice;
+            }
+
+            return notice + "\n\n" + report;
+        }
+
+        private string BuildUnsupportedComponentNotice()
+        {
+            var unsupportedComponents = CollectUnsupportedRuntimeComponents();
+            if (unsupportedComponents.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            builder.AppendLine("【未支持元件提示】");
+            builder.AppendLine("当前画布包含暂未支持仿真判断的元件：" + JoinUnsupportedComponentNames(unsupportedComponents) + "。");
+            builder.AppendLine("这些元件可以保存和显示接线，但当前不会参与完整运行判定。");
+            builder.AppendLine("已支持部分未发现明显问题，但由于画布中存在暂未支持元件，系统无法给出完整运行结论。");
+
+            for (var i = 0; i < unsupportedComponents.Count; i++)
+            {
+                var component = unsupportedComponents[i];
+                var reason = component != null && component.Definition != null
+                    ? component.Definition.unsupportedReason
+                    : string.Empty;
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    continue;
+                }
+
+                builder.AppendLine("- " + UnsupportedComponentDisplayName(component) + "：" + reason);
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private List<CircuitComponent> CollectUnsupportedRuntimeComponents()
+        {
+            var unsupported = new List<CircuitComponent>();
+            if (workspace == null || workspace.Components == null)
+            {
+                return unsupported;
+            }
+
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                var definition = component != null ? component.Definition : null;
+                if (definition == null)
+                {
+                    continue;
+                }
+
+                if (definition.supportLevel == ComponentSupportLevel.VisualOnly ||
+                    !definition.canParticipateInRuntime)
+                {
+                    unsupported.Add(component);
+                }
+            }
+
+            return unsupported;
+        }
+
+        private static string JoinUnsupportedComponentNames(List<CircuitComponent> components)
+        {
+            var builder = new StringBuilder();
+            for (var i = 0; i < components.Count; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append("、");
+                }
+
+                builder.Append(UnsupportedComponentDisplayName(components[i]));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string UnsupportedComponentDisplayName(CircuitComponent component)
+        {
+            if (component == null)
+            {
+                return "未知元件";
+            }
+
+            var definition = component.Definition;
+            if (definition != null && !string.IsNullOrWhiteSpace(definition.displayName))
+            {
+                return definition.displayName.Replace("\r", string.Empty).Replace("\n", string.Empty);
+            }
+
+            if (definition != null && !string.IsNullOrWhiteSpace(definition.name))
+            {
+                return definition.name;
+            }
+
+            return string.IsNullOrWhiteSpace(component.InstanceId) ? "未知元件" : component.InstanceId;
         }
 
         private string PrependAutoReciprocatingRuntimeSummary(string report)
