@@ -327,7 +327,8 @@ namespace ElectricalSim.AI
                     var industrialDebugDetails = BuildRuntimeDisplaySummary(industrialStateResult) +
                         "\n\n" + industrialResult.FormatForAssistant() +
                         "\n\n" + industrialStateResult.ToReadableText();
-                    AddAssistantMessage(TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails));
+                    AddAssistantMessage(PrependAutoReciprocatingRuntimeSummary(
+                        TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails)));
                     var industrialSummary = "工业电路检查完成：";
                     if (industrialResult.ErrorCount > 0)
                     {
@@ -353,7 +354,8 @@ namespace ElectricalSim.AI
                 var debugDetails = BuildRuntimeDisplaySummary(stateResult) +
                     "\n\n" + CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
                     "\n\n" + stateResult.ToReadableText();
-                AddAssistantMessage(TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails));
+                AddAssistantMessage(PrependAutoReciprocatingRuntimeSummary(
+                    TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails)));
                 
                 string summary = "电路检查完成：";
                 if (displayResult.ErrorCount > 0 || displayResult.WarningCount > 0)
@@ -673,7 +675,7 @@ namespace ElectricalSim.AI
             return parameter != null ? Mathf.Max(0f, parameter.value) : defaultDelaySeconds;
         }
 
-        private static string BuildRuntimeDisplaySummary(CircuitStateResult stateResult)
+        private string BuildRuntimeDisplaySummary(CircuitStateResult stateResult)
         {
             if (stateResult == null)
             {
@@ -681,8 +683,13 @@ namespace ElectricalSim.AI
             }
 
             var builder = new StringBuilder();
-            builder.AppendLine("【当前画布运行态（V2.1.3）】");
+            builder.AppendLine("【当前画布运行态】");
             var count = 0;
+            if (TryAppendAutoReciprocatingRuntimeSummary(builder))
+            {
+                count++;
+            }
+
             for (var i = 0; i < stateResult.Components.Count; i++)
             {
                 var component = stateResult.Components[i];
@@ -721,6 +728,213 @@ namespace ElectricalSim.AI
 
             builder.AppendLine("- 说明：本段用于展示当前画布运行态；结构分析仍由下方调试详情给出。");
             return builder.ToString().TrimEnd();
+        }
+
+        private string PrependAutoReciprocatingRuntimeSummary(string report)
+        {
+            var summary = BuildAutoReciprocatingMainRuntimeSummary();
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                return report;
+            }
+
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                return summary;
+            }
+
+            return summary + "\n\n" + report;
+        }
+
+        private string BuildAutoReciprocatingMainRuntimeSummary()
+        {
+            var motor = FindWorkspaceComponent("motor_1");
+            var forwardContactor = FindWorkspaceComponent("km_forward");
+            var reverseContactor = FindWorkspaceComponent("km_reverse");
+            var leftLimit = FindWorkspaceComponent("sq_left");
+            var rightLimit = FindWorkspaceComponent("sq_right");
+            if (motor == null || forwardContactor == null || reverseContactor == null ||
+                leftLimit == null || rightLimit == null)
+            {
+                return string.Empty;
+            }
+
+            var motionState = RuntimeStateManager.Shared.GetOrCreateMotionState("motor_1");
+            if (motionState == null)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            builder.AppendLine("【当前自动往返运行态】");
+            if (motionState.Direction == MotionDirection.Stopped)
+            {
+                builder.AppendLine("- 虚拟运动：停止");
+                builder.AppendLine("- 虚拟位置保持在 " + motionState.Position.ToString("0") + " / 100");
+            }
+            else
+            {
+                builder.AppendLine("- 虚拟位置：" + motionState.Position.ToString("0") + " / 100");
+                builder.AppendLine("- 虚拟运动：" + MotionDirectionDisplayText(motionState.Direction));
+            }
+
+            builder.AppendLine("- " + ContactorPairDisplayText(forwardContactor, reverseContactor));
+            builder.AppendLine("- 电机" + AutoReciprocatingMotorDisplayText(motor, motionState));
+            builder.AppendLine("- " + AutoReciprocatingLimitTeachingText(motionState));
+            builder.AppendLine("- SQ 手动状态表示人工触发；自动往返使用虚拟限位触发参与 effectiveTriggered 判断，虚拟触发不会写回 SQ 手动状态。");
+            return builder.ToString().TrimEnd();
+        }
+
+        private bool TryAppendAutoReciprocatingRuntimeSummary(StringBuilder builder)
+        {
+            var motor = FindWorkspaceComponent("motor_1");
+            var forwardContactor = FindWorkspaceComponent("km_forward");
+            var reverseContactor = FindWorkspaceComponent("km_reverse");
+            var leftLimit = FindWorkspaceComponent("sq_left");
+            var rightLimit = FindWorkspaceComponent("sq_right");
+            if (motor == null || forwardContactor == null || reverseContactor == null ||
+                leftLimit == null || rightLimit == null)
+            {
+                return false;
+            }
+
+            var motionState = RuntimeStateManager.Shared.GetOrCreateMotionState("motor_1");
+            if (motionState == null)
+            {
+                return false;
+            }
+
+            var leftEffectiveTriggered = leftLimit.IsClosed || motionState.LeftLimitTriggered;
+            var rightEffectiveTriggered = rightLimit.IsClosed || motionState.RightLimitTriggered;
+
+            builder.AppendLine();
+            builder.AppendLine("【当前自动往返运行态】");
+            builder.AppendLine("- 虚拟位置：" + motionState.Position.ToString("0") + " / 100");
+            builder.AppendLine("- 虚拟运动：" + MotionDirectionDisplayText(motionState.Direction));
+            builder.AppendLine("- 虚拟左限位：" + (motionState.LeftLimitTriggered ? "触发" : "未触发"));
+            builder.AppendLine("- 虚拟右限位：" + (motionState.RightLimitTriggered ? "触发" : "未触发"));
+            builder.AppendLine("- SQ 手动状态：左 SQ " + (leftLimit.IsClosed ? "人工触发" : "未人工触发") +
+                "，右 SQ " + (rightLimit.IsClosed ? "人工触发" : "未人工触发") + "。");
+            builder.AppendLine("- SQ 有效触发：左 SQ " + (leftEffectiveTriggered ? "触发" : "未触发") +
+                "，右 SQ " + (rightEffectiveTriggered ? "触发" : "未触发") + "。");
+            builder.AppendLine("- 正转接触器 KM_forward：" + (forwardContactor.IsEnergized ? "得电" : "未得电"));
+            builder.AppendLine("- 反转接触器 KM_reverse：" + (reverseContactor.IsEnergized ? "得电" : "未得电"));
+            builder.AppendLine("- 电机：" + AutoReciprocatingMotorDisplayText(motor, motionState));
+
+            if (motionState.RightLimitTriggered)
+            {
+                builder.AppendLine("- 说明：到达右端后，右限位的有效触发状态使正转支路断开、反转支路接通，电机切换为反向运行。");
+            }
+            else if (motionState.LeftLimitTriggered)
+            {
+                builder.AppendLine("- 说明：到达左端后，左限位的有效触发状态使反转支路断开、正转支路接通，电机切换为正向运行。");
+            }
+            else if (motionState.Direction == MotionDirection.Forward)
+            {
+                builder.AppendLine("- 说明：正转时，电机带动机构向右移动；尚未到达右限位。");
+            }
+            else if (motionState.Direction == MotionDirection.Reverse)
+            {
+                builder.AppendLine("- 说明：反转时，电机带动机构向左移动；尚未到达左限位。");
+            }
+            else
+            {
+                builder.AppendLine("- 说明：当前控制回路未驱动自动往返电机，虚拟位置保持不变。");
+            }
+
+            builder.AppendLine("- 注意：SQ 元件本身的手动状态表示人工触发；自动往返中的左/右限位来自虚拟位置到达边界后的运行态触发。两者都会参与有效触发判断，但虚拟触发不会覆盖手动状态。");
+            builder.AppendLine();
+            return true;
+        }
+
+        private CircuitComponent FindWorkspaceComponent(string instanceId)
+        {
+            if (workspace == null || workspace.Components == null || string.IsNullOrWhiteSpace(instanceId))
+            {
+                return null;
+            }
+
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component != null &&
+                    string.Equals(component.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return component;
+                }
+            }
+
+            return null;
+        }
+
+        private static string MotionDirectionDisplayText(MotionDirection direction)
+        {
+            switch (direction)
+            {
+                case MotionDirection.Forward:
+                    return "正向";
+                case MotionDirection.Reverse:
+                    return "反向";
+                default:
+                    return "停止";
+            }
+        }
+
+        private static string AutoReciprocatingMotorDisplayText(CircuitComponent motor, MotionRuntimeState motionState)
+        {
+            if (motor == null || !motor.IsEnergized)
+            {
+                return "停止";
+            }
+
+            if (motionState != null && motionState.Direction == MotionDirection.Forward)
+            {
+                return "正向运行";
+            }
+
+            if (motionState != null && motionState.Direction == MotionDirection.Reverse)
+            {
+                return "反向运行";
+            }
+
+            return "运行中";
+        }
+
+        private static string ContactorPairDisplayText(CircuitComponent forwardContactor, CircuitComponent reverseContactor)
+        {
+            var forwardText = forwardContactor != null && forwardContactor.IsEnergized ? "得电" : "未得电";
+            var reverseText = reverseContactor != null && reverseContactor.IsEnergized ? "得电" : "未得电";
+            return "正转接触器" + forwardText + "，反转接触器" + reverseText;
+        }
+
+        private static string AutoReciprocatingLimitTeachingText(MotionRuntimeState motionState)
+        {
+            if (motionState == null)
+            {
+                return "当前未读取到虚拟运动状态。";
+            }
+
+            if (motionState.RightLimitTriggered)
+            {
+                return "已到达右限位；虚拟右限位使正转支路断开，并切换为反向运行。";
+            }
+
+            if (motionState.LeftLimitTriggered)
+            {
+                return "已到达左限位；虚拟左限位使反转支路断开，并切换为正向运行。";
+            }
+
+            if (motionState.Direction == MotionDirection.Forward)
+            {
+                return "尚未到达右限位；到达右端后将通过虚拟右限位切换为反向运行。";
+            }
+
+            if (motionState.Direction == MotionDirection.Reverse)
+            {
+                return "尚未到达左限位；到达左端后将通过虚拟左限位切换为正向运行。";
+            }
+
+            return "当前电机停止，虚拟位置保持不变。";
         }
 
         private static string RuntimeDisplayState(ComponentStateInfo component)
