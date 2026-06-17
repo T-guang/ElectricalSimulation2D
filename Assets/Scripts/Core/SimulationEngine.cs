@@ -308,7 +308,33 @@ namespace ElectricalSim.Core
                 return closedContactors.Contains(component);
             }
 
+            if (component.Definition.kind == ComponentKind.Indicator)
+            {
+                return IsIndicatorEnergized(component);
+            }
+
             return HasPhaseAndNeutral(component, powered, neutral);
+        }
+
+        private bool IsIndicatorEnergized(CircuitComponent component)
+        {
+            var firstTerminal = component.GetTerminal("L") ?? component.GetTerminal("A1");
+            var secondTerminal = component.GetTerminal("N") ?? component.GetTerminal("A2");
+            if (firstTerminal == null || secondTerminal == null)
+            {
+                return false;
+            }
+
+            var firstPhases = GetReachablePowerPhaseKeys(firstTerminal);
+            var secondPhases = GetReachablePowerPhaseKeys(secondTerminal);
+            var ratedVoltage = component.Definition != null ? component.Definition.ratedVoltage : 0f;
+            if (ratedVoltage >= 300f)
+            {
+                return firstPhases.Any(a => secondPhases.Any(b => b != a));
+            }
+
+            return firstPhases.Count > 0 && CanReachPowerNeutral(secondTerminal) ||
+                secondPhases.Count > 0 && CanReachPowerNeutral(firstTerminal);
         }
 
         private static bool HasPhaseAndNeutral(CircuitComponent component, HashSet<TerminalView> powered, HashSet<TerminalView> neutral)

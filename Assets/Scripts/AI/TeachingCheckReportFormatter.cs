@@ -178,9 +178,26 @@ namespace ElectricalSim.AI
                         (component.IsLimitSwitchTriggered ? "已触发" : "未触发") + "。");
                     count++;
                 }
+                else if (IsKnifeSwitch(component))
+                {
+                    builder.AppendLine("- " + component.DisplayName + "：" +
+                        (component.State == "Closed"
+                            ? "刀开关当前闭合，主回路经刀开关接通。"
+                            : "刀开关当前断开，主回路被切断，后级电机或负载无法获得电源。"));
+                    count++;
+                }
+                else if (IsEmergencyStop(component))
+                {
+                    builder.AppendLine("- " + component.DisplayName + "：" +
+                        (component.State == "Closed"
+                            ? "急停按钮未触发，NC 触点导通，控制回路可继续供电。"
+                            : "急停按钮当前触发，NC 触点断开，控制回路被急停切断，后级负载或线圈应失电。"));
+                    count++;
+                }
                 else if (component.SummaryGroup == ComponentStateInfo.GroupLoad)
                 {
-                    builder.AppendLine("- " + component.DisplayName + "：" + ReadableState(component.State) + "。");
+                    builder.AppendLine("- " + component.DisplayName + "：" +
+                        (IsIndicator(component) ? IndicatorReadableState(component.State) : ReadableState(component.State)) + "。");
                     count++;
                 }
             }
@@ -421,6 +438,29 @@ namespace ElectricalSim.AI
         {
             return Contains(component.DefinitionName, "ThermalRelay") ||
                 Contains(component.DisplayName, "热继");
+        }
+
+        private static bool IsIndicator(ComponentStateInfo component)
+        {
+            return Contains(component.DefinitionName, "Indicator") ||
+                Contains(component.DisplayName, "指示灯");
+        }
+
+        private static bool IsKnifeSwitch(ComponentStateInfo component)
+        {
+            return Contains(component.DefinitionName, "KnifeSwitch") ||
+                Contains(component.DisplayName, "刀开关");
+        }
+
+        private static bool IsEmergencyStop(ComponentStateInfo component)
+        {
+            return Contains(component.DefinitionName, "EmergencyStop") ||
+                Contains(component.DisplayName, "急停");
+        }
+
+        private static string IndicatorReadableState(string state)
+        {
+            return state == "On" || state == "Running" ? "点亮" : "熄灭";
         }
 
         private static bool IsRunningState(string state)

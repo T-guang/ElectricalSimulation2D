@@ -19,7 +19,7 @@ MonoBehaviour:
   accentColor: {r: 0.18, g: 0.34, b: 0.7, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
-  supportLevel: 2
+  supportLevel: 3
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1

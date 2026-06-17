@@ -1338,6 +1338,11 @@ namespace ElectricalSim.Core
                     info.SummaryGroup = ComponentStateInfo.GroupLoad;
                     AnalyzeSinglePhaseLoad(component, info, result, true);
                 }
+                else if (IsIndicator(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupLoad;
+                    AnalyzeIndicatorLoad(component, info, result);
+                }
                 else if (IsStarDeltaMotorComponent(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupLoad;
@@ -1396,6 +1401,26 @@ namespace ElectricalSim.Core
                         ? "当前导通：" + FindFirstTerminalPair(component, " → ")
                         : "当前状态：" + FindFirstTerminalPair(component, " 与 ") + " 不导通";
                 }
+                else if (component.Definition.kind == ComponentKind.PushButton)
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupControl;
+                    info.State = component.IsClosed ? "Closed" : "Open";
+                    if (IsEmergencyStop(component))
+                    {
+                        info.ConductionExplanation = component.IsClosed
+                            ? "急停未按下：NC 触点导通，控制回路可通过。"
+                            : "急停已按下：NC 触点断开，控制回路被急停切断。";
+                        info.Judgement = component.IsClosed
+                            ? "急停按钮当前未触发。"
+                            : "急停按钮当前触发，后级接触器线圈或控制支路应失电。";
+                    }
+                    else
+                    {
+                        info.ConductionExplanation = component.IsClosed
+                            ? "当前导通：" + FindFirstTerminalPair(component, " → ")
+                            : "当前状态：" + FindFirstTerminalPair(component, " 与 ") + " 不导通";
+                    }
+                }
                 else if (IsThermalRelay(component))
                 {
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
@@ -1403,6 +1428,17 @@ namespace ElectricalSim.Core
                     info.Judgement = component.IsClosed
                         ? "V1.2 按当前状态传播热继电器 95/96 控制触点；主回路仍按 V1.0 静态传播。"
                         : "热继电器当前断开，95/96 控制触点不导通；主回路仍按 V1.0 静态传播。";
+                }
+                else if (IsKnifeSwitch(component))
+                {
+                    info.SummaryGroup = ComponentStateInfo.GroupControl;
+                    info.State = component.IsClosed ? "Closed" : "Open";
+                    info.ConductionExplanation = component.IsClosed
+                        ? "刀开关 ON：主回路已接通，L1/T1、L2/T2、L3/T3 按当前端子成对导通。"
+                        : "刀开关 OFF：主回路被切断，L1/T1、L2/T2、L3/T3 不导通。";
+                    info.Judgement = component.IsClosed
+                        ? "刀开关当前闭合，只承担手动通断作用，不按接触器线圈逻辑判断。"
+                        : "刀开关当前断开，后级主回路无法通过该开关获得电源。";
                 }
                 else if (component.Definition.kind == ComponentKind.Breaker || IsBreaker(component))
                 {
@@ -2222,14 +2258,14 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            if (line == VoltageL && neutral == VoltageN)
+            if (IsLineOrPhase(line) && neutral == VoltageN)
             {
                 info.State = runningState;
-                info.Judgement = loadName + "获得有效 L-N 供电。";
+                info.Judgement = loadName + "获得有效 " + line + "-N 单相电压，当前" + (isFan ? "运行" : "亮灯") + "。";
                 return;
             }
 
-            if (line == VoltageN && neutral == VoltageL)
+            if (line == VoltageN && IsLineOrPhase(neutral))
             {
                 info.State = stoppedState;
                 info.Judgement = loadName + "火线和零线接反，不符合规范接线要求，因此不作为正常" + (isFan ? "运行" : "亮灯") + "处理。";
@@ -2238,11 +2274,11 @@ namespace ElectricalSim.Core
             }
 
             info.State = stoppedState;
-            var hasLine = line == VoltageL || neutral == VoltageL;
+            var hasLine = IsLineOrPhase(line) || IsLineOrPhase(neutral);
             var hasNeutral = line == VoltageN || neutral == VoltageN;
             if (!hasLine)
             {
-                AddComponentWarning(info, result, loadName + "未获得火线 L。");
+                AddComponentWarning(info, result, loadName + "未获得火线侧电源 L/L1/L2/L3。");
             }
 
             if (!hasNeutral)
@@ -2261,7 +2297,7 @@ namespace ElectricalSim.Core
             }
             else if (!hasLine)
             {
-                info.Judgement = loadName + "缺少火线 L。";
+                info.Judgement = loadName + "缺少火线侧电源 L/L1/L2/L3。";
             }
             else if (!hasNeutral)
             {
@@ -2271,6 +2307,63 @@ namespace ElectricalSim.Core
             {
                 info.Judgement = loadName + "两端没有形成有效 L-N 电压差。";
             }
+        }
+
+        private static void AnalyzeIndicatorLoad(
+            CircuitComponent component,
+            ComponentStateInfo info,
+            CircuitStateResult result)
+        {
+            var firstTerminalId = component.GetTerminal("L") != null ? "L" : "A1";
+            var secondTerminalId = component.GetTerminal("N") != null ? "N" : "A2";
+            if (component.GetTerminal(firstTerminalId) == null || component.GetTerminal(secondTerminalId) == null)
+            {
+                info.State = "Off";
+                AddComponentWarning(info, result, "指示灯缺少可识别的 L/N 或 A1/A2 端子，无法判断是否得电。");
+                return;
+            }
+
+            var firstVoltage = VoltageAt(info, firstTerminalId);
+            var secondVoltage = VoltageAt(info, secondTerminalId);
+            var isHighVoltageIndicator = component.Definition != null && component.Definition.ratedVoltage >= 300f ||
+                DefinitionContains(component, "380V", "380");
+
+            if (firstVoltage == VoltageConflict || secondVoltage == VoltageConflict)
+            {
+                info.State = "Off";
+                info.Judgement = "指示灯所在回路存在电压冲突或短路风险，当前不作为正常点亮处理。";
+                AddComponentError(info, result, info.Judgement);
+                return;
+            }
+
+            if (isHighVoltageIndicator)
+            {
+                if (IsThreePhaseLine(firstVoltage) && IsThreePhaseLine(secondVoltage) && firstVoltage != secondVoltage)
+                {
+                    info.State = "On";
+                    info.Judgement = "380V 指示灯两端接入不同相线，已得电，当前点亮。";
+                    return;
+                }
+
+                info.State = "Off";
+                info.Judgement = "380V 指示灯需要接入两条不同相线；当前未形成有效线电压，指示灯熄灭。";
+                AddComponentWarning(info, result, info.Judgement);
+                return;
+            }
+
+            if (firstVoltage == VoltageL && secondVoltage == VoltageN ||
+                firstVoltage == VoltageN && secondVoltage == VoltageL ||
+                IsThreePhaseLine(firstVoltage) && secondVoltage == VoltageN ||
+                IsThreePhaseLine(secondVoltage) && firstVoltage == VoltageN)
+            {
+                info.State = "On";
+                info.Judgement = "220V 指示灯两端形成相线/零线电压，已得电，当前点亮。";
+                return;
+            }
+
+            info.State = "Off";
+            info.Judgement = "220V 指示灯未形成有效相线/零线电压，当前熄灭。";
+            AddComponentWarning(info, result, info.Judgement);
         }
 
         private static void AddComponentWarning(ComponentStateInfo info, CircuitStateResult result, string message)
@@ -2456,6 +2549,17 @@ namespace ElectricalSim.Core
         {
             return component.Definition.kind == ComponentKind.Fan ||
                 DefinitionContains(component, "Fan", "风扇", "电风扇");
+        }
+
+        private static bool IsIndicator(CircuitComponent component)
+        {
+            return component.Definition.kind == ComponentKind.Indicator ||
+                DefinitionContains(component, "Indicator", "PilotLight", "指示灯");
+        }
+
+        private static bool IsEmergencyStop(CircuitComponent component)
+        {
+            return DefinitionContains(component, "EmergencyStop", "EStop", "急停");
         }
 
         private static bool IsThreePhaseMotorComponent(CircuitComponent component)

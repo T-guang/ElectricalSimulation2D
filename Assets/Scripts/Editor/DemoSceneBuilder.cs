@@ -767,15 +767,20 @@ namespace ElectricalSim.EditorTools
                 return;
             }
 
+            if (assetName.Contains("Button_SelfLock") ||
+                assetName == "LimitSwitch_SelfLock")
+            {
+                definition.supportLevel = ComponentSupportLevel.SimpleSwitchSupported;
+                return;
+            }
+
             if (assetName == "KnifeSwitch_QS" ||
                 assetName == "EmergencyStop_NC" ||
-                assetName.Contains("Button_SelfLock") ||
-                assetName == "LimitSwitch_SelfLock" ||
                 assetName == "Breaker_1P" ||
                 assetName == "Breaker_4P" ||
                 assetName == "Fuse_1P")
             {
-                definition.supportLevel = ComponentSupportLevel.SimpleSwitchSupported;
+                definition.supportLevel = ComponentSupportLevel.RuntimeSupported;
                 return;
             }
 
