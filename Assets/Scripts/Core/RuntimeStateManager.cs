@@ -39,10 +39,15 @@ namespace ElectricalSim.Core
         public bool LeftLimitTriggered;
         public bool RightLimitTriggered;
 
+        public MotionRuntimeState()
+        {
+            Reset();
+        }
+
         public void Reset()
         {
-            Position = 0f;
-            Speed = 0f;
+            Position = 50f;
+            Speed = 20f;
             Direction = MotionDirection.Stopped;
             LeftLimitTriggered = false;
             RightLimitTriggered = false;

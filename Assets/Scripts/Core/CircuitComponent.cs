@@ -324,6 +324,12 @@ namespace ElectricalSim.Core
                     stateLabel.text = IsClosed ? "ON" : "OFF";
                     stateLabel.color = IsClosed ? new Color(0.05f, 0.55f, 0.24f) : new Color(0.65f, 0.1f, 0.1f);
                 }
+                else if (IsAutoReciprocatingMotionMotor())
+                {
+                    ConfigureMotionStateLabel(stateLabel);
+                    stateLabel.text = GetMotionRuntimeText();
+                    stateLabel.color = IsEnergized ? new Color(0.05f, 0.45f, 0.95f) : new Color(0.32f, 0.36f, 0.42f);
+                }
                 else
                 {
                     ConfigureDefaultStateLabel(stateLabel);
@@ -331,6 +337,31 @@ namespace ElectricalSim.Core
                     stateLabel.text = IsEnergized ? GetRunStateText() : "";
                     stateLabel.color = new Color(0.05f, 0.45f, 0.95f);
                 }
+            }
+        }
+
+        private static void ConfigureMotionStateLabel(Text label)
+        {
+            if (label == null)
+            {
+                return;
+            }
+
+            label.fontSize = 11;
+            label.lineSpacing = 0.88f;
+            label.horizontalOverflow = HorizontalWrapMode.Wrap;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
+            label.resizeTextForBestFit = true;
+            label.resizeTextMinSize = 8;
+            label.resizeTextMaxSize = 11;
+
+            var rect = label.rectTransform;
+            if (rect != null)
+            {
+                rect.anchorMin = new Vector2(-0.18f, 0.08f);
+                rect.anchorMax = new Vector2(1.18f, 0.92f);
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
             }
         }
 
@@ -415,6 +446,70 @@ namespace ElectricalSim.Core
             return Definition != null &&
                    !string.IsNullOrWhiteSpace(Definition.name) &&
                    Definition.name.IndexOf("Timer_OnDelay", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private bool IsAutoReciprocatingMotionMotor()
+        {
+            return Definition != null &&
+                   Definition.kind == ComponentKind.Motor &&
+                   string.Equals(InstanceId, "motor_1", System.StringComparison.OrdinalIgnoreCase) &&
+                   GetTerminal("U") != null &&
+                   GetTerminal("V") != null &&
+                   GetTerminal("W") != null &&
+                   HasWorkspaceComponent("sq_left") &&
+                   HasWorkspaceComponent("sq_right") &&
+                   HasWorkspaceComponent("km_forward") &&
+                   HasWorkspaceComponent("km_reverse");
+        }
+
+        private bool HasWorkspaceComponent(string instanceId)
+        {
+            if (workspace == null || workspace.Components == null || string.IsNullOrWhiteSpace(instanceId))
+            {
+                return false;
+            }
+
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component != null &&
+                    string.Equals(component.InstanceId, instanceId, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private string GetMotionRuntimeText()
+        {
+            var motionState = RuntimeStateManager.Shared.GetOrCreateMotionState(InstanceId);
+            var electricalState = IsEnergized ? GetRunStateText() : "停止";
+            if (motionState == null)
+            {
+                return "电气：" + electricalState + "\n虚拟运动：停止\n虚拟位置：50 / 100\n虚拟左限位：未触发\n虚拟右限位：未触发";
+            }
+
+            return "电气：" + electricalState +
+                   "\n虚拟运动：" + MotionDirectionText(motionState.Direction) +
+                   "\n虚拟位置：" + motionState.Position.ToString("0") + " / 100" +
+                   "\n虚拟左限位：" + (motionState.LeftLimitTriggered ? "已触发" : "未触发") +
+                   "\n虚拟右限位：" + (motionState.RightLimitTriggered ? "已触发" : "未触发") +
+                   "\n速度：" + motionState.Speed.ToString("0") + " / s";
+        }
+
+        private static string MotionDirectionText(MotionDirection direction)
+        {
+            switch (direction)
+            {
+                case MotionDirection.Forward:
+                    return "正向";
+                case MotionDirection.Reverse:
+                    return "反向";
+                default:
+                    return "停止";
+            }
         }
 
         private string GetRunStateText()
