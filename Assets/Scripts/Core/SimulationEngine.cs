@@ -984,6 +984,8 @@ namespace ElectricalSim.Core
             {
                 motionState.Direction = MotionDirection.Stopped;
             }
+
+            motionState.AdvancePosition(simulationDeltaTime);
         }
 
         private bool IsAutoReciprocatingMotionMotor(CircuitComponent component)
@@ -1237,7 +1239,7 @@ namespace ElectricalSim.Core
 
             if (IsLimitSwitch(component))
             {
-                if (component.IsClosed)
+                if (IsLimitSwitchEffectivelyTriggered(component))
                 {
                     ConnectById(component, "23", "24");
                 }
@@ -1311,6 +1313,33 @@ namespace ElectricalSim.Core
                     ConnectPairs(terms, component.IsClosed || component.Definition.kind == ComponentKind.TerminalBlock);
                     break;
             }
+        }
+
+        private bool IsLimitSwitchEffectivelyTriggered(CircuitComponent component)
+        {
+            return component != null && (component.IsClosed || IsVirtualLimitSwitchTriggered(component));
+        }
+
+        private bool IsVirtualLimitSwitchTriggered(CircuitComponent component)
+        {
+            if (component == null ||
+                (!string.Equals(component.InstanceId, "sq_left", System.StringComparison.OrdinalIgnoreCase) &&
+                 !string.Equals(component.InstanceId, "sq_right", System.StringComparison.OrdinalIgnoreCase)) ||
+                !HasComponent("motor_1") ||
+                !HasComponent("km_forward") ||
+                !HasComponent("km_reverse"))
+            {
+                return false;
+            }
+
+            if (!RuntimeStateManager.Shared.TryGetMotionState("motor_1", out var motionState) || motionState == null)
+            {
+                return false;
+            }
+
+            return string.Equals(component.InstanceId, "sq_left", System.StringComparison.OrdinalIgnoreCase)
+                ? motionState.LeftLimitTriggered
+                : motionState.RightLimitTriggered;
         }
 
         private static bool IsLimitSwitch(CircuitComponent component)

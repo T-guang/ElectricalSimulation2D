@@ -33,6 +33,9 @@ namespace ElectricalSim.Core
 
     public sealed class MotionRuntimeState
     {
+        public const float MinPosition = 0f;
+        public const float MaxPosition = 100f;
+
         public float Position;
         public float Speed;
         public MotionDirection Direction;
@@ -51,6 +54,54 @@ namespace ElectricalSim.Core
             Direction = MotionDirection.Stopped;
             LeftLimitTriggered = false;
             RightLimitTriggered = false;
+        }
+
+        public void AdvancePosition(float deltaSeconds)
+        {
+            if (deltaSeconds <= 0f || Speed <= 0f)
+            {
+                ClampPositionAndUpdateLimits();
+                return;
+            }
+
+            if (Direction == MotionDirection.Forward)
+            {
+                Position += Speed * deltaSeconds;
+            }
+            else if (Direction == MotionDirection.Reverse)
+            {
+                Position -= Speed * deltaSeconds;
+            }
+
+            ClampPositionAndUpdateLimits();
+        }
+
+        private void ClampPositionAndUpdateLimits()
+        {
+            if (Position < MinPosition)
+            {
+                Position = MinPosition;
+            }
+            else if (Position > MaxPosition)
+            {
+                Position = MaxPosition;
+            }
+
+            if (Position <= MinPosition)
+            {
+                LeftLimitTriggered = true;
+                RightLimitTriggered = false;
+            }
+            else if (Position >= MaxPosition)
+            {
+                LeftLimitTriggered = false;
+                RightLimitTriggered = true;
+            }
+            else
+            {
+                LeftLimitTriggered = false;
+                RightLimitTriggered = false;
+            }
         }
     }
 
