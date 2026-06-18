@@ -19,11 +19,11 @@ MonoBehaviour:
   accentColor: {r: 0.18, g: 0.56, b: 1, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
-  supportLevel: 3
+  supportLevel: 5
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1
-  canParticipateInParameterCalculation: 0
+  canParticipateInParameterCalculation: 1
   startsClosed: 0
   togglable: 0
   allowSameComponentJumper: 1
@@ -41,6 +41,42 @@ MonoBehaviour:
   canTrip: 0
   parameterNote: "\u4E09\u76F8\u5F02\u6B65\u7535\u52A8\u673A\uFF1A\u6559\u5B66\u4F30\u7B97
     0.75kW\uFF0C\u7535\u6D41\u53D6\u8FD1\u4F3C\u503C\u3002"
+  parameters:
+  - key: ratedVoltage
+    displayName: "额定电压"
+    value: 380
+    unit: "V"
+    min: 0
+    max: 1000
+    editable: 1
+  - key: ratedPower
+    displayName: "额定功率"
+    value: 750
+    unit: "W"
+    min: 0
+    max: 100000
+    editable: 1
+  - key: ratedCurrent
+    displayName: "额定电流"
+    value: 1.8
+    unit: "A"
+    min: 0
+    max: 500
+    editable: 1
+  - key: efficiency
+    displayName: "效率"
+    value: 0.85
+    unit: ""
+    min: 0.1
+    max: 1
+    editable: 1
+  - key: powerFactor
+    displayName: "功率因数"
+    value: 0.8
+    unit: ""
+    min: 0.1
+    max: 1
+    editable: 1
   terminals:
   - id: U1
     label: U1

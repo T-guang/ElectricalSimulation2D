@@ -328,7 +328,8 @@ namespace ElectricalSim.AI
                         "\n\n" + industrialResult.FormatForAssistant() +
                         "\n\n" + industrialStateResult.ToReadableText();
                     AddAssistantMessage(PrependCheckPanelRuntimeNotices(
-                        TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails)));
+                        TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails),
+                        industrialStateResult));
                     var industrialSummary = "工业电路检查完成：";
                     if (industrialResult.ErrorCount > 0)
                     {
@@ -355,7 +356,8 @@ namespace ElectricalSim.AI
                     "\n\n" + CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
                     "\n\n" + stateResult.ToReadableText();
                 AddAssistantMessage(PrependCheckPanelRuntimeNotices(
-                    TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails)));
+                    TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails),
+                    stateResult));
                 
                 string summary = "电路检查完成：";
                 if (displayResult.ErrorCount > 0 || displayResult.WarningCount > 0)
@@ -731,9 +733,429 @@ namespace ElectricalSim.AI
             return builder.ToString().TrimEnd();
         }
 
-        private string PrependCheckPanelRuntimeNotices(string report)
+        private string PrependCheckPanelRuntimeNotices(string report, CircuitStateResult stateResult)
         {
-            return PrependUnsupportedComponentNotice(PrependAutoReciprocatingRuntimeSummary(report));
+            return PrependUnsupportedComponentNotice(
+                PrependParameterEstimationSummary(
+                    PrependIndustrialParameterEstimationSummary(
+                        PrependAutoReciprocatingRuntimeSummary(report),
+                        stateResult),
+                    stateResult));
+        }
+
+        private string PrependParameterEstimationSummary(string report, CircuitStateResult stateResult)
+        {
+            var summary = BuildParameterEstimationSummary(stateResult);
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                return report;
+            }
+
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                return summary;
+            }
+
+            return summary + "\n\n" + report;
+        }
+
+        private string PrependIndustrialParameterEstimationSummary(string report, CircuitStateResult stateResult)
+        {
+            var summary = BuildIndustrialParameterEstimationSummary(stateResult);
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                return report;
+            }
+
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                return summary;
+            }
+
+            return summary + "\n\n" + report;
+        }
+
+        private string BuildIndustrialParameterEstimationSummary(CircuitStateResult stateResult)
+        {
+            if (stateResult == null || workspace == null || workspace.Components == null)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            var motorCount = AppendThreePhaseMotorEstimates(builder, stateResult);
+            var controlCount = AppendControlCircuitLoadEstimates(builder);
+            return motorCount == 0 && controlCount == 0 ? string.Empty : builder.ToString().TrimEnd();
+        }
+
+        private int AppendThreePhaseMotorEstimates(StringBuilder builder, CircuitStateResult stateResult)
+        {
+            var count = 0;
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var info = stateResult.Components[i];
+                var component = FindWorkspaceComponent(info.InstanceId);
+                if (component == null || !TeachingParameterCalculationService.IsThreePhaseTeachingMotor(component))
+                {
+                    continue;
+                }
+
+                if (count == 0)
+                {
+                    builder.AppendLine("【三相电机参数估算】");
+                }
+
+                var lineVoltage = ResolveThreePhaseLineVoltage();
+                if (!TeachingParameterCalculationService.TryCalculateThreePhaseMotor(
+                    component,
+                    component.IsEnergized,
+                    lineVoltage,
+                    out var estimate))
+                {
+                    continue;
+                }
+
+                if (!component.IsEnergized)
+                {
+                    builder.AppendLine("- " + component.Definition.displayName + "当前未运行，估算运行电流为 0A。");
+                    count++;
+                    continue;
+                }
+
+                builder.AppendLine("- " + component.Definition.displayName + "当前运行。线电压：" +
+                    estimate.LineVoltage.ToString("0.#") + "V；额定功率：" +
+                    estimate.RatedPower.ToString("0.#") + "W；效率：" +
+                    estimate.Efficiency.ToString("0.##") + "；功率因数：" +
+                    estimate.PowerFactor.ToString("0.##") + "；估算运行电流：约 " +
+                    estimate.EstimatedCurrent.ToString("0.###") + "A。");
+                count++;
+            }
+
+            if (count > 0)
+            {
+                builder.AppendLine("- 说明：该结果为教学估算值，按 I≈P/(√3×U×η×cosφ) 计算；本阶段不估算星三角电机启动电流。");
+            }
+
+            return count;
+        }
+
+        private int AppendControlCircuitLoadEstimates(StringBuilder builder)
+        {
+            var hasCandidate = false;
+            var count = 0;
+            var totalCurrent = 0f;
+            var displayCounts = BuildComponentDisplayNameCounts();
+            var displayOrdinals = BuildComponentDisplayOrdinals();
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component == null ||
+                    !TeachingParameterCalculationService.IsControlCircuitTeachingLoad(component))
+                {
+                    continue;
+                }
+
+                hasCandidate = true;
+                if (!component.IsEnergized)
+                {
+                    continue;
+                }
+
+                if (!TeachingParameterCalculationService.TryEstimateControlCircuitLoad(component, out var estimate))
+                {
+                    continue;
+                }
+
+                if (count == 0)
+                {
+                    builder.AppendLine();
+                    builder.AppendLine("【控制回路负载估算】");
+                    builder.AppendLine("当前得电控制负载：");
+                }
+
+                if (estimate.HasEnoughParameters)
+                {
+                    builder.AppendLine("- " + ResolveControlLoadDisplayName(component, estimate, displayCounts, displayOrdinals) + "（" + estimate.LoadType + "）：额定电压 " +
+                        estimate.RatedVoltage.ToString("0.#") + "V，额定功率 " +
+                        estimate.RatedPower.ToString("0.###") + "W，估算电流 " +
+                        estimate.EstimatedCurrent.ToString("0.###") + "A。");
+                    totalCurrent += estimate.EstimatedCurrent;
+                }
+                else
+                {
+                    builder.AppendLine("- " + ResolveControlLoadDisplayName(component, estimate, displayCounts, displayOrdinals) + "（" + estimate.LoadType + "）：参数缺失，暂不估算电流。");
+                }
+
+                count++;
+            }
+
+            if (hasCandidate && count == 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("【控制回路负载估算】");
+                builder.AppendLine("当前未检测到得电的控制回路负载。");
+                return 1;
+            }
+
+            if (count == 0)
+            {
+                return 0;
+            }
+
+            builder.AppendLine("控制回路估算总电流：" + totalCurrent.ToString("0.###") + "A。");
+            builder.AppendLine("- 说明：该结果为教学估算值，用于理解控制回路负载大小；本阶段不判断控制电源容量。");
+            return count;
+        }
+
+        private Dictionary<string, int> BuildComponentDisplayNameCounts()
+        {
+            var result = new Dictionary<string, int>();
+            if (workspace == null || workspace.Components == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component == null || component.Definition == null)
+                {
+                    continue;
+                }
+
+                var displayName = NormalizeComponentDisplayName(component.Definition.displayName);
+                if (result.ContainsKey(displayName))
+                {
+                    result[displayName]++;
+                }
+                else
+                {
+                    result[displayName] = 1;
+                }
+            }
+
+            return result;
+        }
+
+        private Dictionary<CircuitComponent, int> BuildComponentDisplayOrdinals()
+        {
+            var result = new Dictionary<CircuitComponent, int>();
+            var indexes = new Dictionary<string, int>();
+            if (workspace == null || workspace.Components == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component == null || component.Definition == null)
+                {
+                    continue;
+                }
+
+                var displayName = NormalizeComponentDisplayName(component.Definition.displayName);
+                var next = 1;
+                if (indexes.TryGetValue(displayName, out var current))
+                {
+                    next = current + 1;
+                }
+
+                indexes[displayName] = next;
+                result[component] = next;
+            }
+
+            return result;
+        }
+
+        private static string ResolveControlLoadDisplayName(
+            CircuitComponent component,
+            ControlCircuitLoadEstimate estimate,
+            Dictionary<string, int> displayCounts,
+            Dictionary<CircuitComponent, int> displayOrdinals)
+        {
+            var fallback = component != null && component.Definition != null
+                ? component.Definition.displayName
+                : "控制负载";
+            var displayName = NormalizeComponentDisplayName(
+                estimate != null && !string.IsNullOrWhiteSpace(estimate.DisplayName)
+                    ? estimate.DisplayName
+                    : fallback);
+
+            var shouldNumber = displayCounts != null &&
+                displayCounts.TryGetValue(displayName, out var total) &&
+                total > 1;
+            if (!shouldNumber)
+            {
+                return displayName;
+            }
+
+            var ordinal = 1;
+            if (component != null && displayOrdinals != null &&
+                displayOrdinals.TryGetValue(component, out var componentOrdinal))
+            {
+                ordinal = componentOrdinal;
+            }
+
+            return displayName + " #" + ordinal.ToString();
+        }
+
+        private static string NormalizeComponentDisplayName(string displayName)
+        {
+            return string.IsNullOrWhiteSpace(displayName)
+                ? "元件"
+                : displayName.Replace("\r", " ").Replace("\n", " ").Trim();
+        }
+
+        private float ResolveThreePhaseLineVoltage()
+        {
+            var fallback = 380f;
+            if (workspace == null || workspace.Components == null)
+            {
+                return fallback;
+            }
+
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component == null || component.Definition == null ||
+                    component.Definition.kind != ComponentKind.PowerSource)
+                {
+                    continue;
+                }
+
+                var lineVoltage = TeachingParameterCalculationService.ResolveParameterValue(
+                    component,
+                    "sourceLineVoltage",
+                    component.Definition.sourceLineVoltage > 0f ? component.Definition.sourceLineVoltage : fallback);
+                if (lineVoltage > 0f)
+                {
+                    return lineVoltage;
+                }
+            }
+
+            return fallback;
+        }
+
+        private string BuildParameterEstimationSummary(CircuitStateResult stateResult)
+        {
+            if (stateResult == null || workspace == null || workspace.Components == null)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            var count = 0;
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var info = stateResult.Components[i];
+                var component = FindWorkspaceComponent(info.InstanceId);
+                if (component == null || !TeachingParameterCalculationService.IsSinglePhaseTeachingLoad(component))
+                {
+                    continue;
+                }
+
+                if (count == 0)
+                {
+                    builder.AppendLine("【参数估算】");
+                }
+
+                AppendSinglePhaseLoadEstimate(builder, component, info);
+                count++;
+            }
+
+            if (count == 0)
+            {
+                return string.Empty;
+            }
+
+            builder.AppendLine("- 说明：以上为教学估算值，按 I = P / U 计算；本阶段不做多负载总电流、空开过载或工业级精确仿真。");
+            return builder.ToString().TrimEnd();
+        }
+
+        private void AppendSinglePhaseLoadEstimate(
+            StringBuilder builder,
+            CircuitComponent component,
+            ComponentStateInfo info)
+        {
+            var loadName = TeachingParameterCalculationService.LoadDisplayName(component);
+            var firstTerminalId = component.GetTerminal("L") != null ? "L" : "A1";
+            var secondTerminalId = component.GetTerminal("N") != null ? "N" : "A2";
+            var firstVoltage = VoltageAt(info, firstTerminalId);
+            var secondVoltage = VoltageAt(info, secondTerminalId);
+            var lineLabel = string.Empty;
+
+            if (IsLineOrPhase(firstVoltage) && secondVoltage == "N")
+            {
+                lineLabel = firstVoltage;
+            }
+            else if (IsLineOrPhase(secondVoltage) && firstVoltage == "N")
+            {
+                lineLabel = secondVoltage;
+            }
+
+            var ratedPower = Mathf.Max(0f, TeachingParameterCalculationService.ResolveParameterValue(
+                component,
+                "ratedPower",
+                component.Definition.ratedPower));
+
+            if (string.IsNullOrWhiteSpace(lineLabel))
+            {
+                builder.AppendLine("- " + loadName + "当前未获得有效单相电压，估算电流为 0A。");
+                return;
+            }
+
+            var voltage = ResolveSinglePhaseSourceVoltage(lineLabel);
+            var current = voltage > 0f ? ratedPower / voltage : 0f;
+            builder.AppendLine("- " + loadName + "获得 " + voltage.ToString("0.#") + "V 单相电压（" +
+                lineLabel + "-N）；额定功率：" + ratedPower.ToString("0.#") +
+                "W；估算电流：" + current.ToString("0.###") + "A。");
+        }
+
+        private float ResolveSinglePhaseSourceVoltage(string lineLabel)
+        {
+            var fallback = 220f;
+            if (workspace == null || workspace.Components == null)
+            {
+                return fallback;
+            }
+
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var component = workspace.Components[i];
+                if (component == null || component.Definition == null ||
+                    component.Definition.kind != ComponentKind.PowerSource)
+                {
+                    continue;
+                }
+
+                var sourceVoltage = TeachingParameterCalculationService.ResolveParameterValue(
+                    component,
+                    "sourceVoltage",
+                    component.Definition.sourceVoltage > 0f ? component.Definition.sourceVoltage : fallback);
+                fallback = sourceVoltage > 0f ? sourceVoltage : fallback;
+                if (component.GetTerminal(lineLabel) != null)
+                {
+                    return fallback;
+                }
+            }
+
+            return fallback;
+        }
+
+        private static string VoltageAt(ComponentStateInfo info, string terminalId)
+        {
+            if (info == null || string.IsNullOrWhiteSpace(terminalId))
+            {
+                return string.Empty;
+            }
+
+            return info.TerminalVoltages.TryGetValue(terminalId, out var voltage) ? voltage : string.Empty;
+        }
+
+        private static bool IsLineOrPhase(string voltage)
+        {
+            return voltage == "L" || voltage == "L1" || voltage == "L2" || voltage == "L3";
         }
 
         private string PrependUnsupportedComponentNotice(string report)

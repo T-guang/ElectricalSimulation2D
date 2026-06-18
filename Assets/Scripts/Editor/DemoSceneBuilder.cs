@@ -619,16 +619,28 @@ namespace ElectricalSim.EditorTools
         {
             return new List<ComponentParameter>
             {
-                new ComponentParameter
-                {
-                    key = "delaySeconds",
-                    displayName = "\u5ef6\u65f6\u65f6\u95f4",
-                    value = 3f,
-                    unit = "s",
-                    min = 0f,
-                    max = 999f,
-                    editable = true
-                }
+                Parameter("delaySeconds", "\u5ef6\u65f6\u65f6\u95f4", 3f, "s", 0f, 999f, true)
+            };
+        }
+
+        private static ComponentParameter Parameter(
+            string key,
+            string displayName,
+            float value,
+            string unit,
+            float min,
+            float max,
+            bool editable)
+        {
+            return new ComponentParameter
+            {
+                key = key,
+                displayName = displayName,
+                value = value,
+                unit = unit,
+                min = min,
+                max = max,
+                editable = editable
             };
         }
 
@@ -706,6 +718,7 @@ namespace ElectricalSim.EditorTools
             definition.terminals = new List<TerminalDefinition>(terminals);
             ConfigureElectricalProfile(definition, assetName, kind);
             ConfigureSupportProfile(definition, assetName, kind);
+            ConfigureEditableParameters(definition, assetName);
             EditorUtility.SetDirty(definition);
             return definition;
         }
@@ -801,6 +814,97 @@ namespace ElectricalSim.EditorTools
             {
                 definition.supportLevel = ComponentSupportLevel.RuntimeSupported;
             }
+        }
+
+        private static void ConfigureEditableParameters(ComponentDefinition definition, string assetName)
+        {
+            var parameters = new List<ComponentParameter>();
+
+            if (assetName == "AC_220V_Power")
+            {
+                parameters.Add(Parameter("sourceVoltage", "电源电压", 220f, "V", 0f, 500f, true));
+            }
+            else if (assetName == "AC_ThreePhase_Power")
+            {
+                parameters.Add(Parameter("sourceVoltage", "相电压", 220f, "V", 0f, 500f, true));
+                parameters.Add(Parameter("sourceLineVoltage", "线电压", 380f, "V", 0f, 1000f, true));
+                parameters.Add(Parameter("sourcePhaseCount", "相数", 3f, string.Empty, 1f, 3f, false));
+            }
+            else if (assetName == "Lamp_220V")
+            {
+                parameters.Add(Parameter("ratedVoltage", "额定电压", 220f, "V", 0f, 500f, true));
+                parameters.Add(Parameter("ratedPower", "额定功率", 60f, "W", 0f, 5000f, true));
+                parameters.Add(Parameter("ratedCurrent", "额定电流", 0.27f, "A", 0f, 100f, false));
+            }
+            else if (assetName == "Fan_220V")
+            {
+                parameters.Add(Parameter("ratedVoltage", "额定电压", 220f, "V", 0f, 500f, true));
+                parameters.Add(Parameter("ratedPower", "额定功率", 45f, "W", 0f, 5000f, true));
+                parameters.Add(Parameter("ratedCurrent", "额定电流", 0.2f, "A", 0f, 100f, false));
+            }
+            else if (assetName == "Motor_ThreePhase_380V" || assetName == "Motor_StarDelta_380V")
+            {
+                parameters.Add(Parameter("ratedVoltage", "额定电压", 380f, "V", 0f, 1000f, true));
+                parameters.Add(Parameter("ratedPower", "额定功率", 750f, "W", 0f, 100000f, true));
+                parameters.Add(Parameter("ratedCurrent", "额定电流", 1.8f, "A", 0f, 500f, true));
+                parameters.Add(Parameter("efficiency", "效率", 0.85f, string.Empty, 0.1f, 1f, true));
+                parameters.Add(Parameter("powerFactor", "功率因数", 0.8f, string.Empty, 0.1f, 1f, true));
+            }
+            else if (assetName == "Contactor_KM_220V" || assetName == "Contactor_KM_380V")
+            {
+                var ratedVoltage = assetName.Contains("380V") ? 380f : 220f;
+                var ratedPower = assetName.Contains("380V") ? 18f : 12f;
+                var ratedCurrent = ratedPower / ratedVoltage;
+                var maxVoltage = assetName.Contains("380V") ? 1000f : 500f;
+                parameters.Add(Parameter("ratedVoltage", "线圈额定电压", ratedVoltage, "V", 0f, maxVoltage, true));
+                parameters.Add(Parameter("ratedPower", "线圈额定功率", ratedPower, "W", 0f, 200f, true));
+                parameters.Add(Parameter("ratedCurrent", "线圈额定电流", ratedCurrent, "A", 0f, 5f, false));
+            }
+            else if (assetName == "Timer_OnDelay_220V" || assetName == "Timer_OnDelay_380V")
+            {
+                var ratedVoltage = assetName.Contains("380V") ? 380f : 220f;
+                var ratedPower = assetName.Contains("380V") ? 18f : 12f;
+                var ratedCurrent = ratedPower / ratedVoltage;
+                var maxVoltage = assetName.Contains("380V") ? 1000f : 500f;
+                parameters.Add(Parameter("ratedVoltage", "线圈额定电压", ratedVoltage, "V", 0f, maxVoltage, true));
+                parameters.Add(Parameter("ratedPower", "线圈额定功率", ratedPower, "W", 0f, 200f, true));
+                parameters.Add(Parameter("ratedCurrent", "线圈额定电流", ratedCurrent, "A", 0f, 5f, false));
+                parameters.Add(Parameter("delaySeconds", "延时时间", 3f, "s", 0f, 999f, true));
+            }
+            else if (assetName == "Breaker_1P" || assetName == "Breaker_2P" ||
+                assetName == "Breaker_3P" || assetName == "Breaker_4P")
+            {
+                parameters.Add(Parameter("ratedCurrent", "额定电流", 16f, "A", 0f, 200f, true));
+                parameters.Add(Parameter("canTrip", "可脱扣", 1f, string.Empty, 0f, 1f, false));
+            }
+            else if (assetName == "Fuse_1P" || assetName == "Fuse_3P")
+            {
+                parameters.Add(Parameter("ratedCurrent", "额定电流", assetName == "Fuse_3P" ? 10f : 6f, "A", 0f, 200f, true));
+                parameters.Add(Parameter("canTrip", "可熔断", 1f, string.Empty, 0f, 1f, false));
+            }
+            else if (assetName == "ThermalRelay_FR_380V")
+            {
+                parameters.Add(Parameter("ratedCurrent", "额定电流", 4f, "A", 0f, 100f, true));
+                parameters.Add(Parameter("settingCurrent", "整定电流", 1.8f, "A", 0f, 100f, true));
+                parameters.Add(Parameter("canTrip", "可保护动作", 1f, string.Empty, 0f, 1f, false));
+            }
+            else if (assetName.StartsWith("Indicator_"))
+            {
+                var ratedVoltage = assetName.Contains("380V") ? 380f : 220f;
+                var maxVoltage = assetName.Contains("380V") ? 1000f : 500f;
+                parameters.Add(Parameter("ratedVoltage", "额定电压", ratedVoltage, "V", 0f, maxVoltage, true));
+                parameters.Add(Parameter("ratedPower", "额定功率", 2f, "W", 0f, 100f, true));
+                parameters.Add(Parameter("ratedCurrent", "额定电流", 2f / ratedVoltage, "A", 0f, 5f, false));
+            }
+
+            if (parameters.Count == 0)
+            {
+                return;
+            }
+
+            definition.parameters = parameters;
+            definition.supportLevel = ComponentSupportLevel.ParameterCalculationSupported;
+            definition.canParticipateInParameterCalculation = true;
         }
 
         private static void MarkVisualOnlyUnsupported(ComponentDefinition definition, string reason)
@@ -926,7 +1030,7 @@ namespace ElectricalSim.EditorTools
 
             if (assetName.Contains("380V"))
             {
-                ConfigureLoad(definition, 380f, 3f, 430f, 0.05f, true, "380V 指示灯：用于工业回路状态指示。");
+                ConfigureLoad(definition, 380f, 2f, 430f, 0.05f, true, "380V 指示灯：用于工业回路状态指示。");
                 return;
             }
 

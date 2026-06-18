@@ -19,11 +19,11 @@ MonoBehaviour:
   accentColor: {r: 1, g: 0.78, b: 0.12, a: 1}
   sprite: {fileID: 21300000, guid: abb0a8187d60aa74e95f101a3be0888e, type: 3}
   size: {x: 420, y: 100}
-  supportLevel: 3
+  supportLevel: 5
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1
-  canParticipateInParameterCalculation: 0
+  canParticipateInParameterCalculation: 1
   startsClosed: 1
   togglable: 0
   controlledByTag: 
@@ -40,6 +40,28 @@ MonoBehaviour:
   canTrip: 0
   parameterNote: "\u4E09\u76F8\u56DB\u7EBF\u4EA4\u6D41\u7535\u6E90\uFF1A\u76F8\u7535\u538B
     220V\uFF0C\u7EBF\u7535\u538B 380V\u3002"
+  parameters:
+  - key: sourceVoltage
+    displayName: "相电压"
+    value: 220
+    unit: "V"
+    min: 0
+    max: 500
+    editable: 1
+  - key: sourceLineVoltage
+    displayName: "线电压"
+    value: 380
+    unit: "V"
+    min: 0
+    max: 1000
+    editable: 1
+  - key: sourcePhaseCount
+    displayName: "相数"
+    value: 3
+    unit: ""
+    min: 1
+    max: 3
+    editable: 0
   terminals:
   - id: L1
     label: L1

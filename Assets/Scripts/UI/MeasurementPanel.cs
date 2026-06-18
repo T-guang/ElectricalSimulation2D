@@ -101,7 +101,7 @@ namespace ElectricalSim.UI
             {
                 if (definition.sourcePhaseCount >= 3)
                 {
-                    var lineVoltage = definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : voltage;
+                    var lineVoltage = ResolveLineVoltage(component, definition, voltage);
                     return $"{voltage:0}V 相电压 / {lineVoltage:0}V 线电压";
                 }
 
@@ -118,6 +118,12 @@ namespace ElectricalSim.UI
 
         private static float ResolveVoltage(CircuitComponent component, ComponentDefinition definition)
         {
+            if (definition.kind == ComponentKind.PowerSource &&
+                TryGetParameterValue(component, "sourceVoltage", out var sourceVoltage))
+            {
+                return sourceVoltage;
+            }
+
             if (TryGetParameterValue(component, "ratedVoltage", out var value))
             {
                 return value;
@@ -179,7 +185,7 @@ namespace ElectricalSim.UI
             if (definition.kind == ComponentKind.PowerSource)
             {
                 var v = ResolveVoltage(component, definition);
-                return definition.sourcePhaseCount >= 3 && definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : v;
+                return definition.sourcePhaseCount >= 3 ? ResolveLineVoltage(component, definition, v) : v;
             }
 
             return measuredVoltage;
@@ -190,7 +196,7 @@ namespace ElectricalSim.UI
             if (definition.kind == ComponentKind.PowerSource)
             {
                 var v = ResolveVoltage(component, definition);
-                return definition.sourcePhaseCount >= 3 && definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : v;
+                return definition.sourcePhaseCount >= 3 ? ResolveLineVoltage(component, definition, v) : v;
             }
 
             return measuredVoltage;
@@ -209,6 +215,19 @@ namespace ElectricalSim.UI
             }
 
             return energized ? "检测到运行信号" : "元件未通电，无有效信号";
+        }
+
+        private static float ResolveLineVoltage(
+            CircuitComponent component,
+            ComponentDefinition definition,
+            float fallback)
+        {
+            if (TryGetParameterValue(component, "sourceLineVoltage", out var lineVoltage) && lineVoltage > 0f)
+            {
+                return lineVoltage;
+            }
+
+            return definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : fallback;
         }
 
         private static string GetStateText(ComponentDefinition definition, bool simulationRunning, bool energized)

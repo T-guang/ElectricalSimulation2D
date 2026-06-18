@@ -19,11 +19,11 @@ MonoBehaviour:
   accentColor: {r: 0.15, g: 0.42, b: 0.92, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
-  supportLevel: 3
+  supportLevel: 5
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1
-  canParticipateInParameterCalculation: 0
+  canParticipateInParameterCalculation: 1
   startsClosed: 1
   togglable: 1
   controlledByTag: 
@@ -39,6 +39,21 @@ MonoBehaviour:
   canBurnOut: 0
   canTrip: 1
   parameterNote: "\u65AD\u8DEF\u5668/\u4FDD\u62A4\u5668\uFF1A\u540E\u7EED\u8FC7\u6D41\u65F6\u8DF3\u95F8\u5E76\u65AD\u8DEF\u3002"
+  parameters:
+  - key: ratedCurrent
+    displayName: "额定电流"
+    value: 16
+    unit: "A"
+    min: 0
+    max: 200
+    editable: 1
+  - key: canTrip
+    displayName: "可脱扣"
+    value: 1
+    unit: ""
+    min: 0
+    max: 1
+    editable: 0
   terminals:
   - id: P1_IN
     label: "\u8FDB1"

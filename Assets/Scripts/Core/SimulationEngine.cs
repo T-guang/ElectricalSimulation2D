@@ -44,10 +44,12 @@ namespace ElectricalSim.Core
             var energizedCount = 0;
 
             var systemVoltage = 220f;
+            var systemLineVoltage = 380f;
             var powerSource = components.FirstOrDefault(c => c.Definition.kind == ComponentKind.PowerSource);
             if (powerSource != null)
             {
                 systemVoltage = ResolveVoltage(powerSource, powerSource.Definition);
+                systemLineVoltage = ResolveLineVoltage(powerSource, powerSource.Definition, systemLineVoltage);
             }
 
             foreach (var component in components)
@@ -56,7 +58,7 @@ namespace ElectricalSim.Core
                 var active = !shorted && energized;
                 UpdateMotorDirection(component, active);
                 component.SetEnergized(active);
-                ApplyMeasurement(component, active, systemVoltage);
+                ApplyMeasurement(component, active, systemVoltage, systemLineVoltage, GetReachablePowerPhaseKeys, CanReachPowerNeutral);
                 if (active)
                 {
                     energizedCount++;
@@ -80,7 +82,7 @@ namespace ElectricalSim.Core
                     var active = !shorted && energized;
                     UpdateMotorDirection(component, active);
                     component.SetEnergized(active);
-                    ApplyMeasurement(component, active, systemVoltage);
+                    ApplyMeasurement(component, active, systemVoltage, systemLineVoltage, GetReachablePowerPhaseKeys, CanReachPowerNeutral);
                     if (active)
                     {
                         energizedCount++;
@@ -165,7 +167,13 @@ namespace ElectricalSim.Core
             return true;
         }
 
-        private static void ApplyMeasurement(CircuitComponent component, bool active, float systemVoltage)
+        private static void ApplyMeasurement(
+            CircuitComponent component,
+            bool active,
+            float systemVoltage,
+            float systemLineVoltage,
+            TeachingParameterCalculationService.PhaseResolver resolvePhases,
+            TeachingParameterCalculationService.NeutralResolver canReachNeutral)
         {
             if (component == null)
             {
@@ -176,6 +184,34 @@ namespace ElectricalSim.Core
             if (!active || definition == null)
             {
                 component.ClearMeasurement();
+                return;
+            }
+
+            if (TeachingParameterCalculationService.TryCalculateSinglePhaseLoad(
+                component,
+                active,
+                systemVoltage,
+                resolvePhases,
+                canReachNeutral,
+                out var teachingEstimate))
+            {
+                component.SetMeasurement(
+                    teachingEstimate.MeasuredVoltage,
+                    teachingEstimate.MeasuredCurrent,
+                    teachingEstimate.MeasuredPower);
+                return;
+            }
+
+            if (TeachingParameterCalculationService.TryCalculateThreePhaseMotor(
+                component,
+                active,
+                systemLineVoltage,
+                out var motorEstimate))
+            {
+                component.SetMeasurement(
+                    motorEstimate.LineVoltage,
+                    motorEstimate.EstimatedCurrent,
+                    motorEstimate.IsRunning ? motorEstimate.RatedPower : 0f);
                 return;
             }
 
@@ -198,6 +234,12 @@ namespace ElectricalSim.Core
 
         private static float ResolveVoltage(CircuitComponent component, ComponentDefinition definition)
         {
+            if (definition.kind == ComponentKind.PowerSource &&
+                TryGetParameterValue(component, "sourceVoltage", out var sourceVoltage))
+            {
+                return sourceVoltage;
+            }
+
             if (TryGetParameterValue(component, "ratedVoltage", out var value))
             {
                 return value;
@@ -209,6 +251,16 @@ namespace ElectricalSim.Core
             }
 
             return definition.ratedVoltage > 0f ? definition.ratedVoltage : definition.sourceVoltage;
+        }
+
+        private static float ResolveLineVoltage(CircuitComponent component, ComponentDefinition definition, float fallback)
+        {
+            if (TryGetParameterValue(component, "sourceLineVoltage", out var value) && value > 0f)
+            {
+                return value;
+            }
+
+            return definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : fallback;
         }
 
         private static float ResolvePower(CircuitComponent component, ComponentDefinition definition)

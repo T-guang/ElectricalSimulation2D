@@ -19,11 +19,11 @@ MonoBehaviour:
   accentColor: {r: 0.2, g: 0.45, b: 1, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
-  supportLevel: 3
+  supportLevel: 5
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1
-  canParticipateInParameterCalculation: 0
+  canParticipateInParameterCalculation: 1
   startsClosed: 0
   togglable: 0
   controlledByTag: 
@@ -39,6 +39,28 @@ MonoBehaviour:
   canBurnOut: 1
   canTrip: 0
   parameterNote: "220V \u7EBF\u5708/\u7EE7\u7535\u5668\uFF1A\u7535\u538B\u5339\u914D\u65F6\u5438\u5408\u3002"
+  parameters:
+  - key: ratedVoltage
+    displayName: "\u7EBF\u5708\u989D\u5B9A\u7535\u538B"
+    value: 220
+    unit: "V"
+    min: 0
+    max: 500
+    editable: 1
+  - key: ratedPower
+    displayName: "\u7EBF\u5708\u989D\u5B9A\u529F\u7387"
+    value: 12
+    unit: "W"
+    min: 0
+    max: 200
+    editable: 1
+  - key: ratedCurrent
+    displayName: "\u7EBF\u5708\u989D\u5B9A\u7535\u6D41"
+    value: 0.054545
+    unit: "A"
+    min: 0
+    max: 5
+    editable: 0
   terminals:
   - id: L1
     label: 1/L1

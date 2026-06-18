@@ -19,11 +19,11 @@ MonoBehaviour:
   accentColor: {r: 1, g: 0.78, b: 0.08, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
-  supportLevel: 3
+  supportLevel: 5
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1
-  canParticipateInParameterCalculation: 0
+  canParticipateInParameterCalculation: 1
   startsClosed: 0
   togglable: 0
   controlledByTag: 
@@ -40,6 +40,28 @@ MonoBehaviour:
   canTrip: 0
   parameterNote: "\u6559\u5B66\u4F30\u7B97\uFF1A\u666E\u901A\u7167\u660E\u706F\u6CE1\uFF0C\u7535\u6D41\u7EA6
     P/U\u3002"
+  parameters:
+  - key: ratedVoltage
+    displayName: "额定电压"
+    value: 220
+    unit: "V"
+    min: 0
+    max: 500
+    editable: 1
+  - key: ratedPower
+    displayName: "额定功率"
+    value: 60
+    unit: "W"
+    min: 0
+    max: 5000
+    editable: 1
+  - key: ratedCurrent
+    displayName: "额定电流"
+    value: 0.27
+    unit: "A"
+    min: 0
+    max: 100
+    editable: 0
   terminals:
   - id: L
     label: L

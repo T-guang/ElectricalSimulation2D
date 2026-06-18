@@ -19,11 +19,11 @@ MonoBehaviour:
   accentColor: {r: 0.18, g: 0.58, b: 0.28, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
-  supportLevel: 3
+  supportLevel: 5
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1
-  canParticipateInParameterCalculation: 0
+  canParticipateInParameterCalculation: 1
   startsClosed: 0
   togglable: 0
   controlledByTag: 
@@ -32,13 +32,35 @@ MonoBehaviour:
   sourceLineVoltage: 0
   sourcePhaseCount: 0
   ratedVoltage: 380
-  ratedPower: 3
+  ratedPower: 2
   ratedCurrent: 0.01
   maxVoltage: 430
   maxCurrent: 0.05
   canBurnOut: 1
   canTrip: 0
   parameterNote: "380V \u6307\u793A\u706F\uFF1A\u7528\u4E8E\u5DE5\u4E1A\u56DE\u8DEF\u72B6\u6001\u6307\u793A\u3002"
+  parameters:
+  - key: ratedVoltage
+    displayName: "额定电压"
+    value: 380
+    unit: "V"
+    min: 0
+    max: 1000
+    editable: 1
+  - key: ratedPower
+    displayName: "额定功率"
+    value: 2
+    unit: "W"
+    min: 0
+    max: 100
+    editable: 1
+  - key: ratedCurrent
+    displayName: "额定电流"
+    value: 0.005263
+    unit: "A"
+    min: 0
+    max: 5
+    editable: 0
   terminals:
   - id: L
     label: L

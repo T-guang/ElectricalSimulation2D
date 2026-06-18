@@ -19,11 +19,11 @@ MonoBehaviour:
   accentColor: {r: 0.12, g: 0.45, b: 1, a: 1}
   sprite: {fileID: 0}
   size: {x: 110, y: 130}
-  supportLevel: 3
+  supportLevel: 5
   showInPalette: 1
   unsupportedReason: ""
   canParticipateInRuntime: 1
-  canParticipateInParameterCalculation: 0
+  canParticipateInParameterCalculation: 1
   startsClosed: 1
   togglable: 0
   controlledByTag: 
@@ -39,6 +39,14 @@ MonoBehaviour:
   canBurnOut: 0
   canTrip: 0
   parameterNote: "\u5355\u76F8 220V \u6559\u5B66\u7535\u6E90\u3002"
+  parameters:
+  - key: sourceVoltage
+    displayName: "电源电压"
+    value: 220
+    unit: "V"
+    min: 0
+    max: 500
+    editable: 1
   terminals:
   - id: L
     label: L
