@@ -167,7 +167,7 @@ namespace ElectricalSim.Core
             return true;
         }
 
-        private static void ApplyMeasurement(
+        private void ApplyMeasurement(
             CircuitComponent component,
             bool active,
             float systemVoltage,
@@ -202,6 +202,19 @@ namespace ElectricalSim.Core
                 return;
             }
 
+            if (TeachingParameterCalculationService.TryCalculateStarDeltaMotor(
+                component,
+                ResolveStarDeltaEstimateStage(component, active),
+                systemLineVoltage,
+                out var starDeltaEstimate))
+            {
+                component.SetMeasurement(
+                    starDeltaEstimate.LineVoltage,
+                    starDeltaEstimate.EstimatedCurrent,
+                    starDeltaEstimate.HasNormalEstimate ? starDeltaEstimate.RatedPower : 0f);
+                return;
+            }
+
             if (TeachingParameterCalculationService.TryCalculateThreePhaseMotor(
                 component,
                 active,
@@ -230,6 +243,78 @@ namespace ElectricalSim.Core
             }
 
             component.SetMeasurement(voltage, current, power);
+        }
+
+        private StarDeltaMotorEstimateStage ResolveStarDeltaEstimateStage(
+            CircuitComponent motor,
+            bool active)
+        {
+            if (!TeachingParameterCalculationService.IsStarDeltaTeachingMotor(motor))
+            {
+                return StarDeltaMotorEstimateStage.Unknown;
+            }
+
+            if (HasStarDeltaMotorConflict(motor))
+            {
+                return StarDeltaMotorEstimateStage.Conflict;
+            }
+
+            if (!active)
+            {
+                return StarDeltaMotorEstimateStage.Stopped;
+            }
+
+            var u1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("U1"));
+            var v1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("V1"));
+            var w1Phases = GetReachablePowerPhaseKeys(motor.GetTerminal("W1"));
+            if (u1Phases.Count != 1 || v1Phases.Count != 1 || w1Phases.Count != 1)
+            {
+                return StarDeltaMotorEstimateStage.SupplyFault;
+            }
+
+            var phases = new HashSet<string>();
+            foreach (var phase in u1Phases)
+            {
+                phases.Add(phase);
+            }
+            foreach (var phase in v1Phases)
+            {
+                phases.Add(phase);
+            }
+            foreach (var phase in w1Phases)
+            {
+                phases.Add(phase);
+            }
+
+            if (phases.Count != 3)
+            {
+                return StarDeltaMotorEstimateStage.SupplyFault;
+            }
+
+            var starConnected =
+                AreConnected(motor.GetTerminal("U2"), motor.GetTerminal("V2")) &&
+                AreConnected(motor.GetTerminal("V2"), motor.GetTerminal("W2"));
+            var deltaConnected =
+                AreConnected(motor.GetTerminal("U1"), motor.GetTerminal("W2")) &&
+                AreConnected(motor.GetTerminal("V1"), motor.GetTerminal("U2")) &&
+                AreConnected(motor.GetTerminal("W1"), motor.GetTerminal("V2"));
+
+            if (starConnected && deltaConnected)
+            {
+                return StarDeltaMotorEstimateStage.Conflict;
+            }
+
+            if (starConnected)
+            {
+                return StarDeltaMotorEstimateStage.Star;
+            }
+
+            if (deltaConnected)
+            {
+                return StarDeltaMotorEstimateStage.Delta;
+            }
+
+            return StarDeltaMotorEstimateStage.Stopped;
         }
 
         private static float ResolveVoltage(CircuitComponent component, ComponentDefinition definition)

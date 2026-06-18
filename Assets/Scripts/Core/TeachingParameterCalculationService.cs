@@ -23,6 +23,29 @@ namespace ElectricalSim.Core
         public float EstimatedCurrent;
     }
 
+    public enum StarDeltaMotorEstimateStage
+    {
+        Stopped,
+        Star,
+        Delta,
+        Conflict,
+        SupplyFault,
+        Unknown
+    }
+
+    public sealed class StarDeltaMotorEstimate
+    {
+        public StarDeltaMotorEstimateStage Stage;
+        public float LineVoltage;
+        public float RatedPower;
+        public float Efficiency;
+        public float PowerFactor;
+        public float DeltaEstimatedCurrent;
+        public float StarEstimatedCurrent;
+        public float EstimatedCurrent;
+        public bool HasNormalEstimate;
+    }
+
     public sealed class ControlCircuitLoadEstimate
     {
         public string DisplayName;
@@ -132,6 +155,49 @@ namespace ElectricalSim.Core
             return true;
         }
 
+        public static bool TryCalculateStarDeltaMotor(
+            CircuitComponent component,
+            StarDeltaMotorEstimateStage stage,
+            float sourceLineVoltage,
+            out StarDeltaMotorEstimate result)
+        {
+            result = null;
+            if (!IsStarDeltaTeachingMotor(component))
+            {
+                return false;
+            }
+
+            var lineVoltage = ResolvePositive(sourceLineVoltage, ResolveParameterValue(component, "ratedVoltage", component.Definition.ratedVoltage));
+            var ratedPower = Mathf.Max(0f, ResolveParameterValue(component, "ratedPower", component.Definition.ratedPower));
+            var efficiency = Mathf.Max(0.01f, ResolveParameterValue(component, "efficiency", 0.85f));
+            var powerFactor = Mathf.Max(0.01f, ResolveParameterValue(component, "powerFactor", 0.8f));
+            var deltaCurrent = lineVoltage > 0f && ratedPower > 0f
+                ? ratedPower / (Mathf.Sqrt(3f) * lineVoltage * efficiency * powerFactor)
+                : 0f;
+            var starCurrent = deltaCurrent / 3f;
+            var normal = stage == StarDeltaMotorEstimateStage.Star ||
+                stage == StarDeltaMotorEstimateStage.Delta;
+
+            result = new StarDeltaMotorEstimate
+            {
+                Stage = stage,
+                LineVoltage = normal ? lineVoltage : 0f,
+                RatedPower = ratedPower,
+                Efficiency = efficiency,
+                PowerFactor = powerFactor,
+                DeltaEstimatedCurrent = deltaCurrent,
+                StarEstimatedCurrent = starCurrent,
+                EstimatedCurrent = stage == StarDeltaMotorEstimateStage.Star
+                    ? starCurrent
+                    : stage == StarDeltaMotorEstimateStage.Delta
+                        ? deltaCurrent
+                        : 0f,
+                HasNormalEstimate = normal && lineVoltage > 0f && ratedPower > 0f
+            };
+
+            return true;
+        }
+
         public static bool TryEstimateControlCircuitLoad(
             CircuitComponent component,
             out ControlCircuitLoadEstimate result)
@@ -201,6 +267,20 @@ namespace ElectricalSim.Core
                 component.GetTerminal("U1") == null &&
                 component.GetTerminal("V1") == null &&
                 component.GetTerminal("W1") == null;
+        }
+
+        public static bool IsStarDeltaTeachingMotor(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.Definition.canParticipateInParameterCalculation &&
+                component.Definition.kind == ComponentKind.Motor &&
+                component.GetTerminal("U1") != null &&
+                component.GetTerminal("V1") != null &&
+                component.GetTerminal("W1") != null &&
+                component.GetTerminal("U2") != null &&
+                component.GetTerminal("V2") != null &&
+                component.GetTerminal("W2") != null;
         }
 
         public static bool IsControlCircuitTeachingLoad(CircuitComponent component)

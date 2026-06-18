@@ -784,8 +784,9 @@ namespace ElectricalSim.AI
 
             var builder = new StringBuilder();
             var motorCount = AppendThreePhaseMotorEstimates(builder, stateResult);
+            var starDeltaCount = AppendStarDeltaMotorEstimates(builder, stateResult);
             var controlCount = AppendControlCircuitLoadEstimates(builder);
-            return motorCount == 0 && controlCount == 0 ? string.Empty : builder.ToString().TrimEnd();
+            return motorCount == 0 && starDeltaCount == 0 && controlCount == 0 ? string.Empty : builder.ToString().TrimEnd();
         }
 
         private int AppendThreePhaseMotorEstimates(StringBuilder builder, CircuitStateResult stateResult)
@@ -833,10 +834,138 @@ namespace ElectricalSim.AI
 
             if (count > 0)
             {
-                builder.AppendLine("- 说明：该结果为教学估算值，按 I≈P/(√3×U×η×cosφ) 计算；本阶段不估算星三角电机启动电流。");
+                builder.AppendLine("- 说明：该结果为教学估算值，按 I≈P/(√3×U×η×cosφ) 计算。");
             }
 
             return count;
+        }
+
+        private int AppendStarDeltaMotorEstimates(StringBuilder builder, CircuitStateResult stateResult)
+        {
+            var count = 0;
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var info = stateResult.Components[i];
+                if (info == null || !info.IsStarDeltaMotor)
+                {
+                    continue;
+                }
+
+                var component = FindWorkspaceComponent(info.InstanceId);
+                if (component == null ||
+                    !TeachingParameterCalculationService.IsStarDeltaTeachingMotor(component))
+                {
+                    continue;
+                }
+
+                var stage = ResolveStarDeltaEstimateStage(info, component);
+                if (!TeachingParameterCalculationService.TryCalculateStarDeltaMotor(
+                    component,
+                    stage,
+                    ResolveThreePhaseLineVoltage(),
+                    out var estimate))
+                {
+                    continue;
+                }
+
+                if (count == 0)
+                {
+                    if (builder.Length > 0)
+                    {
+                        builder.AppendLine();
+                    }
+
+                    builder.AppendLine("【星三角参数估算】");
+                }
+
+                AppendStarDeltaEstimateLine(builder, component, estimate);
+                count++;
+            }
+
+            return count;
+        }
+
+        private static void AppendStarDeltaEstimateLine(
+            StringBuilder builder,
+            CircuitComponent component,
+            StarDeltaMotorEstimate estimate)
+        {
+            var name = component != null && component.Definition != null
+                ? NormalizeComponentDisplayName(component.Definition.displayName)
+                : "星三角电机";
+
+            switch (estimate.Stage)
+            {
+                case StarDeltaMotorEstimateStage.Conflict:
+                    builder.AppendLine("- " + name + "：当前存在星形与三角同时接入风险，属于危险接线状态。系统不输出正常运行电流估算，请先排除星三角冲突。");
+                    return;
+                case StarDeltaMotorEstimateStage.SupplyFault:
+                    builder.AppendLine("- " + name + "：当前三相供电异常，系统不输出正常运行电流估算。");
+                    return;
+                case StarDeltaMotorEstimateStage.Star:
+                    builder.AppendLine("- " + name + "当前阶段：星形启动。线电压：" +
+                        estimate.LineVoltage.ToString("0.#") + "V；额定功率：" +
+                        estimate.RatedPower.ToString("0.#") + "W；效率：" +
+                        estimate.Efficiency.ToString("0.##") + "；功率因数：" +
+                        estimate.PowerFactor.ToString("0.##") + "；三角运行估算电流：约 " +
+                        estimate.DeltaEstimatedCurrent.ToString("0.###") + "A；星形启动估算电流：约 " +
+                        estimate.StarEstimatedCurrent.ToString("0.###") + "A。");
+                    builder.AppendLine("- 说明：星形启动时绕组电压降低，启动电流约为三角运行电流的 1/3。本结果为教学估算值，不代表真实启动暂态曲线。");
+                    return;
+                case StarDeltaMotorEstimateStage.Delta:
+                    builder.AppendLine("- " + name + "当前阶段：三角运行。线电压：" +
+                        estimate.LineVoltage.ToString("0.#") + "V；额定功率：" +
+                        estimate.RatedPower.ToString("0.#") + "W；效率：" +
+                        estimate.Efficiency.ToString("0.##") + "；功率因数：" +
+                        estimate.PowerFactor.ToString("0.##") + "；估算运行电流：约 " +
+                        estimate.EstimatedCurrent.ToString("0.###") + "A。");
+                    builder.AppendLine("- 说明：当前电机已切换至三角运行，按三相电机额定运行公式进行教学估算。");
+                    return;
+                default:
+                    builder.AppendLine("- " + name + "当前未运行，估算运行电流为 0A。");
+                    return;
+            }
+        }
+
+        private static StarDeltaMotorEstimateStage ResolveStarDeltaEstimateStage(
+            ComponentStateInfo info,
+            CircuitComponent component)
+        {
+            if (info == null)
+            {
+                return StarDeltaMotorEstimateStage.Unknown;
+            }
+
+            if (string.Equals(info.State, "StarDeltaConflict", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(info.StarDeltaConnectionMode, "Conflict", StringComparison.OrdinalIgnoreCase) ||
+                (info.IsStarPointConnected && info.IsDeltaConnectionDetected))
+            {
+                return StarDeltaMotorEstimateStage.Conflict;
+            }
+
+            if (string.Equals(info.State, "Fault", StringComparison.OrdinalIgnoreCase))
+            {
+                return StarDeltaMotorEstimateStage.SupplyFault;
+            }
+
+            if (component == null || !component.IsEnergized)
+            {
+                return StarDeltaMotorEstimateStage.Stopped;
+            }
+
+            if (string.Equals(info.State, "StarConnected", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(info.StarDeltaConnectionMode, "Star", StringComparison.OrdinalIgnoreCase))
+            {
+                return StarDeltaMotorEstimateStage.Star;
+            }
+
+            if (string.Equals(info.State, "DeltaConnected", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(info.StarDeltaConnectionMode, "Delta", StringComparison.OrdinalIgnoreCase))
+            {
+                return StarDeltaMotorEstimateStage.Delta;
+            }
+
+            return StarDeltaMotorEstimateStage.SupplyFault;
         }
 
         private int AppendControlCircuitLoadEstimates(StringBuilder builder)
