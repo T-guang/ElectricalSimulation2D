@@ -36,6 +36,7 @@ namespace ElectricalSim.Core
             rectTransform = GetComponent<RectTransform>();
             IsClosed = definition.startsClosed;
             parameterSet.SetParameters(definition.parameters);
+            EnsureInstanceParametersFromDefinition();
 
             if (body != null)
             {
@@ -82,10 +83,51 @@ namespace ElectricalSim.Core
                 parameterSet.parameters != null &&
                 parameterSet.parameters.Count > 0)
             {
+                EnsureInstanceParametersFromDefinition();
                 return;
             }
 
             parameterSet.SetParameters(parameters);
+            EnsureInstanceParametersFromDefinition();
+        }
+
+        public void EnsureInstanceParametersFromDefinition()
+        {
+            if (Definition == null || Definition.parameters == null || Definition.parameters.Count == 0)
+            {
+                return;
+            }
+
+            if (parameterSet.parameters == null)
+            {
+                parameterSet.parameters = new List<ComponentParameter>();
+            }
+
+            var existingKeys = new HashSet<string>();
+            for (var i = 0; i < parameterSet.parameters.Count; i++)
+            {
+                var parameter = parameterSet.parameters[i];
+                if (parameter != null && !string.IsNullOrWhiteSpace(parameter.key))
+                {
+                    existingKeys.Add(parameter.key);
+                }
+            }
+
+            for (var i = 0; i < Definition.parameters.Count; i++)
+            {
+                var definitionParameter = Definition.parameters[i];
+                if (definitionParameter == null ||
+                    string.IsNullOrWhiteSpace(definitionParameter.key) ||
+                    existingKeys.Contains(definitionParameter.key))
+                {
+                    continue;
+                }
+
+                var clone = definitionParameter.Clone();
+                clone.ClampValue();
+                parameterSet.parameters.Add(clone);
+                existingKeys.Add(clone.key);
+            }
         }
 
         private static bool HasAnyParameter(IEnumerable<ComponentParameter> parameters)

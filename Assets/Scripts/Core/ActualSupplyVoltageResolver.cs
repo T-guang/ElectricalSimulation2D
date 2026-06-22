@@ -31,9 +31,12 @@ namespace ElectricalSim.Core
 
     public static class ActualSupplyVoltageResolver
     {
+        public const float DefaultSinglePhaseVoltage = 220f;
+        public const float DefaultThreePhaseLineVoltage = 380f;
+
         public static float ResolveSinglePhaseVoltage(
             IReadOnlyList<CircuitComponent> components,
-            float fallback = 220f)
+            float fallback = DefaultSinglePhaseVoltage)
         {
             if (components == null)
             {
@@ -48,12 +51,10 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                var voltage = ResolveParameterValueByKeys(
+                var voltage = ParameterValueResolver.GetFloatOrFallback(
                     component,
-                    component.Definition.sourceVoltage,
                     fallback,
-                    "sourceVoltage",
-                    "voltage");
+                    ParameterAliases.SourceVoltage);
                 if (voltage > 0f)
                 {
                     return voltage;
@@ -65,7 +66,7 @@ namespace ElectricalSim.Core
 
         public static float ResolveThreePhaseLineVoltage(
             IReadOnlyList<CircuitComponent> components,
-            float fallback = 380f)
+            float fallback = DefaultThreePhaseLineVoltage)
         {
             if (components == null)
             {
@@ -115,8 +116,8 @@ namespace ElectricalSim.Core
                 return new ActualSupplyVoltageResult(false, 0f, ActualSupplyVoltageKind.Unknown, "Terminal voltage label is empty.");
             }
 
-            if ((IsLineOrPhase(firstVoltage) && secondVoltage == "N") ||
-                (IsLineOrPhase(secondVoltage) && firstVoltage == "N"))
+            if ((IsLineOrPhase(firstVoltage) && secondVoltage == TerminalConstants.N) ||
+                (IsLineOrPhase(secondVoltage) && firstVoltage == TerminalConstants.N))
             {
                 var voltage = ResolveSinglePhaseVoltage(components);
                 return new ActualSupplyVoltageResult(
@@ -150,13 +151,12 @@ namespace ElectricalSim.Core
                 return new ActualSupplyVoltageResult(false, 0f, ActualSupplyVoltageKind.Unknown, "Control load is not energized.");
             }
 
-            var ratedVoltage = ResolveParameterValueByKeys(
+            var ratedVoltage = ParameterValueResolver.GetFloatOrFallback(
                 component,
-                component.Definition != null ? component.Definition.ratedVoltage : 0f,
                 0f,
-                "ratedVoltage",
-                "sourceVoltage",
-                "voltage");
+                ParameterKeys.RatedVoltage,
+                ParameterAliases.SourceVoltage[0],
+                ParameterAliases.SourceVoltage[1]);
             if (ratedVoltage <= 0f)
             {
                 return new ActualSupplyVoltageResult(false, 0f, ActualSupplyVoltageKind.Unknown, "Rated voltage is not available.");
@@ -190,9 +190,9 @@ namespace ElectricalSim.Core
         private static bool HasThreePhaseOutputTerminals(CircuitComponent component)
         {
             return component != null &&
-                component.GetTerminal("L1") != null &&
-                component.GetTerminal("L2") != null &&
-                component.GetTerminal("L3") != null;
+                component.GetTerminal(TerminalConstants.L1) != null &&
+                component.GetTerminal(TerminalConstants.L2) != null &&
+                component.GetTerminal(TerminalConstants.L3) != null;
         }
 
         private static float ResolvePowerSourceLineVoltage(CircuitComponent component, float fallback)
@@ -202,43 +202,22 @@ namespace ElectricalSim.Core
                 return fallback;
             }
 
-            return ResolveParameterValueByKeys(
+            return ParameterValueResolver.GetFloatOrFallback(
                 component,
-                component.Definition.sourceLineVoltage,
                 fallback,
-                "sourceLineVoltage",
-                "lineVoltage");
-        }
-
-        private static float ResolveParameterValueByKeys(
-            CircuitComponent component,
-            float definitionFallback,
-            float hardFallback,
-            params string[] keys)
-        {
-            if (component != null && keys != null)
-            {
-                for (var i = 0; i < keys.Length; i++)
-                {
-                    var parameter = component.GetParameter(keys[i]);
-                    if (parameter != null && parameter.value > 0f)
-                    {
-                        return parameter.value;
-                    }
-                }
-            }
-
-            return definitionFallback > 0f ? definitionFallback : hardFallback;
+                ParameterAliases.SourceLineVoltage);
         }
 
         private static bool IsLineOrPhase(string voltage)
         {
-            return voltage == "L" || IsThreePhaseLine(voltage);
+            return voltage == TerminalConstants.L || IsThreePhaseLine(voltage);
         }
 
         private static bool IsThreePhaseLine(string voltage)
         {
-            return voltage == "L1" || voltage == "L2" || voltage == "L3";
+            return voltage == TerminalConstants.L1 ||
+                voltage == TerminalConstants.L2 ||
+                voltage == TerminalConstants.L3;
         }
     }
 }

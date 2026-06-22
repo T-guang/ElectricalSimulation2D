@@ -133,8 +133,8 @@ namespace ElectricalSim.Core
                 return true;
             }
 
-            var voltage = ResolvePositive(sourceVoltage, ResolveParameterValue(component, "ratedVoltage", component.Definition.ratedVoltage));
-            var power = Mathf.Max(0f, ResolveParameterValue(component, "ratedPower", component.Definition.ratedPower));
+            var voltage = ResolvePositive(sourceVoltage, ResolveParameterValue(component, ParameterKeys.RatedVoltage, component.Definition.ratedVoltage));
+            var power = Mathf.Max(0f, ResolveParameterValue(component, ParameterKeys.RatedPower, component.Definition.ratedPower));
             result.HasEffectiveSinglePhaseVoltage = voltage > 0f;
             result.LineLabel = lineLabel;
             result.MeasuredVoltage = result.HasEffectiveSinglePhaseVoltage ? voltage : 0f;
@@ -156,10 +156,10 @@ namespace ElectricalSim.Core
                 return false;
             }
 
-            var lineVoltage = ResolvePositive(sourceLineVoltage, ResolveParameterValue(component, "ratedVoltage", component.Definition.ratedVoltage));
-            var ratedPower = Mathf.Max(0f, ResolveParameterValue(component, "ratedPower", component.Definition.ratedPower));
-            var efficiency = Mathf.Max(0.01f, ResolveParameterValue(component, "efficiency", 0.85f));
-            var powerFactor = Mathf.Max(0.01f, ResolveParameterValue(component, "powerFactor", 0.8f));
+            var lineVoltage = ResolvePositive(sourceLineVoltage, ResolveParameterValue(component, ParameterKeys.RatedVoltage, component.Definition.ratedVoltage));
+            var ratedPower = Mathf.Max(0f, ResolveParameterValue(component, ParameterKeys.RatedPower, component.Definition.ratedPower));
+            var efficiency = Mathf.Max(0.01f, ResolveParameterValue(component, ParameterKeys.Efficiency, 0.85f));
+            var powerFactor = Mathf.Max(0.01f, ResolveParameterValue(component, ParameterKeys.PowerFactor, 0.8f));
 
             result = new ThreePhaseMotorEstimate
             {
@@ -188,10 +188,10 @@ namespace ElectricalSim.Core
                 return false;
             }
 
-            var lineVoltage = ResolvePositive(sourceLineVoltage, ResolveParameterValue(component, "ratedVoltage", component.Definition.ratedVoltage));
-            var ratedPower = Mathf.Max(0f, ResolveParameterValue(component, "ratedPower", component.Definition.ratedPower));
-            var efficiency = Mathf.Max(0.01f, ResolveParameterValue(component, "efficiency", 0.85f));
-            var powerFactor = Mathf.Max(0.01f, ResolveParameterValue(component, "powerFactor", 0.8f));
+            var lineVoltage = ResolvePositive(sourceLineVoltage, ResolveParameterValue(component, ParameterKeys.RatedVoltage, component.Definition.ratedVoltage));
+            var ratedPower = Mathf.Max(0f, ResolveParameterValue(component, ParameterKeys.RatedPower, component.Definition.ratedPower));
+            var efficiency = Mathf.Max(0.01f, ResolveParameterValue(component, ParameterKeys.Efficiency, 0.85f));
+            var powerFactor = Mathf.Max(0.01f, ResolveParameterValue(component, ParameterKeys.PowerFactor, 0.8f));
             var deltaCurrent = lineVoltage > 0f && ratedPower > 0f
                 ? ratedPower / (Mathf.Sqrt(3f) * lineVoltage * efficiency * powerFactor)
                 : 0f;
@@ -231,14 +231,17 @@ namespace ElectricalSim.Core
                 return false;
             }
 
-            var ratedVoltage = ResolveParameterValue(component, "ratedVoltage", component.Definition.ratedVoltage);
+            var ratedVoltage = ResolveParameterValue(component, ParameterKeys.RatedVoltage, component.Definition.ratedVoltage);
             if (ratedVoltage <= 0f)
             {
-                ratedVoltage = ResolveParameterValue(component, "sourceVoltage", component.Definition.sourceVoltage);
+                ratedVoltage = ParameterValueResolver.GetFloatOrFallback(
+                    component,
+                    component.Definition.sourceVoltage,
+                    ParameterAliases.SourceVoltage);
             }
 
-            var ratedPower = ResolveParameterValue(component, "ratedPower", component.Definition.ratedPower);
-            var ratedCurrent = ResolveParameterValue(component, "ratedCurrent", component.Definition.ratedCurrent);
+            var ratedPower = ResolveParameterValue(component, ParameterKeys.RatedPower, component.Definition.ratedPower);
+            var ratedCurrent = ResolveParameterValue(component, ParameterKeys.RatedCurrent, component.Definition.ratedCurrent);
             if (ratedPower <= 0f && ratedCurrent > 0f && ratedVoltage > 0f)
             {
                 ratedPower = ratedVoltage * ratedCurrent;
@@ -293,10 +296,10 @@ namespace ElectricalSim.Core
                 return false;
             }
 
-            var settingCurrent = ResolveParameterValue(thermalRelay, "settingCurrent", 0f);
+            var settingCurrent = ResolveParameterValue(thermalRelay, ParameterKeys.SettingCurrent, 0f);
             if (settingCurrent <= 0f)
             {
-                settingCurrent = ResolveParameterValue(thermalRelay, "ratedCurrent", thermalRelay.Definition.ratedCurrent);
+                settingCurrent = ResolveParameterValue(thermalRelay, ParameterKeys.RatedCurrent, thermalRelay.Definition.ratedCurrent);
             }
 
             var hasEnoughParameters = settingCurrent > 0f && motorCurrent > 0f;
@@ -351,7 +354,7 @@ namespace ElectricalSim.Core
                 return false;
             }
 
-            var ratedVoltage = ResolveParameterValue(component, "ratedVoltage", component.Definition.ratedVoltage);
+            var ratedVoltage = ResolveParameterValue(component, ParameterKeys.RatedVoltage, component.Definition.ratedVoltage);
             return ratedVoltage > 0f && ratedVoltage < 300f;
         }
 
@@ -361,12 +364,12 @@ namespace ElectricalSim.Core
                 component.Definition != null &&
                 component.Definition.canParticipateInParameterCalculation &&
                 component.Definition.kind == ComponentKind.Motor &&
-                component.GetTerminal("U") != null &&
-                component.GetTerminal("V") != null &&
-                component.GetTerminal("W") != null &&
-                component.GetTerminal("U1") == null &&
-                component.GetTerminal("V1") == null &&
-                component.GetTerminal("W1") == null;
+                component.GetTerminal(TerminalConstants.U) != null &&
+                component.GetTerminal(TerminalConstants.V) != null &&
+                component.GetTerminal(TerminalConstants.W) != null &&
+                component.GetTerminal(TerminalConstants.U1) == null &&
+                component.GetTerminal(TerminalConstants.V1) == null &&
+                component.GetTerminal(TerminalConstants.W1) == null;
         }
 
         public static bool IsStarDeltaTeachingMotor(CircuitComponent component)
@@ -375,12 +378,12 @@ namespace ElectricalSim.Core
                 component.Definition != null &&
                 component.Definition.canParticipateInParameterCalculation &&
                 component.Definition.kind == ComponentKind.Motor &&
-                component.GetTerminal("U1") != null &&
-                component.GetTerminal("V1") != null &&
-                component.GetTerminal("W1") != null &&
-                component.GetTerminal("U2") != null &&
-                component.GetTerminal("V2") != null &&
-                component.GetTerminal("W2") != null;
+                component.GetTerminal(TerminalConstants.U1) != null &&
+                component.GetTerminal(TerminalConstants.V1) != null &&
+                component.GetTerminal(TerminalConstants.W1) != null &&
+                component.GetTerminal(TerminalConstants.U2) != null &&
+                component.GetTerminal(TerminalConstants.V2) != null &&
+                component.GetTerminal(TerminalConstants.W2) != null;
         }
 
         public static bool IsControlCircuitTeachingLoad(CircuitComponent component)
@@ -409,8 +412,8 @@ namespace ElectricalSim.Core
         {
             if (component == null ||
                 component.Definition == null ||
-                component.GetTerminal("95") == null ||
-                component.GetTerminal("96") == null)
+                component.GetTerminal(TerminalConstants.ThermalNC95) == null ||
+                component.GetTerminal(TerminalConstants.ThermalNC96) == null)
             {
                 return false;
             }
@@ -425,8 +428,7 @@ namespace ElectricalSim.Core
 
         public static float ResolveParameterValue(CircuitComponent component, string key, float fallback)
         {
-            var parameter = component != null ? component.GetParameter(key) : null;
-            return parameter != null ? parameter.value : fallback;
+            return ParameterValueResolver.GetFloatOrFallback(component, fallback, key);
         }
 
         public static string LoadDisplayName(CircuitComponent component)
@@ -477,16 +479,16 @@ namespace ElectricalSim.Core
             }
 
             return component.Definition.kind == ComponentKind.ContactorCoil ||
-                component.GetTerminal("A1") != null &&
-                component.GetTerminal("A2") != null &&
-                component.GetTerminal("L1") != null &&
-                component.GetTerminal("T1") != null;
+                component.GetTerminal(TerminalConstants.A1) != null &&
+                component.GetTerminal(TerminalConstants.A2) != null &&
+                component.GetTerminal(TerminalConstants.L1) != null &&
+                component.GetTerminal(TerminalConstants.T1) != null;
         }
 
         private static bool IsTimerRelay(CircuitComponent component)
         {
             if (component == null || component.Definition == null ||
-                component.GetTerminal("A1") == null || component.GetTerminal("A2") == null)
+                component.GetTerminal(TerminalConstants.A1) == null || component.GetTerminal(TerminalConstants.A2) == null)
             {
                 return false;
             }
@@ -500,12 +502,12 @@ namespace ElectricalSim.Core
 
         private static TerminalView ResolveFirstTerminal(CircuitComponent component)
         {
-            return component.GetTerminal("L") ?? component.GetTerminal("A1");
+            return component.GetTerminal(TerminalConstants.L) ?? component.GetTerminal(TerminalConstants.A1);
         }
 
         private static TerminalView ResolveSecondTerminal(CircuitComponent component)
         {
-            return component.GetTerminal("N") ?? component.GetTerminal("A2");
+            return component.GetTerminal(TerminalConstants.N) ?? component.GetTerminal(TerminalConstants.A2);
         }
 
         private static float ResolvePositive(float preferred, float fallback)

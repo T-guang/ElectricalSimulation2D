@@ -904,6 +904,7 @@ namespace ElectricalSim.AI
                     builder.AppendLine("- " + name + "：当前三相供电异常，系统不输出正常运行电流估算。");
                     return;
                 case StarDeltaMotorEstimateStage.Star:
+                    builder.AppendLine("- 说明：星形启动电流按三角运行估算电流的 1/3 进行教学近似。");
                     builder.AppendLine("- " + name + "当前阶段：星形启动。线电压：" +
                         estimate.LineVoltage.ToString("0.#") + "V；额定功率：" +
                         estimate.RatedPower.ToString("0.#") + "W；效率：" +
@@ -914,6 +915,7 @@ namespace ElectricalSim.AI
                     builder.AppendLine("- 说明：星形启动时绕组电压降低，启动电流约为三角运行电流的 1/3。本结果为教学估算值，不代表真实启动暂态曲线。");
                     return;
                 case StarDeltaMotorEstimateStage.Delta:
+                    builder.AppendLine("- 说明：当前电机已切换至三角运行，按三相电机公式 I=P/(√3×U×η×cosφ) 进行教学估算。");
                     builder.AppendLine("- " + name + "当前阶段：三角运行。线电压：" +
                         estimate.LineVoltage.ToString("0.#") + "V；额定功率：" +
                         estimate.RatedPower.ToString("0.#") + "W；效率：" +
@@ -1120,9 +1122,9 @@ namespace ElectricalSim.AI
             CircuitComponent motor,
             Dictionary<TerminalView, List<TerminalView>> graph)
         {
-            return AreTerminalsConnectedByWires(relay.GetTerminal("T1"), motor.GetTerminal("U"), graph) &&
-                AreTerminalsConnectedByWires(relay.GetTerminal("T2"), motor.GetTerminal("V"), graph) &&
-                AreTerminalsConnectedByWires(relay.GetTerminal("T3"), motor.GetTerminal("W"), graph);
+            return AreTerminalsConnectedByWires(relay.GetTerminal(TerminalConstants.T1), motor.GetTerminal(TerminalConstants.U), graph) &&
+                AreTerminalsConnectedByWires(relay.GetTerminal(TerminalConstants.T2), motor.GetTerminal(TerminalConstants.V), graph) &&
+                AreTerminalsConnectedByWires(relay.GetTerminal(TerminalConstants.T3), motor.GetTerminal(TerminalConstants.W), graph);
         }
 
         private static bool AreTerminalsConnectedByWires(
@@ -1342,16 +1344,16 @@ namespace ElectricalSim.AI
 
         private static TerminalView ResolveControlLoadFirstTerminal(CircuitComponent component)
         {
-            return component.GetTerminal("A1") ??
-                component.GetTerminal("L") ??
+            return component.GetTerminal(TerminalConstants.A1) ??
+                component.GetTerminal(TerminalConstants.L) ??
                 component.GetTerminal("1") ??
                 component.GetTerminal("11");
         }
 
         private static TerminalView ResolveControlLoadSecondTerminal(CircuitComponent component)
         {
-            return component.GetTerminal("A2") ??
-                component.GetTerminal("N") ??
+            return component.GetTerminal(TerminalConstants.A2) ??
+                component.GetTerminal(TerminalConstants.N) ??
                 component.GetTerminal("2") ??
                 component.GetTerminal("12");
         }
@@ -1547,24 +1549,24 @@ namespace ElectricalSim.AI
             ComponentStateInfo info)
         {
             var loadName = TeachingParameterCalculationService.LoadDisplayName(component);
-            var firstTerminalId = component.GetTerminal("L") != null ? "L" : "A1";
-            var secondTerminalId = component.GetTerminal("N") != null ? "N" : "A2";
+            var firstTerminalId = component.GetTerminal(TerminalConstants.L) != null ? TerminalConstants.L : TerminalConstants.A1;
+            var secondTerminalId = component.GetTerminal(TerminalConstants.N) != null ? TerminalConstants.N : TerminalConstants.A2;
             var firstVoltage = VoltageAt(info, firstTerminalId);
             var secondVoltage = VoltageAt(info, secondTerminalId);
             var lineLabel = string.Empty;
 
-            if (IsLineOrPhase(firstVoltage) && secondVoltage == "N")
+            if (IsLineOrPhase(firstVoltage) && secondVoltage == TerminalConstants.N)
             {
                 lineLabel = firstVoltage;
             }
-            else if (IsLineOrPhase(secondVoltage) && firstVoltage == "N")
+            else if (IsLineOrPhase(secondVoltage) && firstVoltage == TerminalConstants.N)
             {
                 lineLabel = secondVoltage;
             }
 
             var ratedPower = Mathf.Max(0f, TeachingParameterCalculationService.ResolveParameterValue(
                 component,
-                "ratedPower",
+                ParameterKeys.RatedPower,
                 component.Definition.ratedPower));
 
             if (string.IsNullOrWhiteSpace(lineLabel))
@@ -1598,12 +1600,17 @@ namespace ElectricalSim.AI
 
         private static bool IsLineOrPhase(string voltage)
         {
-            return voltage == "L" || voltage == "L1" || voltage == "L2" || voltage == "L3";
+            return voltage == TerminalConstants.L ||
+                voltage == TerminalConstants.L1 ||
+                voltage == TerminalConstants.L2 ||
+                voltage == TerminalConstants.L3;
         }
 
         private static bool IsThreePhaseLine(string voltage)
         {
-            return voltage == "L1" || voltage == "L2" || voltage == "L3";
+            return voltage == TerminalConstants.L1 ||
+                voltage == TerminalConstants.L2 ||
+                voltage == TerminalConstants.L3;
         }
 
         private string PrependUnsupportedComponentNotice(string report)

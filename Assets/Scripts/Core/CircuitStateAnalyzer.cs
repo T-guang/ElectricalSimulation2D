@@ -1592,6 +1592,13 @@ namespace ElectricalSim.Core
                 AreMotorTerminalsConnected(motor, "V1", "U2", unionFind) &&
                 AreMotorTerminalsConnected(motor, "W1", "V2", unionFind);
 
+            var secondaryU2V2Connected = AreMotorTerminalsConnected(motor, "U2", "V2", unionFind);
+            var secondaryV2W2Connected = AreMotorTerminalsConnected(motor, "V2", "W2", unionFind);
+            var secondaryU2W2Connected = AreMotorTerminalsConnected(motor, "U2", "W2", unionFind);
+            var hasSecondaryPartialShort =
+                (secondaryU2V2Connected || secondaryV2W2Connected || secondaryU2W2Connected) &&
+                !info.IsStarPointConnected;
+
             if (info.IsStarPointConnected && info.IsDeltaConnectionDetected)
             {
                 info.State = "StarDeltaConflict";
@@ -1599,6 +1606,17 @@ namespace ElectricalSim.Core
                 info.Judgement = "危险：星形连接与三角形连接同时存在，疑似星三角短接，不能作为正常运行状态。";
                 info.MotorIssues.Add(info.Judgement);
                 AddComponentError(info, result, info.Judgement);
+                AnalyzeMotorPe(motor, info, result);
+                return;
+            }
+
+            if (hasSecondaryPartialShort)
+            {
+                info.State = "Fault";
+                info.StarDeltaConnectionMode = info.IsDeltaConnectionDetected ? "Delta" : "Unknown";
+                info.Judgement = "检测到星三角电机二次端子 U2/V2/W2 存在局部短接。该连接既不是完整星形连接，也不是标准三角连接，存在异常风险。请检查星点短接或三角连接是否接错。";
+                info.MotorIssues.Add(info.Judgement);
+                AddComponentWarning(info, result, info.Judgement);
                 AnalyzeMotorPe(motor, info, result);
                 return;
             }
