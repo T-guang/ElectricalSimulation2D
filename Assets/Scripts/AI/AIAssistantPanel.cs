@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using ElectricalSim.Core;
+using ElectricalSim.Core.Validation;
 using ElectricalSim.Rules;
 using UnityEngine;
 using UnityEngine.UI;
@@ -738,9 +739,92 @@ namespace ElectricalSim.AI
             return PrependUnsupportedComponentNotice(
                 PrependParameterEstimationSummary(
                     PrependIndustrialParameterEstimationSummary(
-                        PrependAutoReciprocatingRuntimeSummary(report),
+                        PrependCircuitValidationSummary(
+                            PrependAutoReciprocatingRuntimeSummary(report),
+                            stateResult),
                         stateResult),
                     stateResult));
+        }
+
+        private string PrependCircuitValidationSummary(string report, CircuitStateResult stateResult)
+        {
+            var summary = BuildCircuitValidationSummary(stateResult);
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                return report;
+            }
+
+            if (string.IsNullOrWhiteSpace(report))
+            {
+                return summary;
+            }
+
+            return summary + "\n\n" + report;
+        }
+
+        private string BuildCircuitValidationSummary(CircuitStateResult stateResult)
+        {
+            if (stateResult == null || workspace == null || workspace.Components == null)
+            {
+                return string.Empty;
+            }
+
+            var service = new CircuitValidationService();
+            var report = service.Validate(
+                workspace.Components,
+                workspace.WireManager != null ? workspace.WireManager.Wires : null,
+                stateResult);
+            if (report == null)
+            {
+                return string.Empty;
+            }
+
+            var builder = new StringBuilder();
+            builder.AppendLine("【接线校验】");
+            if (report.Issues.Count == 0)
+            {
+                builder.AppendLine("当前未检测到已支持规则范围内的接线错误。");
+                return builder.ToString().TrimEnd();
+            }
+
+            AppendValidationIssues(builder, report, CircuitValidationSeverity.Error, "错误");
+            AppendValidationIssues(builder, report, CircuitValidationSeverity.Warning, "警告");
+            AppendValidationIssues(builder, report, CircuitValidationSeverity.Info, "提示");
+            return builder.ToString().TrimEnd();
+        }
+
+        private static void AppendValidationIssues(
+            StringBuilder builder,
+            CircuitValidationReport report,
+            CircuitValidationSeverity severity,
+            string title)
+        {
+            var wroteTitle = false;
+            for (var i = 0; i < report.Issues.Count; i++)
+            {
+                var issue = report.Issues[i];
+                if (issue == null || issue.Severity != severity)
+                {
+                    continue;
+                }
+
+                if (!wroteTitle)
+                {
+                    builder.AppendLine(title + "：");
+                    wroteTitle = true;
+                }
+
+                builder.AppendLine("- " + FormatValidationIssue(issue));
+            }
+        }
+
+        private static string FormatValidationIssue(CircuitValidationIssue issue)
+        {
+            var componentName = issue.Component != null
+                ? NormalizeComponentDisplayName(issue.Component.Definition != null ? issue.Component.Definition.displayName : issue.Component.name)
+                : string.Empty;
+            var prefix = string.IsNullOrWhiteSpace(componentName) ? string.Empty : componentName + "：";
+            return prefix + issue.Message + "（" + issue.RuleId + "）";
         }
 
         private string PrependParameterEstimationSummary(string report, CircuitStateResult stateResult)
