@@ -785,7 +785,7 @@ namespace ElectricalSim.AI
             var builder = new StringBuilder();
             var motorCount = AppendThreePhaseMotorEstimates(builder, stateResult);
             var starDeltaCount = AppendStarDeltaMotorEstimates(builder, stateResult);
-            var controlCount = AppendControlCircuitLoadEstimates(builder);
+            var controlCount = AppendControlCircuitLoadEstimates(builder, stateResult);
             return motorCount == 0 && starDeltaCount == 0 && controlCount == 0 ? string.Empty : builder.ToString().TrimEnd();
         }
 
@@ -968,13 +968,14 @@ namespace ElectricalSim.AI
             return StarDeltaMotorEstimateStage.SupplyFault;
         }
 
-        private int AppendControlCircuitLoadEstimates(StringBuilder builder)
+        private int AppendControlCircuitLoadEstimates(StringBuilder builder, CircuitStateResult stateResult)
         {
             var hasCandidate = false;
             var count = 0;
             var totalCurrent = 0f;
             var displayCounts = BuildComponentDisplayNameCounts();
             var displayOrdinals = BuildComponentDisplayOrdinals();
+            var stateMap = BuildComponentStateMap(stateResult);
             for (var i = 0; i < workspace.Components.Count; i++)
             {
                 var component = workspace.Components[i];
@@ -990,7 +991,18 @@ namespace ElectricalSim.AI
                     continue;
                 }
 
-                if (!TeachingParameterCalculationService.TryEstimateControlCircuitLoad(component, out var estimate))
+                stateMap.TryGetValue(component.InstanceId ?? string.Empty, out var info);
+                var hasActualVoltage = TryResolveActualVoltageAcrossComponent(
+                    component,
+                    info,
+                    out var actualSupplyVoltage,
+                    out _);
+
+                if (!TeachingParameterCalculationService.TryEstimateControlCircuitLoad(
+                    component,
+                    actualSupplyVoltage,
+                    hasActualVoltage,
+                    out var estimate))
                 {
                     continue;
                 }
@@ -1004,9 +1016,11 @@ namespace ElectricalSim.AI
 
                 if (estimate.HasEnoughParameters)
                 {
-                    builder.AppendLine("- " + ResolveControlLoadDisplayName(component, estimate, displayCounts, displayOrdinals) + "（" + estimate.LoadType + "）：额定电压 " +
-                        estimate.RatedVoltage.ToString("0.#") + "V，额定功率 " +
-                        estimate.RatedPower.ToString("0.###") + "W，估算电流 " +
+                    builder.AppendLine("- " + ResolveControlLoadDisplayName(component, estimate, displayCounts, displayOrdinals) + "（" + estimate.LoadType + "）：");
+                    builder.AppendLine("  额定电压：" + estimate.RatedVoltage.ToString("0.#") + "V；");
+                    builder.AppendLine("  当前供电电压：" + FormatControlLoadActualSupplyVoltage(estimate) + "；");
+                    builder.AppendLine("  额定功率：" + estimate.RatedPower.ToString("0.###") + "W；");
+                    builder.AppendLine("  当前估算电流：" +
                         estimate.EstimatedCurrent.ToString("0.###") + "A。");
                     totalCurrent += estimate.EstimatedCurrent;
                 }
@@ -1032,8 +1046,110 @@ namespace ElectricalSim.AI
             }
 
             builder.AppendLine("控制回路估算总电流：" + totalCurrent.ToString("0.###") + "A。");
-            builder.AppendLine("- 说明：该结果为教学估算值，用于理解控制回路负载大小；本阶段不判断控制电源容量。");
+            builder.AppendLine("- 说明：该结果为教学估算值；若能识别当前供电电压，则按当前电压估算，否则按额定电压估算。本阶段不判断控制电源容量。");
             return count;
+        }
+
+        private Dictionary<string, ComponentStateInfo> BuildComponentStateMap(CircuitStateResult stateResult)
+        {
+            var result = new Dictionary<string, ComponentStateInfo>();
+            if (stateResult == null || stateResult.Components == null)
+            {
+                return result;
+            }
+
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var info = stateResult.Components[i];
+                if (info == null || string.IsNullOrWhiteSpace(info.InstanceId))
+                {
+                    continue;
+                }
+
+                result[info.InstanceId] = info;
+            }
+
+            return result;
+        }
+
+        private bool TryResolveActualVoltageAcrossComponent(
+            CircuitComponent component,
+            ComponentStateInfo info,
+            out float voltage,
+            out string reason)
+        {
+            voltage = 0f;
+            reason = string.Empty;
+            if (component == null || info == null)
+            {
+                reason = "缺少元件或检查状态。";
+                return false;
+            }
+
+            var firstTerminal = ResolveControlLoadFirstTerminal(component);
+            var secondTerminal = ResolveControlLoadSecondTerminal(component);
+            if (firstTerminal == null || secondTerminal == null)
+            {
+                reason = "未找到可识别的供电端子。";
+                return false;
+            }
+
+            var energizedResult = ActualSupplyVoltageResolver.ResolveForEnergizedControlLoad(
+                workspace != null ? workspace.Components : null,
+                component);
+            if (energizedResult.Resolved)
+            {
+                voltage = energizedResult.Voltage;
+                reason = energizedResult.Reason;
+                return true;
+            }
+
+            var firstVoltage = VoltageAt(info, firstTerminal.TerminalId);
+            var secondVoltage = VoltageAt(info, secondTerminal.TerminalId);
+            if (string.IsNullOrWhiteSpace(firstVoltage) || string.IsNullOrWhiteSpace(secondVoltage))
+            {
+                reason = "端子电压标签为空。";
+                return false;
+            }
+
+            var result = ActualSupplyVoltageResolver.ResolveAcrossVoltageLabels(
+                workspace != null ? workspace.Components : null,
+                firstVoltage,
+                secondVoltage);
+            voltage = result.Voltage;
+            reason = result.Reason;
+            return result.Resolved;
+        }
+
+        private static TerminalView ResolveControlLoadFirstTerminal(CircuitComponent component)
+        {
+            return component.GetTerminal("A1") ??
+                component.GetTerminal("L") ??
+                component.GetTerminal("1") ??
+                component.GetTerminal("11");
+        }
+
+        private static TerminalView ResolveControlLoadSecondTerminal(CircuitComponent component)
+        {
+            return component.GetTerminal("A2") ??
+                component.GetTerminal("N") ??
+                component.GetTerminal("2") ??
+                component.GetTerminal("12");
+        }
+
+        private static string FormatControlLoadActualSupplyVoltage(ControlCircuitLoadEstimate estimate)
+        {
+            if (estimate == null)
+            {
+                return "未能可靠识别，按额定电压估算";
+            }
+
+            if (estimate.UsesRatedVoltageFallback)
+            {
+                return "未能可靠识别，按额定电压 " + estimate.RatedVoltage.ToString("0.#") + "V 估算";
+            }
+
+            return estimate.ActualSupplyVoltage.ToString("0.#") + "V";
         }
 
         private Dictionary<string, int> BuildComponentDisplayNameCounts()
@@ -1138,32 +1254,8 @@ namespace ElectricalSim.AI
 
         private float ResolveThreePhaseLineVoltage()
         {
-            var fallback = 380f;
-            if (workspace == null || workspace.Components == null)
-            {
-                return fallback;
-            }
-
-            for (var i = 0; i < workspace.Components.Count; i++)
-            {
-                var component = workspace.Components[i];
-                if (component == null || component.Definition == null ||
-                    component.Definition.kind != ComponentKind.PowerSource)
-                {
-                    continue;
-                }
-
-                var lineVoltage = TeachingParameterCalculationService.ResolveParameterValue(
-                    component,
-                    "sourceLineVoltage",
-                    component.Definition.sourceLineVoltage > 0f ? component.Definition.sourceLineVoltage : fallback);
-                if (lineVoltage > 0f)
-                {
-                    return lineVoltage;
-                }
-            }
-
-            return fallback;
+            return ActualSupplyVoltageResolver.ResolveThreePhaseLineVoltage(
+                workspace != null ? workspace.Components : null);
         }
 
         private string BuildParameterEstimationSummary(CircuitStateResult stateResult)
@@ -1243,33 +1335,8 @@ namespace ElectricalSim.AI
 
         private float ResolveSinglePhaseSourceVoltage(string lineLabel)
         {
-            var fallback = 220f;
-            if (workspace == null || workspace.Components == null)
-            {
-                return fallback;
-            }
-
-            for (var i = 0; i < workspace.Components.Count; i++)
-            {
-                var component = workspace.Components[i];
-                if (component == null || component.Definition == null ||
-                    component.Definition.kind != ComponentKind.PowerSource)
-                {
-                    continue;
-                }
-
-                var sourceVoltage = TeachingParameterCalculationService.ResolveParameterValue(
-                    component,
-                    "sourceVoltage",
-                    component.Definition.sourceVoltage > 0f ? component.Definition.sourceVoltage : fallback);
-                fallback = sourceVoltage > 0f ? sourceVoltage : fallback;
-                if (component.GetTerminal(lineLabel) != null)
-                {
-                    return fallback;
-                }
-            }
-
-            return fallback;
+            return ActualSupplyVoltageResolver.ResolveSinglePhaseVoltage(
+                workspace != null ? workspace.Components : null);
         }
 
         private static string VoltageAt(ComponentStateInfo info, string terminalId)
@@ -1285,6 +1352,11 @@ namespace ElectricalSim.AI
         private static bool IsLineOrPhase(string voltage)
         {
             return voltage == "L" || voltage == "L1" || voltage == "L2" || voltage == "L3";
+        }
+
+        private static bool IsThreePhaseLine(string voltage)
+        {
+            return voltage == "L1" || voltage == "L2" || voltage == "L3";
         }
 
         private string PrependUnsupportedComponentNotice(string report)

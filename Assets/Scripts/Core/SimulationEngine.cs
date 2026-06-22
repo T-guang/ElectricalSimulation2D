@@ -43,14 +43,8 @@ namespace ElectricalSim.Core
             var shorted = powered.Overlaps(neutral);
             var energizedCount = 0;
 
-            var systemVoltage = 220f;
-            var systemLineVoltage = 380f;
-            var powerSource = components.FirstOrDefault(c => c.Definition.kind == ComponentKind.PowerSource);
-            if (powerSource != null)
-            {
-                systemVoltage = ResolveVoltage(powerSource, powerSource.Definition);
-                systemLineVoltage = ResolveLineVoltage(powerSource, powerSource.Definition, systemLineVoltage);
-            }
+            var systemVoltage = ActualSupplyVoltageResolver.ResolveSinglePhaseVoltage(components);
+            var systemLineVoltage = ActualSupplyVoltageResolver.ResolveThreePhaseLineVoltage(components);
 
             foreach (var component in components)
             {
@@ -341,6 +335,11 @@ namespace ElectricalSim.Core
         private static float ResolveLineVoltage(CircuitComponent component, ComponentDefinition definition, float fallback)
         {
             if (TryGetParameterValue(component, "sourceLineVoltage", out var value) && value > 0f)
+            {
+                return value;
+            }
+
+            if (TryGetParameterValue(component, "lineVoltage", out value) && value > 0f)
             {
                 return value;
             }

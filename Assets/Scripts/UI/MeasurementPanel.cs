@@ -227,6 +227,11 @@ namespace ElectricalSim.UI
                 return lineVoltage;
             }
 
+            if (TryGetParameterValue(component, "lineVoltage", out lineVoltage) && lineVoltage > 0f)
+            {
+                return lineVoltage;
+            }
+
             return definition.sourceLineVoltage > 0f ? definition.sourceLineVoltage : fallback;
         }
 

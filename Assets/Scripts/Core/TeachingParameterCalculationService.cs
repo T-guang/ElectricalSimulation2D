@@ -53,7 +53,10 @@ namespace ElectricalSim.Core
         public float RatedVoltage;
         public float RatedPower;
         public float RatedCurrent;
+        public float ActualSupplyVoltage;
+        public float ActualPower;
         public float EstimatedCurrent;
+        public bool UsesRatedVoltageFallback;
         public bool HasEnoughParameters;
     }
 
@@ -200,6 +203,8 @@ namespace ElectricalSim.Core
 
         public static bool TryEstimateControlCircuitLoad(
             CircuitComponent component,
+            float actualSupplyVoltage,
+            bool hasActualSupplyVoltage,
             out ControlCircuitLoadEstimate result)
         {
             result = null;
@@ -216,7 +221,30 @@ namespace ElectricalSim.Core
 
             var ratedPower = ResolveParameterValue(component, "ratedPower", component.Definition.ratedPower);
             var ratedCurrent = ResolveParameterValue(component, "ratedCurrent", component.Definition.ratedCurrent);
-            var estimatedCurrent = ratedPower > 0f && ratedVoltage > 0f ? ratedPower / ratedVoltage : ratedCurrent;
+            if (ratedPower <= 0f && ratedCurrent > 0f && ratedVoltage > 0f)
+            {
+                ratedPower = ratedVoltage * ratedCurrent;
+            }
+
+            var resolvedActualVoltage = hasActualSupplyVoltage && actualSupplyVoltage > 0f
+                ? actualSupplyVoltage
+                : ratedVoltage;
+            var hasEnoughParameters = ratedVoltage > 0f && (ratedPower > 0f || ratedCurrent > 0f);
+            var estimatedCurrent = 0f;
+            var actualPower = 0f;
+            if (hasEnoughParameters && resolvedActualVoltage > 0f)
+            {
+                if (ratedPower > 0f && ratedVoltage > 0f)
+                {
+                    estimatedCurrent = ratedPower * resolvedActualVoltage / (ratedVoltage * ratedVoltage);
+                    actualPower = resolvedActualVoltage * estimatedCurrent;
+                }
+                else
+                {
+                    estimatedCurrent = ratedCurrent;
+                    actualPower = resolvedActualVoltage * estimatedCurrent;
+                }
+            }
 
             result = new ControlCircuitLoadEstimate
             {
@@ -225,8 +253,11 @@ namespace ElectricalSim.Core
                 RatedVoltage = Mathf.Max(0f, ratedVoltage),
                 RatedPower = Mathf.Max(0f, ratedPower),
                 RatedCurrent = Mathf.Max(0f, ratedCurrent),
+                ActualSupplyVoltage = Mathf.Max(0f, resolvedActualVoltage),
+                ActualPower = Mathf.Max(0f, actualPower),
                 EstimatedCurrent = Mathf.Max(0f, estimatedCurrent),
-                HasEnoughParameters = ratedVoltage > 0f && (ratedPower > 0f || ratedCurrent > 0f)
+                UsesRatedVoltageFallback = !hasActualSupplyVoltage || actualSupplyVoltage <= 0f,
+                HasEnoughParameters = hasEnoughParameters
             };
 
             return true;
