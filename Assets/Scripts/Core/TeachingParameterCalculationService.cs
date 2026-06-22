@@ -60,6 +60,24 @@ namespace ElectricalSim.Core
         public bool HasEnoughParameters;
     }
 
+    public enum ThermalRelaySettingJudgement
+    {
+        Unknown,
+        TooLow,
+        Reasonable,
+        High,
+        TooHigh
+    }
+
+    public sealed class ThermalRelaySettingEstimate
+    {
+        public float SettingCurrent;
+        public float MotorCurrent;
+        public bool UsesStaticReference;
+        public ThermalRelaySettingJudgement Judgement;
+        public bool HasEnoughParameters;
+    }
+
     public static class TeachingParameterCalculationService
     {
         public delegate IReadOnlyCollection<string> PhaseResolver(TerminalView terminal);
@@ -263,6 +281,57 @@ namespace ElectricalSim.Core
             return true;
         }
 
+        public static bool TryEstimateThermalRelaySetting(
+            CircuitComponent thermalRelay,
+            float motorCurrent,
+            bool usesStaticReference,
+            out ThermalRelaySettingEstimate result)
+        {
+            result = null;
+            if (!IsThermalRelay(thermalRelay))
+            {
+                return false;
+            }
+
+            var settingCurrent = ResolveParameterValue(thermalRelay, "settingCurrent", 0f);
+            if (settingCurrent <= 0f)
+            {
+                settingCurrent = ResolveParameterValue(thermalRelay, "ratedCurrent", thermalRelay.Definition.ratedCurrent);
+            }
+
+            var hasEnoughParameters = settingCurrent > 0f && motorCurrent > 0f;
+            var judgement = ThermalRelaySettingJudgement.Unknown;
+            if (hasEnoughParameters)
+            {
+                if (settingCurrent < 0.8f * motorCurrent)
+                {
+                    judgement = ThermalRelaySettingJudgement.TooLow;
+                }
+                else if (settingCurrent <= 1.2f * motorCurrent)
+                {
+                    judgement = ThermalRelaySettingJudgement.Reasonable;
+                }
+                else if (settingCurrent <= 1.8f * motorCurrent)
+                {
+                    judgement = ThermalRelaySettingJudgement.High;
+                }
+                else
+                {
+                    judgement = ThermalRelaySettingJudgement.TooHigh;
+                }
+            }
+
+            result = new ThermalRelaySettingEstimate
+            {
+                SettingCurrent = Mathf.Max(0f, settingCurrent),
+                MotorCurrent = Mathf.Max(0f, motorCurrent),
+                UsesStaticReference = usesStaticReference,
+                Judgement = judgement,
+                HasEnoughParameters = hasEnoughParameters
+            };
+            return true;
+        }
+
         public static bool IsSinglePhaseTeachingLoad(CircuitComponent component)
         {
             if (component == null || component.Definition == null ||
@@ -334,6 +403,24 @@ namespace ElectricalSim.Core
             }
 
             return IsContactor(component);
+        }
+
+        public static bool IsThermalRelay(CircuitComponent component)
+        {
+            if (component == null ||
+                component.Definition == null ||
+                component.GetTerminal("95") == null ||
+                component.GetTerminal("96") == null)
+            {
+                return false;
+            }
+
+            var id = component.Definition.name ?? string.Empty;
+            var displayName = component.Definition.displayName ?? string.Empty;
+            return id.IndexOf("ThermalRelay", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                id.IndexOf("Thermal_Relay", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                displayName.Contains("热继") ||
+                displayName.Contains("鐑户");
         }
 
         public static float ResolveParameterValue(CircuitComponent component, string key, float fallback)

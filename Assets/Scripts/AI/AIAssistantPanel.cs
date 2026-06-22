@@ -785,8 +785,9 @@ namespace ElectricalSim.AI
             var builder = new StringBuilder();
             var motorCount = AppendThreePhaseMotorEstimates(builder, stateResult);
             var starDeltaCount = AppendStarDeltaMotorEstimates(builder, stateResult);
+            var thermalCount = AppendThermalRelaySettingEstimates(builder);
             var controlCount = AppendControlCircuitLoadEstimates(builder, stateResult);
-            return motorCount == 0 && starDeltaCount == 0 && controlCount == 0 ? string.Empty : builder.ToString().TrimEnd();
+            return motorCount == 0 && starDeltaCount == 0 && thermalCount == 0 && controlCount == 0 ? string.Empty : builder.ToString().TrimEnd();
         }
 
         private int AppendThreePhaseMotorEstimates(StringBuilder builder, CircuitStateResult stateResult)
@@ -966,6 +967,224 @@ namespace ElectricalSim.AI
             }
 
             return StarDeltaMotorEstimateStage.SupplyFault;
+        }
+
+        private int AppendThermalRelaySettingEstimates(StringBuilder builder)
+        {
+            if (workspace == null || workspace.Components == null)
+            {
+                return 0;
+            }
+
+            var displayCounts = BuildComponentDisplayNameCounts();
+            var displayOrdinals = BuildComponentDisplayOrdinals();
+            var count = 0;
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var relay = workspace.Components[i];
+                if (!TeachingParameterCalculationService.IsThermalRelay(relay))
+                {
+                    continue;
+                }
+
+                if (count == 0)
+                {
+                    if (builder.Length > 0)
+                    {
+                        builder.AppendLine();
+                    }
+
+                    builder.AppendLine("【热继整定匹配估算】");
+                }
+
+                var relayName = ResolveComponentDisplayName(relay, displayCounts, displayOrdinals);
+                if (!TryFindProtectedThreePhaseMotor(relay, out var motor))
+                {
+                    builder.AppendLine("- " + relayName + "：暂未能可靠关联被保护电机，暂不进行整定匹配判断。");
+                    count++;
+                    continue;
+                }
+
+                var lineVoltage = ResolveThreePhaseLineVoltage();
+                var useStaticReference = !motor.IsEnergized;
+                if (!TeachingParameterCalculationService.TryCalculateThreePhaseMotor(
+                    motor,
+                    true,
+                    lineVoltage,
+                    out var motorEstimate) ||
+                    !TeachingParameterCalculationService.TryEstimateThermalRelaySetting(
+                        relay,
+                        motorEstimate.EstimatedCurrent,
+                        useStaticReference,
+                        out var relayEstimate))
+                {
+                    builder.AppendLine("- " + relayName + "：暂未获得被保护电机的有效估算电流，无法进行整定匹配判断。");
+                    count++;
+                    continue;
+                }
+
+                var motorName = ResolveComponentDisplayName(motor, displayCounts, displayOrdinals);
+                builder.AppendLine("- " + relayName + "：");
+                if (!relay.IsClosed)
+                {
+                    builder.AppendLine("  当前热继处于 OFF 状态，控制回路已断开，电机当前运行电流为 0A。");
+                    builder.AppendLine("  以下判断基于被保护电机的额定估算电流，仅作为整定参考，不表示当前正在过载。");
+                }
+
+                builder.AppendLine("  整定电流：" + relayEstimate.SettingCurrent.ToString("0.###") + "A；");
+                builder.AppendLine("  被保护电机：" + motorName + "；");
+                builder.AppendLine("  " + (relayEstimate.UsesStaticReference ? "电机额定估算电流：" : "电机估算运行电流：") +
+                    relayEstimate.MotorCurrent.ToString("0.###") + "A；");
+                builder.AppendLine("  判断：" + ThermalRelayJudgementText(relayEstimate.Judgement));
+                count++;
+            }
+
+            if (count > 0)
+            {
+                builder.AppendLine("- 说明：该结果为教学估算，用于理解热继整定与电机电流的匹配关系，不代表真实热继动作曲线。");
+            }
+
+            return count;
+        }
+
+        private bool TryFindProtectedThreePhaseMotor(CircuitComponent relay, out CircuitComponent motor)
+        {
+            motor = null;
+            if (relay == null || workspace == null || workspace.Components == null)
+            {
+                return false;
+            }
+
+            var graph = BuildWireTerminalGraph();
+            for (var i = 0; i < workspace.Components.Count; i++)
+            {
+                var candidate = workspace.Components[i];
+                if (!TeachingParameterCalculationService.IsThreePhaseTeachingMotor(candidate))
+                {
+                    continue;
+                }
+
+                if (AreThermalRelayOutputsConnectedToMotor(relay, candidate, graph))
+                {
+                    motor = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private Dictionary<TerminalView, List<TerminalView>> BuildWireTerminalGraph()
+        {
+            var graph = new Dictionary<TerminalView, List<TerminalView>>();
+            var wires = workspace != null && workspace.WireManager != null ? workspace.WireManager.Wires : null;
+            if (wires == null)
+            {
+                return graph;
+            }
+
+            for (var i = 0; i < wires.Count; i++)
+            {
+                var wire = wires[i];
+                if (wire == null || wire.StartTerminal == null || wire.EndTerminal == null)
+                {
+                    continue;
+                }
+
+                AddTerminalEdge(graph, wire.StartTerminal, wire.EndTerminal);
+                AddTerminalEdge(graph, wire.EndTerminal, wire.StartTerminal);
+            }
+
+            return graph;
+        }
+
+        private static void AddTerminalEdge(
+            Dictionary<TerminalView, List<TerminalView>> graph,
+            TerminalView from,
+            TerminalView to)
+        {
+            if (!graph.TryGetValue(from, out var list))
+            {
+                list = new List<TerminalView>();
+                graph[from] = list;
+            }
+
+            if (!list.Contains(to))
+            {
+                list.Add(to);
+            }
+        }
+
+        private bool AreThermalRelayOutputsConnectedToMotor(
+            CircuitComponent relay,
+            CircuitComponent motor,
+            Dictionary<TerminalView, List<TerminalView>> graph)
+        {
+            return AreTerminalsConnectedByWires(relay.GetTerminal("T1"), motor.GetTerminal("U"), graph) &&
+                AreTerminalsConnectedByWires(relay.GetTerminal("T2"), motor.GetTerminal("V"), graph) &&
+                AreTerminalsConnectedByWires(relay.GetTerminal("T3"), motor.GetTerminal("W"), graph);
+        }
+
+        private static bool AreTerminalsConnectedByWires(
+            TerminalView start,
+            TerminalView target,
+            Dictionary<TerminalView, List<TerminalView>> graph)
+        {
+            if (start == null || target == null)
+            {
+                return false;
+            }
+
+            if (start == target)
+            {
+                return true;
+            }
+
+            var visited = new HashSet<TerminalView>();
+            var queue = new Queue<TerminalView>();
+            visited.Add(start);
+            queue.Enqueue(start);
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (!graph.TryGetValue(current, out var next))
+                {
+                    continue;
+                }
+
+                for (var i = 0; i < next.Count; i++)
+                {
+                    var terminal = next[i];
+                    if (terminal == target)
+                    {
+                        return true;
+                    }
+
+                    if (visited.Add(terminal))
+                    {
+                        queue.Enqueue(terminal);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static string ThermalRelayJudgementText(ThermalRelaySettingJudgement judgement)
+        {
+            switch (judgement)
+            {
+                case ThermalRelaySettingJudgement.TooLow:
+                    return "整定偏低，可能导致电机正常运行时误动作。";
+                case ThermalRelaySettingJudgement.Reasonable:
+                    return "整定值接近电机运行电流，较合理。";
+                case ThermalRelaySettingJudgement.High:
+                    return "整定偏高，保护灵敏度降低。";
+                case ThermalRelaySettingJudgement.TooHigh:
+                    return "整定明显偏高，保护可能不足。";
+                default:
+                    return "暂未获得足够参数，无法判断整定匹配。";
+            }
         }
 
         private int AppendControlCircuitLoadEstimates(StringBuilder builder, CircuitStateResult stateResult)
@@ -1226,6 +1445,34 @@ namespace ElectricalSim.AI
                 estimate != null && !string.IsNullOrWhiteSpace(estimate.DisplayName)
                     ? estimate.DisplayName
                     : fallback);
+
+            var shouldNumber = displayCounts != null &&
+                displayCounts.TryGetValue(displayName, out var total) &&
+                total > 1;
+            if (!shouldNumber)
+            {
+                return displayName;
+            }
+
+            var ordinal = 1;
+            if (component != null && displayOrdinals != null &&
+                displayOrdinals.TryGetValue(component, out var componentOrdinal))
+            {
+                ordinal = componentOrdinal;
+            }
+
+            return displayName + " #" + ordinal.ToString();
+        }
+
+        private static string ResolveComponentDisplayName(
+            CircuitComponent component,
+            Dictionary<string, int> displayCounts,
+            Dictionary<CircuitComponent, int> displayOrdinals)
+        {
+            var displayName = NormalizeComponentDisplayName(
+                component != null && component.Definition != null
+                    ? component.Definition.displayName
+                    : "元件");
 
             var shouldNumber = displayCounts != null &&
                 displayCounts.TryGetValue(displayName, out var total) &&

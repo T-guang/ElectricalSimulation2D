@@ -1223,77 +1223,21 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
-                if (TryGetParameterValue(relay, "manualTrip", out var manualTrip) && manualTrip >= 0.5f)
-                {
-                    changed |= SetThermalRelayTripState(relay, true);
-                    continue;
-                }
-
                 if (IsThermalRelayTripped(relay))
                 {
-                    continue;
+                    changed |= SetThermalRelayTripState(relay, false);
                 }
 
-                var settingCurrent = ResolveThermalRelaySettingCurrent(relay);
-                var motorCurrent = ResolveProtectedMotorCurrent(relay);
-                if (settingCurrent <= 0f || motorCurrent <= settingCurrent)
+                if (TryGetParameterValue(relay, "manualTrip", out var manualTrip) && manualTrip > 0f)
                 {
-                    SetParameterIfPresent(relay, "overloadTimer", 0f);
-                    continue;
+                    SetParameterIfPresent(relay, "manualTrip", 0f);
+                    changed = true;
                 }
 
-                var overloadTimer = ResolveParameterValue(relay, "overloadTimer", 0f);
-                overloadTimer += simulationDeltaTime;
-                SetParameterIfPresent(relay, "overloadTimer", overloadTimer);
-
-                var tripDelay = Mathf.Max(0f, ResolveParameterValue(relay, "tripDelay", 3f));
-                if (overloadTimer >= tripDelay)
-                {
-                    changed |= SetThermalRelayTripState(relay, true);
-                }
+                SetParameterIfPresent(relay, "overloadTimer", 0f);
             }
 
             return changed;
-        }
-
-        private float ResolveProtectedMotorCurrent(CircuitComponent relay)
-        {
-            var relayT1 = relay.GetTerminal("T1");
-            var relayT2 = relay.GetTerminal("T2");
-            var relayT3 = relay.GetTerminal("T3");
-            var maxCurrent = 0f;
-
-            foreach (var motor in components)
-            {
-                if (!IsThreePhaseMotorComponent(motor) || !motor.IsEnergized)
-                {
-                    continue;
-                }
-
-                if (AreConnected(relayT1, motor.GetTerminal("U")) &&
-                    AreConnected(relayT2, motor.GetTerminal("V")) &&
-                    AreConnected(relayT3, motor.GetTerminal("W")))
-                {
-                    maxCurrent = Mathf.Max(maxCurrent, ResolveCurrent(motor, motor.Definition));
-                }
-            }
-
-            return maxCurrent;
-        }
-
-        private static float ResolveThermalRelaySettingCurrent(CircuitComponent relay)
-        {
-            if (TryGetParameterValue(relay, "settingCurrent", out var value))
-            {
-                return value;
-            }
-
-            if (TryGetParameterValue(relay, "ratedCurrent", out value))
-            {
-                return value;
-            }
-
-            return relay.Definition != null ? relay.Definition.ratedCurrent : 0f;
         }
 
         private static float ResolveParameterValue(CircuitComponent component, string key, float fallback)
@@ -1305,6 +1249,8 @@ namespace ElectricalSim.Core
         {
             var oldState = IsThermalRelayTripped(relay);
             SetParameterIfPresent(relay, "tripState", tripped ? 1f : 0f);
+            SetParameterIfPresent(relay, "isTripped", tripped ? 1f : 0f);
+            SetParameterIfPresent(relay, "tripped", tripped ? 1f : 0f);
             return oldState != tripped;
         }
 
@@ -1544,15 +1490,7 @@ namespace ElectricalSim.Core
             ConnectById(component, "L1", "T1");
             ConnectById(component, "L2", "T2");
             ConnectById(component, "L3", "T3");
-
-            if (IsThermalRelayTripped(component))
-            {
-                ConnectById(component, "97", "98");
-            }
-            else
-            {
-                ConnectById(component, "95", "96");
-            }
+            ConnectById(component, "95", "96");
         }
 
         private static bool IsThermalRelayComponent(CircuitComponent component)
