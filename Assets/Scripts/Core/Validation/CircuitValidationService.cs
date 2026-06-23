@@ -15,6 +15,7 @@ namespace ElectricalSim.Core.Validation
             var phaseHelper = new MotorPhaseValidationHelper(components, wires);
             AddMotorIssues(report, components, analysisResult, phaseHelper);
             AddComponentInvariantIssues(report, components, phaseHelper);
+            AddControlCircuitStructureIssues(report, components, analysisResult);
             AddUnsupportedComponentIssues(report, components);
             return report;
         }
@@ -397,6 +398,161 @@ namespace ElectricalSim.Core.Validation
                     reason,
                     component);
             }
+        }
+
+        private static void AddControlCircuitStructureIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            CircuitStateResult analysisResult)
+        {
+            AddStopButtonBypassedIssues(report, components, analysisResult);
+        }
+
+        private static void AddStopButtonBypassedIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            CircuitStateResult analysisResult)
+        {
+            if (report == null || components == null)
+            {
+                return;
+            }
+
+            var stopButtonCount = 0;
+            CircuitComponent stopButton = null;
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (!IsPureStopButtonCandidate(component))
+                {
+                    continue;
+                }
+
+                stopButtonCount++;
+                stopButton = component;
+            }
+
+            // Multiple stop buttons need a later StopButton -> Coil control-scope model.
+            if (stopButtonCount != 1 || stopButton == null || stopButton.IsClosed)
+            {
+                return;
+            }
+
+            var energizedCoilCount = 0;
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (!IsControlCoilCandidate(component) ||
+                    !IsControlCoilEnergized(component, analysisResult))
+                {
+                    continue;
+                }
+
+                energizedCoilCount++;
+            }
+
+            if (energizedCoilCount <= 0)
+            {
+                return;
+            }
+
+            AddIssue(
+                report,
+                "STOP_BUTTON_BYPASSED",
+                CircuitValidationSeverity.Error,
+                CircuitValidationCategory.ControlCircuit,
+                "\u505c\u6b62\u6309\u94ae\u88ab\u65c1\u8def",
+                "\u505c\u6b62\u6309\u94ae\u5904\u4e8e\u65ad\u5f00\u72b6\u6001\uff0c\u4f46\u63a7\u5236\u7ebf\u5708\u4ecd\u7136\u5f97\u7535\uff0c\u53ef\u80fd\u5b58\u5728\u8de8\u63a5\u7ebf\u7ed5\u8fc7\u505c\u6b62\u6309\u94ae\u6216\u505c\u6b62\u6309\u94ae\u672a\u6709\u6548\u4e32\u5165\u63a7\u5236\u56de\u8def\u3002\u505c\u6b62\u6309\u94ae\u901a\u5e38\u5e94\u4e32\u8054\u5728\u63a7\u5236\u56de\u8def\u4e2d\uff0c\u7528\u4e8e\u5207\u65ad\u63a5\u89e6\u5668\u6216\u7ee7\u7535\u5668\u7ebf\u5708\u7535\u6e90\u3002",
+                stopButton,
+                "11",
+                "12");
+        }
+
+        private static bool IsPureStopButtonCandidate(CircuitComponent component)
+        {
+            if (component == null ||
+                component.Definition == null ||
+                component.Definition.kind != ComponentKind.PushButton)
+            {
+                return false;
+            }
+
+            if (!string.Equals(component.Definition.name, "Button_Stop_NC", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return component.GetTerminal(TerminalConstants.AuxNC21) == null &&
+                component.GetTerminal(TerminalConstants.AuxNC22) == null &&
+                component.GetTerminal("11") != null &&
+                component.GetTerminal("12") != null &&
+                component.GetTerminal("23") == null &&
+                component.GetTerminal("24") == null;
+        }
+
+        private static bool IsControlCoilCandidate(CircuitComponent component)
+        {
+            if (component == null ||
+                component.Definition == null ||
+                component.Definition.kind != ComponentKind.ContactorCoil)
+            {
+                return false;
+            }
+
+            var definitionName = component.Definition.name ?? string.Empty;
+            return string.Equals(definitionName, "Contactor_KM_220V", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(definitionName, "Contactor_KM_380V", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(definitionName, "Timer_OnDelay_220V", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(definitionName, "Timer_OnDelay_380V", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsControlCoilEnergized(
+            CircuitComponent component,
+            CircuitStateResult analysisResult)
+        {
+            var info = FindComponentInfo(analysisResult, component != null ? component.InstanceId : null);
+            if (info != null)
+            {
+                if (info.IsContactor && info.IsContactorCoilEnergizedByAnalyzer)
+                {
+                    return true;
+                }
+
+                if (info.IsTimerRelay && info.IsTimerRelayCoilEnergizedByAnalyzer)
+                {
+                    return true;
+                }
+
+                if (string.Equals(info.CoilStatus, "CoilEnergized", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return component != null && component.IsEnergized;
+        }
+
+        private static ComponentStateInfo FindComponentInfo(
+            CircuitStateResult analysisResult,
+            string instanceId)
+        {
+            if (analysisResult == null ||
+                analysisResult.Components == null ||
+                string.IsNullOrWhiteSpace(instanceId))
+            {
+                return null;
+            }
+
+            for (var i = 0; i < analysisResult.Components.Count; i++)
+            {
+                var info = analysisResult.Components[i];
+                if (info != null && string.Equals(info.InstanceId, instanceId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return info;
+                }
+            }
+
+            return null;
         }
 
         private static CircuitComponent FindComponent(IReadOnlyList<CircuitComponent> components, string instanceId)
