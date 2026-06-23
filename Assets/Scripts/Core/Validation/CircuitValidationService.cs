@@ -15,7 +15,7 @@ namespace ElectricalSim.Core.Validation
             var phaseHelper = new MotorPhaseValidationHelper(components, wires);
             AddMotorIssues(report, components, analysisResult, phaseHelper);
             AddComponentInvariantIssues(report, components, phaseHelper);
-            AddControlCircuitStructureIssues(report, components, analysisResult);
+            AddControlCircuitStructureIssues(report, components, wires, analysisResult);
             AddUnsupportedComponentIssues(report, components);
             return report;
         }
@@ -403,9 +403,57 @@ namespace ElectricalSim.Core.Validation
         private static void AddControlCircuitStructureIssues(
             CircuitValidationReport report,
             IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires,
             CircuitStateResult analysisResult)
         {
             AddStopButtonBypassedIssues(report, components, analysisResult);
+            AddThermalRelayControlBypassedIssues(report, components, wires, analysisResult);
+        }
+
+        private static void AddThermalRelayControlBypassedIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires,
+            CircuitStateResult analysisResult)
+        {
+            if (report == null || components == null)
+            {
+                return;
+            }
+
+            var scopeHelper = new ThermalRelayProtectionScopeHelper();
+            for (var i = 0; i < components.Count; i++)
+            {
+                var relay = components[i];
+                if (relay == null || relay.IsClosed)
+                {
+                    continue;
+                }
+
+                if (!scopeHelper.TryResolveProtectionScope(relay, components, wires, out var scope) ||
+                    scope == null ||
+                    !scope.IsReliable ||
+                    scope.UpstreamContactor == null)
+                {
+                    continue;
+                }
+
+                if (!IsControlCoilEnergized(scope.UpstreamContactor, analysisResult))
+                {
+                    continue;
+                }
+
+                AddIssue(
+                    report,
+                    "THERMAL_RELAY_CONTROL_BYPASSED",
+                    CircuitValidationSeverity.Error,
+                    CircuitValidationCategory.Protection,
+                    "\u70ed\u7ee7\u63a7\u5236\u4fdd\u62a4\u88ab\u65c1\u8def",
+                    "\u70ed\u7ee7\u7535\u5668\u63a7\u5236\u89e6\u70b9\u5df2\u65ad\u5f00\uff0c\u4f46\u5bf9\u5e94\u63a5\u89e6\u5668\u7ebf\u5708\u4ecd\u7136\u5f97\u7535\uff0c\u53ef\u80fd\u5b58\u5728\u70ed\u7ee7 95/96 \u88ab\u65c1\u8def\u6216\u672a\u6709\u6548\u4e32\u5165\u63a7\u5236\u56de\u8def\u3002\u70ed\u7ee7\u7535\u5668\u7684 95/96 \u5e38\u95ed\u89e6\u70b9\u901a\u5e38\u5e94\u4e32\u8054\u5728\u63a7\u5236\u56de\u8def\u4e2d\uff0c\u7528\u4e8e\u5728\u8fc7\u8f7d\u6216\u624b\u52a8\u8df3\u95f8\u65f6\u5207\u65ad\u63a5\u89e6\u5668\u7ebf\u5708\u7535\u6e90\u3002",
+                    relay,
+                    TerminalConstants.ThermalNC95,
+                    TerminalConstants.ThermalNC96);
+            }
         }
 
         private static void AddStopButtonBypassedIssues(
