@@ -14,6 +14,7 @@ namespace ElectricalSim.Core.Validation
             var report = new CircuitValidationReport();
             var phaseHelper = new MotorPhaseValidationHelper(components, wires);
             AddMotorIssues(report, components, analysisResult, phaseHelper);
+            AddComponentInvariantIssues(report, components, phaseHelper);
             AddUnsupportedComponentIssues(report, components);
             return report;
         }
@@ -119,6 +120,12 @@ namespace ElectricalSim.Core.Validation
                 return;
             }
 
+            if (!ShouldEvaluateStarDeltaPhaseIssue(info, component) ||
+                HasStarDeltaTerminalInvariantIssue(component, phaseHelper))
+            {
+                return;
+            }
+
             var phaseResult = phaseHelper != null ? phaseHelper.Validate(component, info, true) : null;
             if (phaseResult == null || !phaseResult.ShouldEvaluate)
             {
@@ -155,6 +162,207 @@ namespace ElectricalSim.Core.Validation
                     TerminalConstants.V1,
                     TerminalConstants.W1);
             }
+        }
+
+        private static bool ShouldEvaluateStarDeltaPhaseIssue(ComponentStateInfo info, CircuitComponent component)
+        {
+            if (info == null)
+            {
+                return false;
+            }
+
+            if (component != null && component.IsEnergized)
+            {
+                return true;
+            }
+
+            if (string.Equals(info.State, "StarConnected", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(info.State, "DeltaConnected", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(info.State, "StarDeltaConflict", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(info.StarDeltaConnectionMode, "Star", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(info.StarDeltaConnectionMode, "Delta", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(info.StarDeltaConnectionMode, "Conflict", StringComparison.OrdinalIgnoreCase))
+            {
+                return !string.Equals(info.State, "Stopped", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
+        }
+
+        private static bool HasStarDeltaTerminalInvariantIssue(
+            CircuitComponent motor,
+            MotorPhaseValidationHelper connectivityHelper)
+        {
+            if (motor == null || connectivityHelper == null)
+            {
+                return false;
+            }
+
+            if (AnyTerminalPairConnected(
+                connectivityHelper,
+                motor,
+                TerminalConstants.U1,
+                TerminalConstants.V1,
+                TerminalConstants.W1))
+            {
+                return true;
+            }
+
+            var secondaryConnectedPairs = CountConnectedTerminalPairs(
+                connectivityHelper,
+                motor,
+                TerminalConstants.U2,
+                TerminalConstants.V2,
+                TerminalConstants.W2);
+            return secondaryConnectedPairs > 0 && secondaryConnectedPairs < 3;
+        }
+
+        private static void AddComponentInvariantIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            MotorPhaseValidationHelper connectivityHelper)
+        {
+            if (report == null || components == null || connectivityHelper == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var component = components[i];
+                if (component == null)
+                {
+                    continue;
+                }
+
+                if (TeachingParameterCalculationService.IsThreePhaseTeachingMotor(component))
+                {
+                    AddThreePhaseMotorInvariantIssues(report, component, connectivityHelper);
+                }
+
+                if (TeachingParameterCalculationService.IsStarDeltaTeachingMotor(component))
+                {
+                    AddStarDeltaInvariantIssues(report, component, connectivityHelper);
+                }
+            }
+        }
+
+        private static void AddThreePhaseMotorInvariantIssues(
+            CircuitValidationReport report,
+            CircuitComponent motor,
+            MotorPhaseValidationHelper connectivityHelper)
+        {
+            if (AnyTerminalPairConnected(
+                connectivityHelper,
+                motor,
+                TerminalConstants.U,
+                TerminalConstants.V,
+                TerminalConstants.W))
+            {
+                AddIssue(
+                    report,
+                    "MOTOR_PHASE_TERMINAL_SHORT",
+                    CircuitValidationSeverity.Error,
+                    CircuitValidationCategory.Motor,
+                    "三相电机输入端短接",
+                    "检测到三相电机 U/V/W 输入端之间存在直接短接，当前接线不符合三相电机接线要求。",
+                    motor,
+                    TerminalConstants.U,
+                    TerminalConstants.V,
+                    TerminalConstants.W);
+            }
+        }
+
+        private static void AddStarDeltaInvariantIssues(
+            CircuitValidationReport report,
+            CircuitComponent motor,
+            MotorPhaseValidationHelper connectivityHelper)
+        {
+            if (AnyTerminalPairConnected(
+                connectivityHelper,
+                motor,
+                TerminalConstants.U1,
+                TerminalConstants.V1,
+                TerminalConstants.W1))
+            {
+                AddIssue(
+                    report,
+                    "STAR_DELTA_INPUT_TERMINAL_SHORT",
+                    CircuitValidationSeverity.Error,
+                    CircuitValidationCategory.StarDelta,
+                    "星三角电机输入端短接",
+                    "检测到星三角电机 U1/V1/W1 输入端之间存在直接短接，当前接线不符合三相电机输入要求。",
+                    motor,
+                    TerminalConstants.U1,
+                    TerminalConstants.V1,
+                    TerminalConstants.W1);
+            }
+
+            var connectedPairs = CountConnectedTerminalPairs(
+                connectivityHelper,
+                motor,
+                TerminalConstants.U2,
+                TerminalConstants.V2,
+                TerminalConstants.W2);
+            if (connectedPairs > 0 && connectedPairs < 3)
+            {
+                AddIssue(
+                    report,
+                    "STAR_DELTA_PARTIAL_STARPOINT_SHORT",
+                    CircuitValidationSeverity.Error,
+                    CircuitValidationCategory.StarDelta,
+                    "星三角局部星点短接",
+                    "星三角电机 U2/V2/W2 存在局部短接。该连接不是完整星形连接，也不是标准三角连接，属于异常接线。",
+                    motor,
+                    TerminalConstants.U2,
+                    TerminalConstants.V2,
+                    TerminalConstants.W2);
+            }
+        }
+
+        private static bool AnyTerminalPairConnected(
+            MotorPhaseValidationHelper connectivityHelper,
+            CircuitComponent component,
+            string first,
+            string second,
+            string third)
+        {
+            return CountConnectedTerminalPairs(connectivityHelper, component, first, second, third) > 0;
+        }
+
+        private static int CountConnectedTerminalPairs(
+            MotorPhaseValidationHelper connectivityHelper,
+            CircuitComponent component,
+            string first,
+            string second,
+            string third)
+        {
+            if (connectivityHelper == null || component == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            if (connectivityHelper.AreTerminalsDirectlyWired(component, first, second))
+            {
+                count++;
+            }
+
+            if (connectivityHelper.AreTerminalsDirectlyWired(component, second, third))
+            {
+                count++;
+            }
+
+            if (connectivityHelper.AreTerminalsDirectlyWired(component, first, third))
+            {
+                count++;
+            }
+
+            return count;
         }
 
         private static void AddUnsupportedComponentIssues(

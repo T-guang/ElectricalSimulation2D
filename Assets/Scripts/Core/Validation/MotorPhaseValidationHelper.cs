@@ -9,11 +9,13 @@ namespace ElectricalSim.Core.Validation
         private readonly IReadOnlyList<CircuitComponent> components;
         private readonly IReadOnlyList<WireView> wires;
         private readonly Dictionary<TerminalView, HashSet<TerminalView>> graph = new Dictionary<TerminalView, HashSet<TerminalView>>();
+        private readonly Dictionary<TerminalView, HashSet<TerminalView>> staticWireGraph = new Dictionary<TerminalView, HashSet<TerminalView>>();
 
         public MotorPhaseValidationHelper(IReadOnlyList<CircuitComponent> components, IReadOnlyList<WireView> wires)
         {
             this.components = components;
             this.wires = wires;
+            BuildStaticWireGraph();
             BuildGraph();
         }
 
@@ -126,6 +128,57 @@ namespace ElectricalSim.Core.Validation
                 (info.MotorIssues != null && info.MotorIssues.Count > 0));
         }
 
+        public bool AreTerminalsConnected(CircuitComponent component, string firstTerminalId, string secondTerminalId)
+        {
+            return AreTerminalsConnected(component, firstTerminalId, component, secondTerminalId);
+        }
+
+        public bool AreTerminalsConnected(
+            CircuitComponent firstComponent,
+            string firstTerminalId,
+            CircuitComponent secondComponent,
+            string secondTerminalId)
+        {
+            if (firstComponent == null || secondComponent == null ||
+                string.IsNullOrWhiteSpace(firstTerminalId) ||
+                string.IsNullOrWhiteSpace(secondTerminalId))
+            {
+                return false;
+            }
+
+            var first = firstComponent.GetTerminal(firstTerminalId);
+            var second = secondComponent.GetTerminal(secondTerminalId);
+            return first != null && second != null && Flood(first).Contains(second);
+        }
+
+        public bool AreTerminalsLocallyConnected(CircuitComponent component, string firstTerminalId, string secondTerminalId)
+        {
+            if (component == null ||
+                string.IsNullOrWhiteSpace(firstTerminalId) ||
+                string.IsNullOrWhiteSpace(secondTerminalId))
+            {
+                return false;
+            }
+
+            var first = component.GetTerminal(firstTerminalId);
+            var second = component.GetTerminal(secondTerminalId);
+            return first != null && second != null && FloodWithoutSupplyTerminals(first).Contains(second);
+        }
+
+        public bool AreTerminalsDirectlyWired(CircuitComponent component, string firstTerminalId, string secondTerminalId)
+        {
+            if (component == null ||
+                string.IsNullOrWhiteSpace(firstTerminalId) ||
+                string.IsNullOrWhiteSpace(secondTerminalId))
+            {
+                return false;
+            }
+
+            var first = component.GetTerminal(firstTerminalId);
+            var second = component.GetTerminal(secondTerminalId);
+            return first != null && second != null && FloodStaticWires(first).Contains(second);
+        }
+
         private string ResolveTerminalPhase(TerminalView terminal)
         {
             if (terminal == null)
@@ -162,6 +215,41 @@ namespace ElectricalSim.Core.Validation
             }
 
             return CircuitStateAnalyzer.VoltageNone;
+        }
+
+        private void BuildStaticWireGraph()
+        {
+            staticWireGraph.Clear();
+            if (components != null)
+            {
+                for (var i = 0; i < components.Count; i++)
+                {
+                    var component = components[i];
+                    if (component == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (var terminal in component.Terminals)
+                    {
+                        EnsureStatic(terminal);
+                    }
+                }
+            }
+
+            if (wires == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < wires.Count; i++)
+            {
+                var wire = wires[i];
+                if (wire != null)
+                {
+                    ConnectStatic(wire.StartTerminal, wire.EndTerminal);
+                }
+            }
         }
 
         private void BuildGraph()
@@ -359,11 +447,86 @@ namespace ElectricalSim.Core.Validation
             return visited;
         }
 
+        private HashSet<TerminalView> FloodStaticWires(TerminalView start)
+        {
+            var visited = new HashSet<TerminalView>();
+            if (start == null || !staticWireGraph.ContainsKey(start))
+            {
+                return visited;
+            }
+
+            var stack = new Stack<TerminalView>();
+            stack.Push(start);
+            visited.Add(start);
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (!staticWireGraph.TryGetValue(current, out var next))
+                {
+                    continue;
+                }
+
+                foreach (var terminal in next)
+                {
+                    if (terminal != null && visited.Add(terminal))
+                    {
+                        stack.Push(terminal);
+                    }
+                }
+            }
+
+            return visited;
+        }
+
+        private HashSet<TerminalView> FloodWithoutSupplyTerminals(TerminalView start)
+        {
+            var visited = new HashSet<TerminalView>();
+            if (start == null || !graph.ContainsKey(start))
+            {
+                return visited;
+            }
+
+            var stack = new Stack<TerminalView>();
+            stack.Push(start);
+            visited.Add(start);
+            while (stack.Count > 0)
+            {
+                var current = stack.Pop();
+                if (!graph.TryGetValue(current, out var next))
+                {
+                    continue;
+                }
+
+                foreach (var terminal in next)
+                {
+                    if (terminal == null || IsSupplyTerminal(terminal))
+                    {
+                        continue;
+                    }
+
+                    if (visited.Add(terminal))
+                    {
+                        stack.Push(terminal);
+                    }
+                }
+            }
+
+            return visited;
+        }
+
         private void Ensure(TerminalView terminal)
         {
             if (terminal != null && !graph.ContainsKey(terminal))
             {
                 graph[terminal] = new HashSet<TerminalView>();
+            }
+        }
+
+        private void EnsureStatic(TerminalView terminal)
+        {
+            if (terminal != null && !staticWireGraph.ContainsKey(terminal))
+            {
+                staticWireGraph[terminal] = new HashSet<TerminalView>();
             }
         }
 
@@ -390,10 +553,32 @@ namespace ElectricalSim.Core.Validation
             graph[second].Add(first);
         }
 
+        private void ConnectStatic(TerminalView first, TerminalView second)
+        {
+            if (first == null || second == null)
+            {
+                return;
+            }
+
+            EnsureStatic(first);
+            EnsureStatic(second);
+            staticWireGraph[first].Add(second);
+            staticWireGraph[second].Add(first);
+        }
+
         private static bool IsPowerPhaseTerminal(TerminalView terminal)
         {
             return terminal != null &&
                 terminal.Role == TerminalRole.Phase &&
+                terminal.Owner != null &&
+                terminal.Owner.Definition != null &&
+                (terminal.Owner.Definition.kind == ComponentKind.PowerSource ||
+                terminal.Owner.Definition.kind == ComponentKind.EnergyMeter);
+        }
+
+        private static bool IsSupplyTerminal(TerminalView terminal)
+        {
+            return terminal != null &&
                 terminal.Owner != null &&
                 terminal.Owner.Definition != null &&
                 (terminal.Owner.Definition.kind == ComponentKind.PowerSource ||
