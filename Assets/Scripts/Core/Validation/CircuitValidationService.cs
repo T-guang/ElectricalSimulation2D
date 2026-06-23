@@ -408,6 +408,41 @@ namespace ElectricalSim.Core.Validation
         {
             AddStopButtonBypassedIssues(report, components, analysisResult);
             AddThermalRelayControlBypassedIssues(report, components, wires, analysisResult);
+            AddSelfHoldingBranchIssues(report, components, wires);
+        }
+
+        private static void AddSelfHoldingBranchIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires)
+        {
+            if (report == null || components == null)
+            {
+                return;
+            }
+
+            var helper = new SelfHoldingBranchValidationHelper();
+            if (!helper.TryEvaluateSingleContactorSelfHold(components, wires, out var result) ||
+                result == null ||
+                !result.IsApplicable ||
+                !result.HasSelfHoldAttempt ||
+                result.IsValidSelfHoldBranch)
+            {
+                return;
+            }
+
+            AddIssue(
+                report,
+                "SELF_HOLDING_BRANCH_INCOMPLETE",
+                CircuitValidationSeverity.Warning,
+                CircuitValidationCategory.ControlCircuit,
+                "\u81ea\u9501\u652f\u8def\u4e0d\u5b8c\u6574",
+                "\u68c0\u6d4b\u5230\u63a5\u89e6\u5668 13/14 \u53ef\u80fd\u7528\u4e8e\u81ea\u9501\uff0c\u4f46\u672a\u5f62\u6210\u6709\u6548\u7684\u542f\u52a8\u6309\u94ae\u5e76\u8054\u4fdd\u6301\u652f\u8def\uff0c\u8fde\u7eed\u8fd0\u884c\u4fdd\u6301\u80fd\u529b\u53ef\u80fd\u7f3a\u5931\u3002\u8fde\u7eed\u8fd0\u884c\u63a7\u5236\u4e2d\uff0c\u63a5\u89e6\u5668\u7684 13/14 \u5e38\u5f00\u8f85\u52a9\u89e6\u70b9\u901a\u5e38\u5e94\u5e76\u8054\u5728\u542f\u52a8\u6309\u94ae\u4e24\u7aef\uff1b\u82e5 13/14 \u63a5\u7ebf\u4e0d\u5b8c\u6574\u6216\u672a\u5e76\u8054\u5230\u542f\u52a8\u6309\u94ae\u4e24\u4fa7\uff0c\u7535\u8def\u53ef\u80fd\u9000\u5316\u4e3a\u70b9\u52a8\u8fd0\u884c\u3002",
+                result.Contactor,
+                TerminalConstants.AuxNO13,
+                TerminalConstants.AuxNO14,
+                "23",
+                "24");
         }
 
         private static void AddThermalRelayControlBypassedIssues(
