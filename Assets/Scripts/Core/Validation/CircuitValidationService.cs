@@ -409,6 +409,87 @@ namespace ElectricalSim.Core.Validation
             AddStopButtonBypassedIssues(report, components, analysisResult);
             AddThermalRelayControlBypassedIssues(report, components, wires, analysisResult);
             AddSelfHoldingBranchIssues(report, components, wires);
+            AddReversingContactorConflictIssues(report, components, wires, analysisResult);
+        }
+
+        private static void AddReversingContactorConflictIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires,
+            CircuitStateResult analysisResult)
+        {
+            if (report == null || components == null)
+            {
+                return;
+            }
+
+            var scopes = ReversingPairScopeHelper.ResolveReliableReversingPairs(components, wires);
+            for (var i = 0; i < scopes.Count; i++)
+            {
+                var scope = scopes[i];
+                if (scope == null ||
+                    !scope.IsReliable ||
+                    scope.ForwardContactor == null ||
+                    scope.ReverseContactor == null)
+                {
+                    continue;
+                }
+
+                if (!HasReversingContactorConflict(scope, analysisResult))
+                {
+                    continue;
+                }
+
+                AddIssue(
+                    report,
+                    "REVERSING_CONTACTOR_CONFLICT",
+                    CircuitValidationSeverity.Error,
+                    CircuitValidationCategory.ControlCircuit,
+                    "\u6b63\u53cd\u8f6c\u63a5\u89e6\u5668\u4e92\u9501\u51b2\u7a81",
+                    "\u540c\u4e00\u53f0\u7535\u673a\u7684\u6b63\u8f6c\u63a5\u89e6\u5668\u548c\u53cd\u8f6c\u63a5\u89e6\u5668\u51fa\u73b0\u4e92\u9501\u51b2\u7a81\uff0c\u5b58\u5728\u540c\u65f6\u5438\u5408\u6216\u76f8\u5e8f\u51b2\u7a81\u98ce\u9669\u3002\u6b63\u53cd\u8f6c\u63a7\u5236\u4e2d\uff0c\u6b63\u8f6c\u548c\u53cd\u8f6c\u63a5\u89e6\u5668\u4e0d\u80fd\u540c\u65f6\u5438\u5408\u3002\u5f53\u524d\u7cfb\u7edf\u68c0\u6d4b\u5230\u6b63\u53cd\u8f6c\u4e92\u9501\u51b2\u7a81\uff0c\u8fd0\u884c\u5c42\u5df2\u963b\u6b62\u5371\u9669\u72b6\u6001\u7ee7\u7eed\u4f20\u64ad\u3002\u8bf7\u68c0\u67e5\u7535\u6c14\u4e92\u9501 21/22\u3001\u6309\u94ae\u4e92\u9501\u6216\u662f\u5426\u5b58\u5728\u8de8\u63a5\u7ebf\u3002",
+                    scope.ForwardContactor,
+                    TerminalConstants.A1,
+                    TerminalConstants.A2,
+                    TerminalConstants.T1,
+                    TerminalConstants.T2,
+                    TerminalConstants.T3);
+            }
+        }
+
+        private static bool HasReversingContactorConflict(
+            ReversingPairScope scope,
+            CircuitStateResult analysisResult)
+        {
+            if (scope == null ||
+                scope.ForwardContactor == null ||
+                scope.ReverseContactor == null)
+            {
+                return false;
+            }
+
+            if (IsControlCoilEnergized(scope.ForwardContactor, analysisResult) &&
+                IsControlCoilEnergized(scope.ReverseContactor, analysisResult))
+            {
+                return true;
+            }
+
+            return IsContactorInterlockConflict(scope.ForwardContactor, analysisResult) &&
+                IsContactorInterlockConflict(scope.ReverseContactor, analysisResult);
+        }
+
+        private static bool IsContactorInterlockConflict(
+            CircuitComponent contactor,
+            CircuitStateResult analysisResult)
+        {
+            if (analysisResult == null || !analysisResult.HasContactorInterlockConflict)
+            {
+                return false;
+            }
+
+            var info = FindComponentInfo(analysisResult, contactor != null ? contactor.InstanceId : null);
+            return info != null &&
+                (string.Equals(info.State, "InterlockConflict", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(info.CoilStatus, "InterlockConflict", StringComparison.OrdinalIgnoreCase));
         }
 
         private static void AddSelfHoldingBranchIssues(
