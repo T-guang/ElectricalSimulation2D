@@ -34,5 +34,53 @@ namespace ElectricalSim.Core
             ParameterKeys.SourceLineVoltage,
             ParameterKeys.LineVoltage
         };
+
+        public static string GetCanonicalKey(string key)
+        {
+            if (IsAliasOf(key, SourceVoltage))
+            {
+                return ParameterKeys.SourceVoltage;
+            }
+
+            if (IsAliasOf(key, SourceLineVoltage))
+            {
+                return ParameterKeys.SourceLineVoltage;
+            }
+
+            return key;
+        }
+
+        public static string[] GetAliasesIncludingSelf(string key)
+        {
+            if (IsAliasOf(key, SourceVoltage))
+            {
+                return SourceVoltage;
+            }
+
+            if (IsAliasOf(key, SourceLineVoltage))
+            {
+                return SourceLineVoltage;
+            }
+
+            return new[] { key };
+        }
+
+        private static bool IsAliasOf(string key, string[] aliases)
+        {
+            if (string.IsNullOrWhiteSpace(key) || aliases == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < aliases.Length; i++)
+            {
+                if (string.Equals(key, aliases[i], System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

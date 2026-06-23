@@ -97,7 +97,8 @@ namespace ElectricalSim.UI
             }
 
             var changed = new List<string>();
-            foreach (var parameter in currentComponent.GetAllParameters())
+            var parameters = GetDisplayParameters(currentComponent);
+            foreach (var parameter in parameters)
             {
                 if (parameter == null || !parameter.editable)
                 {
@@ -145,7 +146,7 @@ namespace ElectricalSim.UI
             ClearRows();
             editableInputs.Clear();
 
-            var parameters = component.GetAllParameters();
+            var parameters = GetDisplayParameters(component);
             var hasParameters = parameters != null && parameters.Count > 0;
             
             if (emptyText != null)
@@ -189,6 +190,61 @@ namespace ElectricalSim.UI
                 if (p != null && p.editable) return true;
             }
             return false;
+        }
+
+        private static List<ComponentParameter> GetDisplayParameters(CircuitComponent component)
+        {
+            var result = new List<ComponentParameter>();
+            if (component == null)
+            {
+                return result;
+            }
+
+            var parameters = component.GetAllParameters();
+            if (parameters == null)
+            {
+                return result;
+            }
+
+            var indexByCanonicalKey = new Dictionary<string, int>();
+            for (var i = 0; i < parameters.Count; i++)
+            {
+                var parameter = parameters[i];
+                if (parameter == null || string.IsNullOrWhiteSpace(parameter.key))
+                {
+                    continue;
+                }
+
+                var canonicalKey = ParameterAliases.GetCanonicalKey(parameter.key);
+                if (!indexByCanonicalKey.TryGetValue(canonicalKey, out var existingIndex))
+                {
+                    indexByCanonicalKey[canonicalKey] = result.Count;
+                    result.Add(parameter);
+                    continue;
+                }
+
+                if (ShouldPreferDisplayParameter(parameter, result[existingIndex], canonicalKey))
+                {
+                    result[existingIndex] = parameter;
+                }
+            }
+
+            return result;
+        }
+
+        private static bool ShouldPreferDisplayParameter(
+            ComponentParameter candidate,
+            ComponentParameter current,
+            string canonicalKey)
+        {
+            if (candidate == null || current == null || string.IsNullOrWhiteSpace(canonicalKey))
+            {
+                return false;
+            }
+
+            var candidateIsCanonical = string.Equals(candidate.key, canonicalKey, System.StringComparison.OrdinalIgnoreCase);
+            var currentIsCanonical = string.Equals(current.key, canonicalKey, System.StringComparison.OrdinalIgnoreCase);
+            return candidateIsCanonical && !currentIsCanonical;
         }
 
         private void CreateParameterRow(ComponentParameter parameter)

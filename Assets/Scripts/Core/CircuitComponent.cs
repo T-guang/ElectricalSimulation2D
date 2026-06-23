@@ -104,21 +104,27 @@ namespace ElectricalSim.Core
             }
 
             var existingKeys = new HashSet<string>();
+            var existingCanonicalKeys = new HashSet<string>();
             for (var i = 0; i < parameterSet.parameters.Count; i++)
             {
                 var parameter = parameterSet.parameters[i];
                 if (parameter != null && !string.IsNullOrWhiteSpace(parameter.key))
                 {
                     existingKeys.Add(parameter.key);
+                    existingCanonicalKeys.Add(ParameterAliases.GetCanonicalKey(parameter.key));
                 }
             }
 
             for (var i = 0; i < Definition.parameters.Count; i++)
             {
                 var definitionParameter = Definition.parameters[i];
+                var canonicalKey = definitionParameter != null
+                    ? ParameterAliases.GetCanonicalKey(definitionParameter.key)
+                    : null;
                 if (definitionParameter == null ||
                     string.IsNullOrWhiteSpace(definitionParameter.key) ||
-                    existingKeys.Contains(definitionParameter.key))
+                    existingKeys.Contains(definitionParameter.key) ||
+                    existingCanonicalKeys.Contains(canonicalKey))
                 {
                     continue;
                 }
@@ -127,6 +133,7 @@ namespace ElectricalSim.Core
                 clone.ClampValue();
                 parameterSet.parameters.Add(clone);
                 existingKeys.Add(clone.key);
+                existingCanonicalKeys.Add(ParameterAliases.GetCanonicalKey(clone.key));
             }
         }
 
