@@ -51829,6 +51829,7 @@ MonoBehaviour:
   minCanvasZoom: 0.65
   maxCanvasZoom: 1.7
   zoomStep: 0.12
+  simulationRefreshInterval: 0.25
 --- !u!114 &1612767336
 MonoBehaviour:
   m_ObjectHideFlags: 0

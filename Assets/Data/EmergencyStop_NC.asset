@@ -21,11 +21,12 @@ MonoBehaviour:
   size: {x: 110, y: 130}
   supportLevel: 3
   showInPalette: 1
-  unsupportedReason: ""
+  unsupportedReason: 
   canParticipateInRuntime: 1
   canParticipateInParameterCalculation: 0
   startsClosed: 1
   togglable: 1
+  allowSameComponentJumper: 0
   controlledByTag: 
   outputTag: 
   sourceVoltage: 0
@@ -39,6 +40,7 @@ MonoBehaviour:
   canBurnOut: 0
   canTrip: 0
   parameterNote: "\u5F00\u5173/\u6309\u94AE\uFF1A\u7528\u4E8E\u63A7\u5236\u901A\u65AD\uFF0C\u540E\u7EED\u53EF\u53C2\u4E0E\u8FC7\u6D41\u89E6\u70B9\u635F\u574F\u5224\u65AD\u3002"
+  parameters: []
   terminals:
   - id: 11
     label: 11

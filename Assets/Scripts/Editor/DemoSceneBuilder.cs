@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -1118,7 +1118,7 @@ namespace ElectricalSim.EditorTools
             var workspacePanel = CreatePanel("Workspace", simulationRoot, new Color(0.96f, 0.98f, 1f), new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(210f, -83f), new Vector2(-420f, -166f));
             workspacePanel.gameObject.AddComponent<RectMask2D>();
 
-            var canvasContent = CreateRect("CanvasContent", workspacePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(2800f, 1800f));
+            var canvasContent = CreateRect("CanvasContent", workspacePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14000f, 9000f));
             var gridLayer = CreateRect("GridLayer", canvasContent, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             gridLayer.gameObject.AddComponent<WorkspaceGrid>().raycastTarget = false;
             var wireLayer = CreateRect("WireLayer", canvasContent, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);

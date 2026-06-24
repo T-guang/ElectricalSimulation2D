@@ -21,11 +21,12 @@ MonoBehaviour:
   size: {x: 110, y: 130}
   supportLevel: 5
   showInPalette: 1
-  unsupportedReason: ""
+  unsupportedReason: 
   canParticipateInRuntime: 1
   canParticipateInParameterCalculation: 1
   startsClosed: 1
   togglable: 1
+  allowSameComponentJumper: 0
   controlledByTag: 
   outputTag: 
   sourceVoltage: 0
@@ -41,16 +42,16 @@ MonoBehaviour:
   parameterNote: "\u65AD\u8DEF\u5668/\u4FDD\u62A4\u5668\uFF1A\u540E\u7EED\u8FC7\u6D41\u65F6\u8DF3\u95F8\u5E76\u65AD\u8DEF\u3002"
   parameters:
   - key: ratedCurrent
-    displayName: "额定电流"
+    displayName: "\u989D\u5B9A\u7535\u6D41"
     value: 16
-    unit: "A"
+    unit: A
     min: 0
     max: 200
     editable: 1
   - key: canTrip
-    displayName: "可脱扣"
+    displayName: "\u53EF\u8131\u6263"
     value: 1
-    unit: ""
+    unit: 
     min: 0
     max: 1
     editable: 0
@@ -79,7 +80,7 @@ MonoBehaviour:
     label: "\u8FDB3"
     role: 4
     normalizedPosition: {x: 0.75, y: 1}
-    color: {r: 0.95, g: 0.78, b: 0.12, a: 1}
+    color: {r: 0.9568628, g: 0.9686275, b: 0.9843138, a: 1}
   - id: P3_OUT
     label: "\u51FA3"
     role: 5

@@ -8,6 +8,14 @@ namespace ElectricalSim.Core
     [RequireComponent(typeof(RectTransform))]
     public sealed class CircuitComponent : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
     {
+        // Temporary KM visual pilot. Set to false to restore the default rectangular appearance.
+        private const bool useExperimentalKmVisualPrefab = true;
+        private const bool showExperimentalKmTerminalDebugMarkers = false;
+        private const string experimentalKmVisualDefinitionName = "Contactor_KM_380V";
+        private const string experimentalKmVisualAssetPath = "Assets/Prefab/Contactor_KM_380V_Visual.prefab";
+        private const string experimentalKmDefaultSpritePath = "Assets/Art/Components/Contactor_KM_380V_Default.png";
+        private const string experimentalKmEnergizedSpritePath = "Assets/Art/Components/Contactor_KM_380V_Energized.png";
+
         [SerializeField] private Image body;
         [SerializeField] private Text title;
         [SerializeField] private Text stateLabel;
@@ -27,6 +35,11 @@ namespace ElectricalSim.Core
         private RectTransform rectTransform;
         private Vector2 dragOffset;
         private bool selected;
+        private RectTransform experimentalKmVisualRoot;
+        private Image experimentalKmBodyImage;
+        private Sprite experimentalKmDefaultSprite;
+        private Sprite experimentalKmEnergizedSprite;
+        private readonly Dictionary<string, RectTransform> experimentalKmTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
 
         public void Initialize(ComponentDefinition definition, WorkspaceController owner, string instanceId = null)
         {
@@ -48,6 +61,7 @@ namespace ElectricalSim.Core
                 title.text = ResolveInstanceDisplayName(definition.displayName, InstanceId);
             }
 
+            TryApplyExperimentalKmVisualPrefab();
             BuildTerminals();
             RefreshVisual();
         }
@@ -295,16 +309,33 @@ namespace ElectricalSim.Core
                 terminalObject.transform.SetParent(transform, false);
 
                 var terminalRect = terminalObject.GetComponent<RectTransform>();
-                terminalRect.sizeDelta = new Vector2(18f, 18f);
-                terminalRect.anchorMin = terminalDefinition.normalizedPosition;
-                terminalRect.anchorMax = terminalDefinition.normalizedPosition;
-                terminalRect.anchoredPosition = Vector2.zero;
+                var terminalAnchor = terminalDefinition.normalizedPosition;
+                var terminalOffset = Vector2.zero;
+                var experimentalPosition = Vector2.zero;
+                var usesExperimentalAnchor = IsExperimentalKmVisualActive() &&
+                    TryGetExperimentalTerminalPosition(terminalDefinition.id, out experimentalPosition);
+                if (usesExperimentalAnchor)
+                {
+                    terminalAnchor = new Vector2(0.5f, 0.5f);
+                    terminalOffset = experimentalPosition;
+                }
+
+                terminalRect.anchorMin = terminalAnchor;
+                terminalRect.anchorMax = terminalAnchor;
+                terminalRect.pivot = new Vector2(0.5f, 0.5f);
+                terminalRect.anchoredPosition = terminalOffset;
+                terminalRect.localRotation = Quaternion.identity;
+                terminalRect.localScale = Vector3.one;
+                terminalRect.sizeDelta = usesExperimentalAnchor ? new Vector2(30f, 30f) : new Vector2(18f, 18f);
 
                 var terminalImage = terminalObject.GetComponent<Image>();
-                terminalImage.color = terminalDefinition.color;
+                terminalImage.color = usesExperimentalAnchor
+                    ? new Color(terminalDefinition.color.r, terminalDefinition.color.g, terminalDefinition.color.b, 0.16f)
+                    : terminalDefinition.color;
 
                 var terminal = terminalObject.GetComponent<TerminalView>();
                 terminal.Initialize(this, terminalDefinition, workspace);
+                terminal.SetSubtleVisualMode(usesExperimentalAnchor, showExperimentalKmTerminalDebugMarkers);
                 terminals.Add(terminal);
 
                 if (Definition.sprite != null)
@@ -313,9 +344,9 @@ namespace ElectricalSim.Core
                     labelObject.transform.SetParent(transform, false);
                     var labelRect = labelObject.GetComponent<RectTransform>();
                     labelRect.sizeDelta = new Vector2(44f, 18f);
-                    labelRect.anchorMin = terminalDefinition.normalizedPosition;
-                    labelRect.anchorMax = terminalDefinition.normalizedPosition;
-                    labelRect.anchoredPosition = GetTerminalLabelOffset(terminalDefinition.normalizedPosition);
+                    labelRect.anchorMin = terminalAnchor;
+                    labelRect.anchorMax = terminalAnchor;
+                    labelRect.anchoredPosition = terminalOffset + GetTerminalLabelOffset(terminalDefinition.normalizedPosition, terminalOffset, usesExperimentalAnchor);
 
                     var label = labelObject.GetComponent<Text>();
                     label.text = terminalDefinition.label;
@@ -331,6 +362,16 @@ namespace ElectricalSim.Core
 
         private static Vector2 GetTerminalLabelOffset(Vector2 normalizedPosition)
         {
+            return GetTerminalLabelOffset(normalizedPosition, Vector2.zero, false);
+        }
+
+        private static Vector2 GetTerminalLabelOffset(Vector2 normalizedPosition, Vector2 anchoredPosition, bool usesExperimentalAnchor)
+        {
+            if (usesExperimentalAnchor)
+            {
+                return anchoredPosition.y > 0f ? new Vector2(0f, -24f) : new Vector2(0f, 24f);
+            }
+
             if (normalizedPosition.y > 0.75f)
             {
                 return new Vector2(0f, -24f);
@@ -344,18 +385,280 @@ namespace ElectricalSim.Core
             return new Vector2(0f, 28f);
         }
 
+        private void TryApplyExperimentalKmVisualPrefab()
+        {
+            experimentalKmVisualRoot = null;
+            experimentalKmBodyImage = null;
+            experimentalKmDefaultSprite = null;
+            experimentalKmEnergizedSprite = null;
+            experimentalKmTerminalAnchors.Clear();
+
+            if (!useExperimentalKmVisualPrefab ||
+                Definition == null ||
+                !string.Equals(Definition.name, experimentalKmVisualDefinitionName, System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(experimentalKmVisualAssetPath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            var visualObject = Instantiate(prefab, transform);
+            visualObject.name = prefab.name + "_Pilot";
+            visualObject.transform.SetAsFirstSibling();
+
+            experimentalKmVisualRoot = visualObject.GetComponent<RectTransform>();
+            if (experimentalKmVisualRoot != null)
+            {
+                experimentalKmVisualRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                experimentalKmVisualRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                experimentalKmVisualRoot.pivot = new Vector2(0.5f, 0.5f);
+                experimentalKmVisualRoot.anchoredPosition = Vector2.zero;
+
+                if (rectTransform != null &&
+                    experimentalKmVisualRoot.sizeDelta.x > 0f &&
+                    experimentalKmVisualRoot.sizeDelta.y > 0f)
+                {
+                    rectTransform.sizeDelta = experimentalKmVisualRoot.sizeDelta;
+                }
+            }
+
+            RegisterExperimentalKmTerminalAnchors(visualObject.transform);
+            ConfigureExperimentalKmBodyImage(visualObject.transform);
+
+            if (body != null)
+            {
+                body.enabled = true;
+                body.raycastTarget = true;
+                body.color = Color.clear;
+            }
+
+            if (title != null)
+            {
+                title.enabled = false;
+            }
+#endif
+        }
+
+        private void ConfigureExperimentalKmBodyImage(Transform visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            var bodyTransform = visualRoot.Find("Body");
+            experimentalKmBodyImage = bodyTransform != null ? bodyTransform.GetComponent<Image>() : null;
+            if (experimentalKmBodyImage != null)
+            {
+                experimentalKmBodyImage.raycastTarget = false;
+            }
+
+#if UNITY_EDITOR
+            experimentalKmDefaultSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalKmDefaultSpritePath);
+            experimentalKmEnergizedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalKmEnergizedSpritePath);
+#endif
+            UpdateExperimentalKmBodySprite();
+        }
+
+        private void UpdateExperimentalKmBodySprite()
+        {
+            if (experimentalKmBodyImage == null)
+            {
+                return;
+            }
+
+            var targetSprite = IsEnergized && experimentalKmEnergizedSprite != null
+                ? experimentalKmEnergizedSprite
+                : experimentalKmDefaultSprite;
+
+            if (targetSprite != null && experimentalKmBodyImage.sprite != targetSprite)
+            {
+                experimentalKmBodyImage.sprite = targetSprite;
+            }
+        }
+
+        private void RegisterExperimentalKmTerminalAnchors(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var rects = root.GetComponentsInChildren<RectTransform>(true);
+            for (var i = 0; i < rects.Length; i++)
+            {
+                var candidate = rects[i];
+                if (candidate == null ||
+                    string.IsNullOrEmpty(candidate.name) ||
+                    !candidate.name.StartsWith("Terminal_", System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var terminalId = candidate.name.Substring("Terminal_".Length);
+                if (!experimentalKmTerminalAnchors.ContainsKey(terminalId))
+                {
+                    experimentalKmTerminalAnchors.Add(terminalId, candidate);
+                }
+            }
+        }
+
+        private bool TryGetExperimentalTerminalPosition(string terminalId, out Vector2 localPosition)
+        {
+            localPosition = Vector2.zero;
+            if (!IsExperimentalKmVisualActive() ||
+                rectTransform == null ||
+                string.IsNullOrWhiteSpace(terminalId) ||
+                !IsExperimentalKmTerminal(terminalId))
+            {
+                return false;
+            }
+
+            if (TryGetExperimentalKmCoordinateTablePosition(terminalId, out localPosition))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetAnchoredPositionRelativeToExperimentalRoot(RectTransform anchor, out Vector2 localPosition)
+        {
+            localPosition = Vector2.zero;
+            var current = anchor;
+            while (current != null && current != experimentalKmVisualRoot)
+            {
+                localPosition += current.anchoredPosition;
+                current = current.parent as RectTransform;
+            }
+
+            return current == experimentalKmVisualRoot;
+        }
+
+        private static bool TryGetExperimentalKmCoordinateTablePosition(string terminalId, out Vector2 localPosition)
+        {
+            const float prefabWidth = 280f;
+            const float prefabHeight = 350f;
+            var x = 0f;
+            var y = 0f;
+
+            if (string.Equals(terminalId, "L1", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 224f;
+                y = 71f;
+            }
+            else if (string.Equals(terminalId, "L2", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 404f;
+                y = 71f;
+            }
+            else if (string.Equals(terminalId, "L3", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 583f;
+                y = 71f;
+            }
+            else if (string.Equals(terminalId, "T1", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 223f;
+                y = 937f;
+            }
+            else if (string.Equals(terminalId, "T2", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 403f;
+                y = 937f;
+            }
+            else if (string.Equals(terminalId, "T3", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 582f;
+                y = 937f;
+            }
+            else if (string.Equals(terminalId, "A1", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 46f;
+                y = 272f;
+            }
+            else if (string.Equals(terminalId, "A2", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 752f;
+                y = 273f;
+            }
+            else if (string.Equals(terminalId, "13", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 46f;
+                y = 496f;
+            }
+            else if (string.Equals(terminalId, "14", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 752f;
+                y = 496f;
+            }
+            else if (string.Equals(terminalId, "21", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 46f;
+                y = 717f;
+            }
+            else if (string.Equals(terminalId, "22", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 752f;
+                y = 717f;
+            }
+            else
+            {
+                localPosition = Vector2.zero;
+                return false;
+            }
+
+            localPosition = new Vector2((x / 800f - 0.5f) * prefabWidth, (0.5f - y / 1000f) * prefabHeight);
+            return true;
+        }
+
+        private static bool IsExperimentalKmTerminal(string terminalId)
+        {
+            return string.Equals(terminalId, "L1", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "L2", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "L3", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "T1", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "T2", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "T3", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "A1", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "A2", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "13", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "14", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "21", System.StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(terminalId, "22", System.StringComparison.OrdinalIgnoreCase);
+        }
+
         private void RefreshVisual()
         {
             if (body != null && Definition != null)
             {
+                if (IsExperimentalKmVisualActive())
+                {
+                    body.enabled = true;
+                    body.raycastTarget = true;
+                    body.color = Color.clear;
+                    UpdateExperimentalKmBodySprite();
+                }
+                else
+                {
                 var baseColor = Definition.sprite != null ? Color.white : Definition.bodyColor;
                 var color = IsEnergized ? Color.Lerp(baseColor, Definition.accentColor, 0.45f) : baseColor;
                 body.color = selected ? Color.Lerp(color, Color.white, 0.35f) : color;
+                }
             }
 
             if (stateLabel != null && Definition != null)
             {
-                if (Definition.kind == ComponentKind.TwoWaySwitch)
+                if (IsExperimentalKmVisualActive())
+                {
+                    stateLabel.text = "";
+                }
+                else if (Definition.kind == ComponentKind.TwoWaySwitch)
                 {
                     stateLabel.text = IsClosed ? "L-L1" : "L-L2";
                     stateLabel.color = new Color(0.05f, 0.42f, 0.9f);
@@ -387,6 +690,14 @@ namespace ElectricalSim.Core
                     stateLabel.color = new Color(0.05f, 0.45f, 0.95f);
                 }
             }
+        }
+
+        private bool IsExperimentalKmVisualActive()
+        {
+            return useExperimentalKmVisualPrefab &&
+                   experimentalKmVisualRoot != null &&
+                   Definition != null &&
+                   string.Equals(Definition.name, experimentalKmVisualDefinitionName, System.StringComparison.Ordinal);
         }
 
         private static void ConfigureMotionStateLabel(Text label)

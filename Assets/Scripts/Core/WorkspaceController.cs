@@ -19,8 +19,8 @@ namespace ElectricalSim.Core
         [SerializeField] private MeasurementPanel measurementPanel;
         [SerializeField] private ComponentParameterView componentParameterView;
         [SerializeField] private float gridSize = 24f;
-        [SerializeField] private float minCanvasZoom = 0.65f;
-        [SerializeField] private float maxCanvasZoom = 1.7f;
+        [SerializeField] private float minCanvasZoom = 0.2f;
+        [SerializeField] private float maxCanvasZoom = 2.0f;
         [SerializeField] private float zoomStep = 0.12f;
         [SerializeField] private float simulationRefreshInterval = 0.25f;
 
@@ -74,6 +74,11 @@ namespace ElectricalSim.Core
             {
                 Undo();
                 return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Home))
+            {
+                ResetView();
             }
 
             if (controlPressed && Input.GetKeyDown(KeyCode.Y))
@@ -724,6 +729,15 @@ namespace ElectricalSim.Core
             canvasZoom = nextZoom;
             canvasContent.localScale = Vector3.one * canvasZoom;
             SetCanvasPan(mouseInWorkspace - contentPointUnderMouse * canvasZoom);
+        }
+
+        public void ResetView()
+        {
+            if (canvasContent == null) return;
+            canvasZoom = 1f;
+            canvasContent.localScale = Vector3.one;
+            SetCanvasPan(Vector2.zero);
+            SetStatus("视图已重置到中心。");
         }
 
         private bool IsPointerInsideActionLog()
