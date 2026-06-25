@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace ElectricalSim.Core
 {
     [RequireComponent(typeof(RectTransform))]
-    public sealed class CircuitComponent : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+    public sealed class CircuitComponent : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler
     {
         // Temporary KM visual pilot. Set to false to restore the default rectangular appearance.
         private const bool useExperimentalKmVisualPrefab = true;
@@ -294,7 +294,7 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            if (eventData.clickCount >= 2)
+            if (eventData.clickCount >= 2 && !IsCompoundPushButton())
             {
                 Toggle();
             }
@@ -302,6 +302,35 @@ namespace ElectricalSim.Core
             {
                 workspace?.SelectComponent(this);
             }
+        }
+
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            if (workspace != null && workspace.IsInteractionLocked) return;
+            if (IsCompoundPushButton())
+            {
+                workspace?.RecordHistoryCheckpoint();
+                IsClosed = true;
+                RefreshVisual();
+                workspace?.MarkSimulationDirty("复合按钮已按下。");
+            }
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (workspace != null && workspace.IsInteractionLocked) return;
+            if (IsCompoundPushButton())
+            {
+                workspace?.RecordHistoryCheckpoint();
+                IsClosed = false;
+                RefreshVisual();
+                workspace?.MarkSimulationDirty("复合按钮已释放。");
+            }
+        }
+
+        private bool IsCompoundPushButton()
+        {
+            return Definition != null && Definition.name.IndexOf("Button_Compound", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public void OnBeginDrag(PointerEventData eventData)
