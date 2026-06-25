@@ -37,6 +37,17 @@ namespace ElectricalSim.Core
         private const string experimentalCompoundRedButtonPressedSpritePath = "Assets/Art/Components/Button_Compound_SB_Pressed.png";
         private const string experimentalCompoundGreenButtonDefaultSpritePath = "Assets/Art/Components/Button_Compound_Green_SB_Default.png";
         private const string experimentalCompoundGreenButtonPressedSpritePath = "Assets/Art/Components/Button_Compound_Green_SB_Pressed.png";
+        // Temporary self-lock button visual pilot. Set to false to restore the default rectangular appearance.
+        private const bool useExperimentalSelfLockButtonVisualPrefab = true;
+        private const bool showExperimentalSelfLockButtonTerminalDebugMarkers = false;
+        private const string experimentalSelfLockRedButtonDefinitionName = "Button_SelfLock_SB";
+        private const string experimentalSelfLockGreenButtonDefinitionName = "Button_SelfLock_Green_SB";
+        private const string experimentalSelfLockRedButtonVisualAssetPath = "Assets/Prefab/Button_SelfLock_SB_Visual.prefab";
+        private const string experimentalSelfLockGreenButtonVisualAssetPath = "Assets/Prefab/Button_SelfLock_Green_SB_Visual.prefab";
+        private const string experimentalSelfLockRedButtonDefaultSpritePath = "Assets/Art/Components/Button_SelfLock_SB_Default.png";
+        private const string experimentalSelfLockRedButtonPressedSpritePath = "Assets/Art/Components/Button_SelfLock_SB_Locked.png";
+        private const string experimentalSelfLockGreenButtonDefaultSpritePath = "Assets/Art/Components/Button_SelfLock_Green_SB_Default.png";
+        private const string experimentalSelfLockGreenButtonPressedSpritePath = "Assets/Art/Components/Button_SelfLock_Green_SB_Locked.png";
         // Temporary three-phase power visual pilot. Set to false to restore the default appearance.
         private const bool useExperimentalThreePhasePowerVisualPrefab = true;
         private const bool showExperimentalThreePhasePowerTerminalDebugMarkers = false;
@@ -78,6 +89,11 @@ namespace ElectricalSim.Core
         private Sprite experimentalCompoundButtonDefaultSprite;
         private Sprite experimentalCompoundButtonPressedSprite;
         private readonly Dictionary<string, RectTransform> experimentalCompoundButtonTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
+        private RectTransform experimentalSelfLockButtonVisualRoot;
+        private Image experimentalSelfLockButtonBodyImage;
+        private Sprite experimentalSelfLockButtonDefaultSprite;
+        private Sprite experimentalSelfLockButtonPressedSprite;
+        private readonly Dictionary<string, RectTransform> experimentalSelfLockButtonTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
         private RectTransform experimentalThreePhasePowerVisualRoot;
         private Image experimentalThreePhasePowerBodyImage;
         private Sprite experimentalThreePhasePowerSprite;
@@ -106,6 +122,7 @@ namespace ElectricalSim.Core
             TryApplyExperimentalKmVisualPrefab();
             TryApplyExperimentalButtonVisualPrefab();
             TryApplyExperimentalCompoundButtonVisualPrefab();
+            TryApplyExperimentalSelfLockButtonVisualPrefab();
             TryApplyExperimentalThreePhasePowerVisualPrefab();
             BuildTerminals();
             RefreshVisual();
@@ -865,6 +882,11 @@ namespace ElectricalSim.Core
                 showDebugMarker = showExperimentalCompoundButtonTerminalDebugMarkers;
                 return true;
             }
+            if (TryGetExperimentalSelfLockButtonTerminalPosition(terminalId, out localPosition))
+            {
+                showDebugMarker = showExperimentalSelfLockButtonTerminalDebugMarkers;
+                return true;
+            }
 
             if (TryGetExperimentalThreePhasePowerTerminalPosition(terminalId, out localPosition))
             {
@@ -1056,6 +1078,200 @@ namespace ElectricalSim.Core
             const float prefabWidth = 80f;
             const float prefabHeight = 128f;
             var isGreen = string.Equals(Definition.name, experimentalCompoundGreenButtonDefinitionName, System.StringComparison.Ordinal);
+            var x = 0f;
+            var y = 0f;
+
+            if (string.Equals(terminalId, "11", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = isGreen ? 36.16f : 38.16f;
+                y = isGreen ? 331.16f : 329.16f;
+            }
+            else if (string.Equals(terminalId, "12", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 281.16f;
+                y = isGreen ? 331.16f : 329.16f;
+            }
+            else if (string.Equals(terminalId, "23", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = isGreen ? 36.16f : 38.16f;
+                y = 464.16f;
+            }
+            else if (string.Equals(terminalId, "24", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 281.16f;
+                y = 464.16f;
+            }
+            else
+            {
+                localPosition = Vector2.zero;
+                return false;
+            }
+
+            localPosition = new Vector2((x / 320f - 0.5f) * prefabWidth, (0.5f - y / 512f) * prefabHeight);
+            return true;
+        }
+
+        private void TryApplyExperimentalSelfLockButtonVisualPrefab()
+        {
+            experimentalSelfLockButtonVisualRoot = null;
+            experimentalSelfLockButtonBodyImage = null;
+            experimentalSelfLockButtonDefaultSprite = null;
+            experimentalSelfLockButtonPressedSprite = null;
+            experimentalSelfLockButtonTerminalAnchors.Clear();
+
+            if (!useExperimentalSelfLockButtonVisualPrefab ||
+                Definition == null ||
+                !IsExperimentalSelfLockButtonDefinition())
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            var isGreen = string.Equals(Definition.name, experimentalSelfLockGreenButtonDefinitionName, System.StringComparison.Ordinal);
+            var prefabPath = isGreen ? experimentalSelfLockGreenButtonVisualAssetPath : experimentalSelfLockRedButtonVisualAssetPath;
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            var visualObject = Instantiate(prefab, transform);
+            visualObject.name = prefab.name + "_Pilot";
+            visualObject.transform.SetAsFirstSibling();
+
+            experimentalSelfLockButtonVisualRoot = visualObject.GetComponent<RectTransform>();
+            if (experimentalSelfLockButtonVisualRoot != null)
+            {
+                experimentalSelfLockButtonVisualRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                experimentalSelfLockButtonVisualRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                experimentalSelfLockButtonVisualRoot.pivot = new Vector2(0.5f, 0.5f);
+                experimentalSelfLockButtonVisualRoot.anchoredPosition = Vector2.zero;
+
+                if (rectTransform != null &&
+                    experimentalSelfLockButtonVisualRoot.sizeDelta.x > 0f &&
+                    experimentalSelfLockButtonVisualRoot.sizeDelta.y > 0f)
+                {
+                    rectTransform.sizeDelta = experimentalSelfLockButtonVisualRoot.sizeDelta;
+                }
+            }
+
+            RegisterExperimentalSelfLockButtonTerminalAnchors(visualObject.transform);
+            ConfigureExperimentalSelfLockButtonBodyImage(visualObject.transform);
+
+            if (body != null)
+            {
+                body.enabled = true;
+                body.raycastTarget = true;
+                body.color = Color.clear;
+            }
+
+            if (title != null)
+            {
+                title.enabled = false;
+            }
+#endif
+        }
+
+        private void ConfigureExperimentalSelfLockButtonBodyImage(Transform visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            var bodyTransform = visualRoot.Find("Body");
+            experimentalSelfLockButtonBodyImage = bodyTransform != null ? bodyTransform.GetComponent<Image>() : null;
+            if (experimentalSelfLockButtonBodyImage != null)
+            {
+                experimentalSelfLockButtonBodyImage.raycastTarget = false;
+            }
+
+#if UNITY_EDITOR
+            if (string.Equals(Definition.name, experimentalSelfLockGreenButtonDefinitionName, System.StringComparison.Ordinal))
+            {
+                experimentalSelfLockButtonDefaultSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalSelfLockGreenButtonDefaultSpritePath);
+                experimentalSelfLockButtonPressedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalSelfLockGreenButtonPressedSpritePath);
+            }
+            else
+            {
+                experimentalSelfLockButtonDefaultSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalSelfLockRedButtonDefaultSpritePath);
+                experimentalSelfLockButtonPressedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalSelfLockRedButtonPressedSpritePath);
+            }
+#endif
+            UpdateExperimentalSelfLockButtonBodySprite();
+        }
+
+        private void UpdateExperimentalSelfLockButtonBodySprite()
+        {
+            if (experimentalSelfLockButtonBodyImage == null)
+            {
+                return;
+            }
+
+            var targetSprite = IsClosed && experimentalSelfLockButtonPressedSprite != null
+                ? experimentalSelfLockButtonPressedSprite
+                : experimentalSelfLockButtonDefaultSprite;
+
+            if (targetSprite != null && experimentalSelfLockButtonBodyImage.sprite != targetSprite)
+            {
+                experimentalSelfLockButtonBodyImage.sprite = targetSprite;
+            }
+        }
+
+        private void RegisterExperimentalSelfLockButtonTerminalAnchors(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var rects = root.GetComponentsInChildren<RectTransform>(true);
+            for (var i = 0; i < rects.Length; i++)
+            {
+                var candidate = rects[i];
+                if (candidate == null ||
+                    string.IsNullOrEmpty(candidate.name) ||
+                    !candidate.name.StartsWith("Terminal_", System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var terminalId = candidate.name.Substring("Terminal_".Length);
+                if (!experimentalSelfLockButtonTerminalAnchors.ContainsKey(terminalId))
+                {
+                    experimentalSelfLockButtonTerminalAnchors.Add(terminalId, candidate);
+                }
+            }
+        }
+
+        private bool TryGetExperimentalSelfLockButtonTerminalPosition(string terminalId, out Vector2 localPosition)
+        {
+            localPosition = Vector2.zero;
+            if (!IsExperimentalSelfLockButtonVisualActive() ||
+                rectTransform == null ||
+                string.IsNullOrWhiteSpace(terminalId))
+            {
+                return false;
+            }
+
+            if (experimentalSelfLockButtonTerminalAnchors.TryGetValue(terminalId, out var anchor) &&
+                anchor != null &&
+                TryGetAnchoredPositionRelativeToExperimentalRoot(
+                    anchor,
+                    experimentalSelfLockButtonVisualRoot,
+                    out localPosition))
+            {
+                return true;
+            }
+
+            return TryGetExperimentalSelfLockButtonCoordinateTablePosition(terminalId, out localPosition);
+        }
+
+        private bool TryGetExperimentalSelfLockButtonCoordinateTablePosition(string terminalId, out Vector2 localPosition)
+        {
+            const float prefabWidth = 80f;
+            const float prefabHeight = 128f;
+            var isGreen = string.Equals(Definition.name, experimentalSelfLockGreenButtonDefinitionName, System.StringComparison.Ordinal);
             var x = 0f;
             var y = 0f;
 
@@ -1295,6 +1511,7 @@ namespace ElectricalSim.Core
                     UpdateExperimentalKmBodySprite();
                     UpdateExperimentalButtonBodySprite();
                     UpdateExperimentalCompoundButtonBodySprite();
+                    UpdateExperimentalSelfLockButtonBodySprite();
                     UpdateExperimentalThreePhasePowerBodySprite();
                 }
                 else
@@ -1366,6 +1583,7 @@ namespace ElectricalSim.Core
             return IsExperimentalKmVisualActive() ||
                    IsExperimentalButtonVisualActive() ||
                    IsExperimentalCompoundButtonVisualActive() ||
+                   IsExperimentalSelfLockButtonVisualActive() ||
                    IsExperimentalThreePhasePowerVisualActive();
         }
 
@@ -1395,6 +1613,20 @@ namespace ElectricalSim.Core
         {
             return string.Equals(Definition.name, experimentalCompoundRedButtonDefinitionName, System.StringComparison.Ordinal) ||
                    string.Equals(Definition.name, experimentalCompoundGreenButtonDefinitionName, System.StringComparison.Ordinal);
+        }
+
+        private bool IsExperimentalSelfLockButtonVisualActive()
+        {
+            return useExperimentalSelfLockButtonVisualPrefab &&
+                   experimentalSelfLockButtonVisualRoot != null &&
+                   Definition != null &&
+                   IsExperimentalSelfLockButtonDefinition();
+        }
+
+        private bool IsExperimentalSelfLockButtonDefinition()
+        {
+            return string.Equals(Definition.name, experimentalSelfLockRedButtonDefinitionName, System.StringComparison.Ordinal) ||
+                   string.Equals(Definition.name, experimentalSelfLockGreenButtonDefinitionName, System.StringComparison.Ordinal);
         }
 
         private bool IsExperimentalButtonPressed()
