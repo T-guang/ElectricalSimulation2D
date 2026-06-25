@@ -341,6 +341,20 @@ namespace ElectricalSim.Core.Validation
                 return;
             }
 
+            if (IsSelfLockingButton(component))
+            {
+                if (component.IsClosed)
+                {
+                    ConnectById(component, "23", "24");
+                }
+                else
+                {
+                    ConnectById(component, "11", "12");
+                }
+
+                return;
+            }
+
             if (IsOnDelayTimer(component))
             {
                 if (IsOnDelayTimerElapsed(component))
@@ -653,6 +667,13 @@ namespace ElectricalSim.Core.Validation
                 component.GetTerminal("23") != null &&
                 component.GetTerminal("24") != null &&
                 component.Definition.name.IndexOf("Button_Compound", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsSelfLockingButton(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.Definition.name.IndexOf("Button_SelfLock", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool IsOnDelayTimer(CircuitComponent component)

@@ -688,6 +688,12 @@ namespace ElectricalSim.Core
                     continue;
                 }
 
+                if (IsSelfLockingButton(component))
+                {
+                    ConnectIfExists(component, component.IsClosed ? "23" : "11", component.IsClosed ? "24" : "12", unionFind);
+                    continue;
+                }
+
                 if (component.Definition.kind == ComponentKind.PushButton)
                 {
                     if (component.IsClosed)
@@ -2532,6 +2538,17 @@ namespace ElectricalSim.Core
                 component.GetTerminal("12") != null &&
                 component.GetTerminal("23") != null &&
                 component.GetTerminal("24") != null;
+        }
+
+        private static bool IsSelfLockingButton(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.GetTerminal("11") != null &&
+                component.GetTerminal("12") != null &&
+                component.GetTerminal("23") != null &&
+                component.GetTerminal("24") != null &&
+                component.Definition.name.IndexOf("Button_SelfLock", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool IsKnifeSwitch(CircuitComponent component)

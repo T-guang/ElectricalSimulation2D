@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -1373,6 +1373,20 @@ namespace ElectricalSim.Core
                 return;
             }
 
+            if (IsSelfLockingButton(component))
+            {
+                if (component.IsClosed)
+                {
+                    ConnectById(component, "23", "24");
+                }
+                else
+                {
+                    ConnectById(component, "11", "12");
+                }
+
+                return;
+            }
+
             if (IsOnDelayTimerRelay(component))
             {
                 if (IsOnDelayTimerElapsed(component))
@@ -1478,6 +1492,17 @@ namespace ElectricalSim.Core
                 component.GetTerminal("23") != null &&
                 component.GetTerminal("24") != null &&
                 component.Definition.name.IndexOf("Button_Compound", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsSelfLockingButton(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.GetTerminal("11") != null &&
+                component.GetTerminal("12") != null &&
+                component.GetTerminal("23") != null &&
+                component.GetTerminal("24") != null &&
+                component.Definition.name.IndexOf("Button_SelfLock", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void AddThermalRelayInternalConnections(CircuitComponent component)

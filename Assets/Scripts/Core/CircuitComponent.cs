@@ -15,6 +15,34 @@ namespace ElectricalSim.Core
         private const string experimentalKmVisualAssetPath = "Assets/Prefab/Contactor_KM_380V_Visual.prefab";
         private const string experimentalKmDefaultSpritePath = "Assets/Art/Components/Contactor_KM_380V_Default.png";
         private const string experimentalKmEnergizedSpritePath = "Assets/Art/Components/Contactor_KM_380V_Energized.png";
+        // Temporary push button visual pilot. Set to false to restore the default rectangular appearance.
+        private const bool useExperimentalButtonVisualPrefab = true;
+        private const bool showExperimentalButtonTerminalDebugMarkers = false;
+        private const string experimentalStartButtonDefinitionName = "Button_Start_NO";
+        private const string experimentalStopButtonDefinitionName = "Button_Stop_NC";
+        private const string experimentalStartButtonVisualAssetPath = "Assets/Prefab/Button_Start_NO_Visual.prefab";
+        private const string experimentalStopButtonVisualAssetPath = "Assets/Prefab/Button_Stop_NC_Visual.prefab";
+        private const string experimentalStartButtonDefaultSpritePath = "Assets/Art/Components/Button_Start_NO_Default.png";
+        private const string experimentalStartButtonPressedSpritePath = "Assets/Art/Components/Button_Start_NO_Pressed.png";
+        private const string experimentalStopButtonDefaultSpritePath = "Assets/Art/Components/Button_Stop_NC_Default.png";
+        private const string experimentalStopButtonPressedSpritePath = "Assets/Art/Components/Button_Stop_NC_Pressed.png";
+        // Temporary compound button visual pilot. Set to false to restore the default rectangular appearance.
+        private const bool useExperimentalCompoundButtonVisualPrefab = true;
+        private const bool showExperimentalCompoundButtonTerminalDebugMarkers = false;
+        private const string experimentalCompoundRedButtonDefinitionName = "Button_Compound_SB";
+        private const string experimentalCompoundGreenButtonDefinitionName = "Button_Compound_Green_SB";
+        private const string experimentalCompoundRedButtonVisualAssetPath = "Assets/Prefab/Button_Compound_SB_Visual.prefab";
+        private const string experimentalCompoundGreenButtonVisualAssetPath = "Assets/Prefab/Button_Compound_Green_SB_Visual.prefab";
+        private const string experimentalCompoundRedButtonDefaultSpritePath = "Assets/Art/Components/Button_Compound_SB_Default.png";
+        private const string experimentalCompoundRedButtonPressedSpritePath = "Assets/Art/Components/Button_Compound_SB_Pressed.png";
+        private const string experimentalCompoundGreenButtonDefaultSpritePath = "Assets/Art/Components/Button_Compound_Green_SB_Default.png";
+        private const string experimentalCompoundGreenButtonPressedSpritePath = "Assets/Art/Components/Button_Compound_Green_SB_Pressed.png";
+        // Temporary three-phase power visual pilot. Set to false to restore the default appearance.
+        private const bool useExperimentalThreePhasePowerVisualPrefab = true;
+        private const bool showExperimentalThreePhasePowerTerminalDebugMarkers = false;
+        private const string experimentalThreePhasePowerDefinitionName = "AC_ThreePhase_Power";
+        private const string experimentalThreePhasePowerVisualAssetPath = "Assets/Prefab/AC_ThreePhase_Power_Visual.prefab";
+        private const string experimentalThreePhasePowerSpritePath = "Assets/Art/Components/AC_ThreePhase_Power_Visual.png";
 
         [SerializeField] private Image body;
         [SerializeField] private Text title;
@@ -40,6 +68,20 @@ namespace ElectricalSim.Core
         private Sprite experimentalKmDefaultSprite;
         private Sprite experimentalKmEnergizedSprite;
         private readonly Dictionary<string, RectTransform> experimentalKmTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
+        private RectTransform experimentalButtonVisualRoot;
+        private Image experimentalButtonBodyImage;
+        private Sprite experimentalButtonDefaultSprite;
+        private Sprite experimentalButtonPressedSprite;
+        private readonly Dictionary<string, RectTransform> experimentalButtonTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
+        private RectTransform experimentalCompoundButtonVisualRoot;
+        private Image experimentalCompoundButtonBodyImage;
+        private Sprite experimentalCompoundButtonDefaultSprite;
+        private Sprite experimentalCompoundButtonPressedSprite;
+        private readonly Dictionary<string, RectTransform> experimentalCompoundButtonTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
+        private RectTransform experimentalThreePhasePowerVisualRoot;
+        private Image experimentalThreePhasePowerBodyImage;
+        private Sprite experimentalThreePhasePowerSprite;
+        private readonly Dictionary<string, RectTransform> experimentalThreePhasePowerTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
 
         public void Initialize(ComponentDefinition definition, WorkspaceController owner, string instanceId = null)
         {
@@ -62,6 +104,9 @@ namespace ElectricalSim.Core
             }
 
             TryApplyExperimentalKmVisualPrefab();
+            TryApplyExperimentalButtonVisualPrefab();
+            TryApplyExperimentalCompoundButtonVisualPrefab();
+            TryApplyExperimentalThreePhasePowerVisualPrefab();
             BuildTerminals();
             RefreshVisual();
         }
@@ -312,8 +357,11 @@ namespace ElectricalSim.Core
                 var terminalAnchor = terminalDefinition.normalizedPosition;
                 var terminalOffset = Vector2.zero;
                 var experimentalPosition = Vector2.zero;
-                var usesExperimentalAnchor = IsExperimentalKmVisualActive() &&
-                    TryGetExperimentalTerminalPosition(terminalDefinition.id, out experimentalPosition);
+                var showExperimentalDebugMarker = false;
+                var usesExperimentalAnchor = TryGetExperimentalVisualTerminalPosition(
+                    terminalDefinition.id,
+                    out experimentalPosition,
+                    out showExperimentalDebugMarker);
                 if (usesExperimentalAnchor)
                 {
                     terminalAnchor = new Vector2(0.5f, 0.5f);
@@ -332,13 +380,19 @@ namespace ElectricalSim.Core
                 terminalImage.color = usesExperimentalAnchor
                     ? new Color(terminalDefinition.color.r, terminalDefinition.color.g, terminalDefinition.color.b, 0.16f)
                     : terminalDefinition.color;
+                var terminalButton = terminalObject.GetComponent<Button>();
+                if (terminalButton != null && usesExperimentalAnchor)
+                {
+                    terminalButton.transition = Selectable.Transition.None;
+                    terminalButton.targetGraphic = terminalImage;
+                }
 
                 var terminal = terminalObject.GetComponent<TerminalView>();
                 terminal.Initialize(this, terminalDefinition, workspace);
-                terminal.SetSubtleVisualMode(usesExperimentalAnchor, showExperimentalKmTerminalDebugMarkers);
+                terminal.SetSubtleVisualMode(usesExperimentalAnchor, showExperimentalDebugMarker);
                 terminals.Add(terminal);
 
-                if (Definition.sprite != null)
+                if (Definition.sprite != null && !usesExperimentalAnchor)
                 {
                     var labelObject = new GameObject("Label_" + terminalDefinition.id, typeof(RectTransform), typeof(Text));
                     labelObject.transform.SetParent(transform, false);
@@ -529,15 +583,23 @@ namespace ElectricalSim.Core
 
         private bool TryGetAnchoredPositionRelativeToExperimentalRoot(RectTransform anchor, out Vector2 localPosition)
         {
+            return TryGetAnchoredPositionRelativeToExperimentalRoot(anchor, experimentalKmVisualRoot, out localPosition);
+        }
+
+        private static bool TryGetAnchoredPositionRelativeToExperimentalRoot(
+            RectTransform anchor,
+            RectTransform visualRoot,
+            out Vector2 localPosition)
+        {
             localPosition = Vector2.zero;
             var current = anchor;
-            while (current != null && current != experimentalKmVisualRoot)
+            while (current != null && current != visualRoot)
             {
                 localPosition += current.anchoredPosition;
                 current = current.parent as RectTransform;
             }
 
-            return current == experimentalKmVisualRoot;
+            return current == visualRoot;
         }
 
         private static bool TryGetExperimentalKmCoordinateTablePosition(string terminalId, out Vector2 localPosition)
@@ -617,6 +679,565 @@ namespace ElectricalSim.Core
             return true;
         }
 
+        private void TryApplyExperimentalButtonVisualPrefab()
+        {
+            experimentalButtonVisualRoot = null;
+            experimentalButtonBodyImage = null;
+            experimentalButtonDefaultSprite = null;
+            experimentalButtonPressedSprite = null;
+            experimentalButtonTerminalAnchors.Clear();
+
+            if (!useExperimentalButtonVisualPrefab ||
+                Definition == null ||
+                !IsExperimentalButtonDefinition())
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            var prefabPath = string.Equals(Definition.name, experimentalStartButtonDefinitionName, System.StringComparison.Ordinal)
+                ? experimentalStartButtonVisualAssetPath
+                : experimentalStopButtonVisualAssetPath;
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            var visualObject = Instantiate(prefab, transform);
+            visualObject.name = prefab.name + "_Pilot";
+            visualObject.transform.SetAsFirstSibling();
+
+            experimentalButtonVisualRoot = visualObject.GetComponent<RectTransform>();
+            if (experimentalButtonVisualRoot != null)
+            {
+                experimentalButtonVisualRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                experimentalButtonVisualRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                experimentalButtonVisualRoot.pivot = new Vector2(0.5f, 0.5f);
+                experimentalButtonVisualRoot.anchoredPosition = Vector2.zero;
+
+                if (rectTransform != null &&
+                    experimentalButtonVisualRoot.sizeDelta.x > 0f &&
+                    experimentalButtonVisualRoot.sizeDelta.y > 0f)
+                {
+                    rectTransform.sizeDelta = experimentalButtonVisualRoot.sizeDelta;
+                }
+            }
+
+            RegisterExperimentalButtonTerminalAnchors(visualObject.transform);
+            ConfigureExperimentalButtonBodyImage(visualObject.transform);
+
+            if (body != null)
+            {
+                body.enabled = true;
+                body.raycastTarget = true;
+                body.color = Color.clear;
+            }
+
+            if (title != null)
+            {
+                title.enabled = false;
+            }
+#endif
+        }
+
+        private void ConfigureExperimentalButtonBodyImage(Transform visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            var bodyTransform = visualRoot.Find("Body");
+            experimentalButtonBodyImage = bodyTransform != null ? bodyTransform.GetComponent<Image>() : null;
+            if (experimentalButtonBodyImage != null)
+            {
+                experimentalButtonBodyImage.raycastTarget = false;
+            }
+
+#if UNITY_EDITOR
+            if (string.Equals(Definition.name, experimentalStartButtonDefinitionName, System.StringComparison.Ordinal))
+            {
+                experimentalButtonDefaultSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalStartButtonDefaultSpritePath);
+                experimentalButtonPressedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalStartButtonPressedSpritePath);
+            }
+            else
+            {
+                experimentalButtonDefaultSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalStopButtonDefaultSpritePath);
+                experimentalButtonPressedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalStopButtonPressedSpritePath);
+            }
+#endif
+            UpdateExperimentalButtonBodySprite();
+        }
+
+        private void UpdateExperimentalButtonBodySprite()
+        {
+            if (experimentalButtonBodyImage == null)
+            {
+                return;
+            }
+
+            var targetSprite = IsExperimentalButtonPressed() && experimentalButtonPressedSprite != null
+                ? experimentalButtonPressedSprite
+                : experimentalButtonDefaultSprite;
+
+            if (targetSprite != null && experimentalButtonBodyImage.sprite != targetSprite)
+            {
+                experimentalButtonBodyImage.sprite = targetSprite;
+            }
+        }
+
+        private void RegisterExperimentalButtonTerminalAnchors(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var rects = root.GetComponentsInChildren<RectTransform>(true);
+            for (var i = 0; i < rects.Length; i++)
+            {
+                var candidate = rects[i];
+                if (candidate == null ||
+                    string.IsNullOrEmpty(candidate.name) ||
+                    !candidate.name.StartsWith("Terminal_", System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var terminalId = candidate.name.Substring("Terminal_".Length);
+                if (!experimentalButtonTerminalAnchors.ContainsKey(terminalId))
+                {
+                    experimentalButtonTerminalAnchors.Add(terminalId, candidate);
+                }
+            }
+        }
+
+        private bool TryGetExperimentalVisualTerminalPosition(
+            string terminalId,
+            out Vector2 localPosition,
+            out bool showDebugMarker)
+        {
+            if (IsExperimentalKmVisualActive() &&
+                TryGetExperimentalTerminalPosition(terminalId, out localPosition))
+            {
+                showDebugMarker = showExperimentalKmTerminalDebugMarkers;
+                return true;
+            }
+
+            if (TryGetExperimentalButtonTerminalPosition(terminalId, out localPosition))
+            {
+                showDebugMarker = showExperimentalButtonTerminalDebugMarkers;
+                return true;
+            }
+
+            if (TryGetExperimentalCompoundButtonTerminalPosition(terminalId, out localPosition))
+            {
+                showDebugMarker = showExperimentalCompoundButtonTerminalDebugMarkers;
+                return true;
+            }
+
+            if (TryGetExperimentalThreePhasePowerTerminalPosition(terminalId, out localPosition))
+            {
+                showDebugMarker = showExperimentalThreePhasePowerTerminalDebugMarkers;
+                return true;
+            }
+
+            localPosition = Vector2.zero;
+            showDebugMarker = false;
+            return false;
+        }
+
+        private bool TryGetExperimentalButtonTerminalPosition(string terminalId, out Vector2 localPosition)
+        {
+            localPosition = Vector2.zero;
+            if (!IsExperimentalButtonVisualActive() ||
+                rectTransform == null ||
+                string.IsNullOrWhiteSpace(terminalId) ||
+                !experimentalButtonTerminalAnchors.TryGetValue(terminalId, out var anchor) ||
+                anchor == null)
+            {
+                return false;
+            }
+
+            return TryGetAnchoredPositionRelativeToExperimentalRoot(
+                anchor,
+                experimentalButtonVisualRoot,
+                out localPosition);
+        }
+
+        private void TryApplyExperimentalCompoundButtonVisualPrefab()
+        {
+            experimentalCompoundButtonVisualRoot = null;
+            experimentalCompoundButtonBodyImage = null;
+            experimentalCompoundButtonDefaultSprite = null;
+            experimentalCompoundButtonPressedSprite = null;
+            experimentalCompoundButtonTerminalAnchors.Clear();
+
+            if (!useExperimentalCompoundButtonVisualPrefab ||
+                Definition == null ||
+                !IsExperimentalCompoundButtonDefinition())
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            var isGreen = string.Equals(Definition.name, experimentalCompoundGreenButtonDefinitionName, System.StringComparison.Ordinal);
+            var prefabPath = isGreen ? experimentalCompoundGreenButtonVisualAssetPath : experimentalCompoundRedButtonVisualAssetPath;
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            var visualObject = Instantiate(prefab, transform);
+            visualObject.name = prefab.name + "_Pilot";
+            visualObject.transform.SetAsFirstSibling();
+
+            experimentalCompoundButtonVisualRoot = visualObject.GetComponent<RectTransform>();
+            if (experimentalCompoundButtonVisualRoot != null)
+            {
+                experimentalCompoundButtonVisualRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                experimentalCompoundButtonVisualRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                experimentalCompoundButtonVisualRoot.pivot = new Vector2(0.5f, 0.5f);
+                experimentalCompoundButtonVisualRoot.anchoredPosition = Vector2.zero;
+
+                if (rectTransform != null &&
+                    experimentalCompoundButtonVisualRoot.sizeDelta.x > 0f &&
+                    experimentalCompoundButtonVisualRoot.sizeDelta.y > 0f)
+                {
+                    rectTransform.sizeDelta = experimentalCompoundButtonVisualRoot.sizeDelta;
+                }
+            }
+
+            RegisterExperimentalCompoundButtonTerminalAnchors(visualObject.transform);
+            ConfigureExperimentalCompoundButtonBodyImage(visualObject.transform);
+
+            if (body != null)
+            {
+                body.enabled = true;
+                body.raycastTarget = true;
+                body.color = Color.clear;
+            }
+
+            if (title != null)
+            {
+                title.enabled = false;
+            }
+#endif
+        }
+
+        private void ConfigureExperimentalCompoundButtonBodyImage(Transform visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            var bodyTransform = visualRoot.Find("Body");
+            experimentalCompoundButtonBodyImage = bodyTransform != null ? bodyTransform.GetComponent<Image>() : null;
+            if (experimentalCompoundButtonBodyImage != null)
+            {
+                experimentalCompoundButtonBodyImage.raycastTarget = false;
+            }
+
+#if UNITY_EDITOR
+            if (string.Equals(Definition.name, experimentalCompoundGreenButtonDefinitionName, System.StringComparison.Ordinal))
+            {
+                experimentalCompoundButtonDefaultSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalCompoundGreenButtonDefaultSpritePath);
+                experimentalCompoundButtonPressedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalCompoundGreenButtonPressedSpritePath);
+            }
+            else
+            {
+                experimentalCompoundButtonDefaultSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalCompoundRedButtonDefaultSpritePath);
+                experimentalCompoundButtonPressedSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalCompoundRedButtonPressedSpritePath);
+            }
+#endif
+            UpdateExperimentalCompoundButtonBodySprite();
+        }
+
+        private void UpdateExperimentalCompoundButtonBodySprite()
+        {
+            if (experimentalCompoundButtonBodyImage == null)
+            {
+                return;
+            }
+
+            var targetSprite = IsClosed && experimentalCompoundButtonPressedSprite != null
+                ? experimentalCompoundButtonPressedSprite
+                : experimentalCompoundButtonDefaultSprite;
+
+            if (targetSprite != null && experimentalCompoundButtonBodyImage.sprite != targetSprite)
+            {
+                experimentalCompoundButtonBodyImage.sprite = targetSprite;
+            }
+        }
+
+        private void RegisterExperimentalCompoundButtonTerminalAnchors(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var rects = root.GetComponentsInChildren<RectTransform>(true);
+            for (var i = 0; i < rects.Length; i++)
+            {
+                var candidate = rects[i];
+                if (candidate == null ||
+                    string.IsNullOrEmpty(candidate.name) ||
+                    !candidate.name.StartsWith("Terminal_", System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var terminalId = candidate.name.Substring("Terminal_".Length);
+                if (!experimentalCompoundButtonTerminalAnchors.ContainsKey(terminalId))
+                {
+                    experimentalCompoundButtonTerminalAnchors.Add(terminalId, candidate);
+                }
+            }
+        }
+
+        private bool TryGetExperimentalCompoundButtonTerminalPosition(string terminalId, out Vector2 localPosition)
+        {
+            localPosition = Vector2.zero;
+            if (!IsExperimentalCompoundButtonVisualActive() ||
+                rectTransform == null ||
+                string.IsNullOrWhiteSpace(terminalId))
+            {
+                return false;
+            }
+
+            if (experimentalCompoundButtonTerminalAnchors.TryGetValue(terminalId, out var anchor) &&
+                anchor != null &&
+                TryGetAnchoredPositionRelativeToExperimentalRoot(
+                    anchor,
+                    experimentalCompoundButtonVisualRoot,
+                    out localPosition))
+            {
+                return true;
+            }
+
+            return TryGetExperimentalCompoundButtonCoordinateTablePosition(terminalId, out localPosition);
+        }
+
+        private bool TryGetExperimentalCompoundButtonCoordinateTablePosition(string terminalId, out Vector2 localPosition)
+        {
+            const float prefabWidth = 80f;
+            const float prefabHeight = 128f;
+            var isGreen = string.Equals(Definition.name, experimentalCompoundGreenButtonDefinitionName, System.StringComparison.Ordinal);
+            var x = 0f;
+            var y = 0f;
+
+            if (string.Equals(terminalId, "11", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = isGreen ? 36.16f : 38.16f;
+                y = isGreen ? 331.16f : 329.16f;
+            }
+            else if (string.Equals(terminalId, "12", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 281.16f;
+                y = isGreen ? 331.16f : 329.16f;
+            }
+            else if (string.Equals(terminalId, "23", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = isGreen ? 36.16f : 38.16f;
+                y = 464.16f;
+            }
+            else if (string.Equals(terminalId, "24", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 281.16f;
+                y = 464.16f;
+            }
+            else
+            {
+                localPosition = Vector2.zero;
+                return false;
+            }
+
+            localPosition = new Vector2((x / 320f - 0.5f) * prefabWidth, (0.5f - y / 512f) * prefabHeight);
+            return true;
+        }
+
+        private void TryApplyExperimentalThreePhasePowerVisualPrefab()
+        {
+            experimentalThreePhasePowerVisualRoot = null;
+            experimentalThreePhasePowerBodyImage = null;
+            experimentalThreePhasePowerSprite = null;
+            experimentalThreePhasePowerTerminalAnchors.Clear();
+
+            if (!useExperimentalThreePhasePowerVisualPrefab ||
+                Definition == null ||
+                !string.Equals(Definition.name, experimentalThreePhasePowerDefinitionName, System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(experimentalThreePhasePowerVisualAssetPath);
+            if (prefab == null)
+            {
+                return;
+            }
+
+            var visualObject = Instantiate(prefab, transform);
+            visualObject.name = prefab.name + "_Pilot";
+            visualObject.transform.SetAsFirstSibling();
+
+            experimentalThreePhasePowerVisualRoot = visualObject.GetComponent<RectTransform>();
+            if (experimentalThreePhasePowerVisualRoot != null)
+            {
+                experimentalThreePhasePowerVisualRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                experimentalThreePhasePowerVisualRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                experimentalThreePhasePowerVisualRoot.pivot = new Vector2(0.5f, 0.5f);
+                experimentalThreePhasePowerVisualRoot.anchoredPosition = Vector2.zero;
+
+                if (rectTransform != null &&
+                    experimentalThreePhasePowerVisualRoot.sizeDelta.x > 0f &&
+                    experimentalThreePhasePowerVisualRoot.sizeDelta.y > 0f)
+                {
+                    rectTransform.sizeDelta = experimentalThreePhasePowerVisualRoot.sizeDelta;
+                }
+            }
+
+            RegisterExperimentalThreePhasePowerTerminalAnchors(visualObject.transform);
+            ConfigureExperimentalThreePhasePowerBodyImage(visualObject.transform);
+
+            if (body != null)
+            {
+                body.enabled = true;
+                body.raycastTarget = true;
+                body.color = Color.clear;
+            }
+
+            if (title != null)
+            {
+                title.enabled = false;
+            }
+#endif
+        }
+
+        private void ConfigureExperimentalThreePhasePowerBodyImage(Transform visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            var bodyTransform = visualRoot.Find("Body");
+            experimentalThreePhasePowerBodyImage = bodyTransform != null ? bodyTransform.GetComponent<Image>() : null;
+            if (experimentalThreePhasePowerBodyImage != null)
+            {
+                experimentalThreePhasePowerBodyImage.raycastTarget = false;
+            }
+
+#if UNITY_EDITOR
+            experimentalThreePhasePowerSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(experimentalThreePhasePowerSpritePath);
+#endif
+            UpdateExperimentalThreePhasePowerBodySprite();
+        }
+
+        private void UpdateExperimentalThreePhasePowerBodySprite()
+        {
+            if (experimentalThreePhasePowerBodyImage == null)
+            {
+                return;
+            }
+
+            if (experimentalThreePhasePowerSprite != null &&
+                experimentalThreePhasePowerBodyImage.sprite != experimentalThreePhasePowerSprite)
+            {
+                experimentalThreePhasePowerBodyImage.sprite = experimentalThreePhasePowerSprite;
+            }
+        }
+
+        private void RegisterExperimentalThreePhasePowerTerminalAnchors(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var rects = root.GetComponentsInChildren<RectTransform>(true);
+            for (var i = 0; i < rects.Length; i++)
+            {
+                var candidate = rects[i];
+                if (candidate == null ||
+                    string.IsNullOrEmpty(candidate.name) ||
+                    !candidate.name.StartsWith("Terminal_", System.StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var terminalId = candidate.name.Substring("Terminal_".Length);
+                if (!experimentalThreePhasePowerTerminalAnchors.ContainsKey(terminalId))
+                {
+                    experimentalThreePhasePowerTerminalAnchors.Add(terminalId, candidate);
+                }
+            }
+        }
+
+        private bool TryGetExperimentalThreePhasePowerTerminalPosition(string terminalId, out Vector2 localPosition)
+        {
+            localPosition = Vector2.zero;
+            if (!IsExperimentalThreePhasePowerVisualActive() ||
+                rectTransform == null ||
+                string.IsNullOrWhiteSpace(terminalId))
+            {
+                return false;
+            }
+
+            if (experimentalThreePhasePowerTerminalAnchors.TryGetValue(terminalId, out var anchor) &&
+                anchor != null &&
+                TryGetAnchoredPositionRelativeToExperimentalRoot(
+                    anchor,
+                    experimentalThreePhasePowerVisualRoot,
+                    out localPosition))
+            {
+                return true;
+            }
+
+            return TryGetExperimentalThreePhasePowerCoordinateTablePosition(terminalId, out localPosition);
+        }
+
+        private static bool TryGetExperimentalThreePhasePowerCoordinateTablePosition(string terminalId, out Vector2 localPosition)
+        {
+            const float prefabWidth = 200f;
+            const float prefabHeight = 72f;
+            var x = 0f;
+            var y = 177f;
+
+            if (string.Equals(terminalId, "L1", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 103.06f;
+            }
+            else if (string.Equals(terminalId, "L2", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 301.97f;
+            }
+            else if (string.Equals(terminalId, "L3", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 500.88f;
+            }
+            else if (string.Equals(terminalId, "N", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 699.75f;
+            }
+            else if (string.Equals(terminalId, "PE", System.StringComparison.OrdinalIgnoreCase))
+            {
+                x = 899.94f;
+            }
+            else
+            {
+                localPosition = Vector2.zero;
+                return false;
+            }
+
+            localPosition = new Vector2((x / 1000f - 0.5f) * prefabWidth, (0.5f - y / 360f) * prefabHeight);
+            return true;
+        }
+
         private static bool IsExperimentalKmTerminal(string terminalId)
         {
             return string.Equals(terminalId, "L1", System.StringComparison.OrdinalIgnoreCase) ||
@@ -637,12 +1258,15 @@ namespace ElectricalSim.Core
         {
             if (body != null && Definition != null)
             {
-                if (IsExperimentalKmVisualActive())
+                if (IsExperimentalVisualActive())
                 {
                     body.enabled = true;
                     body.raycastTarget = true;
                     body.color = Color.clear;
                     UpdateExperimentalKmBodySprite();
+                    UpdateExperimentalButtonBodySprite();
+                    UpdateExperimentalCompoundButtonBodySprite();
+                    UpdateExperimentalThreePhasePowerBodySprite();
                 }
                 else
                 {
@@ -654,7 +1278,7 @@ namespace ElectricalSim.Core
 
             if (stateLabel != null && Definition != null)
             {
-                if (IsExperimentalKmVisualActive())
+                if (IsExperimentalVisualActive())
                 {
                     stateLabel.text = "";
                 }
@@ -698,6 +1322,70 @@ namespace ElectricalSim.Core
                    experimentalKmVisualRoot != null &&
                    Definition != null &&
                    string.Equals(Definition.name, experimentalKmVisualDefinitionName, System.StringComparison.Ordinal);
+        }
+
+        private bool IsExperimentalButtonVisualActive()
+        {
+            return useExperimentalButtonVisualPrefab &&
+                   experimentalButtonVisualRoot != null &&
+                   Definition != null &&
+                   IsExperimentalButtonDefinition();
+        }
+
+        private bool IsExperimentalVisualActive()
+        {
+            return IsExperimentalKmVisualActive() ||
+                   IsExperimentalButtonVisualActive() ||
+                   IsExperimentalCompoundButtonVisualActive() ||
+                   IsExperimentalThreePhasePowerVisualActive();
+        }
+
+        private bool IsExperimentalCompoundButtonVisualActive()
+        {
+            return useExperimentalCompoundButtonVisualPrefab &&
+                   experimentalCompoundButtonVisualRoot != null &&
+                   Definition != null &&
+                   IsExperimentalCompoundButtonDefinition();
+        }
+
+        private bool IsExperimentalThreePhasePowerVisualActive()
+        {
+            return useExperimentalThreePhasePowerVisualPrefab &&
+                   experimentalThreePhasePowerVisualRoot != null &&
+                   Definition != null &&
+                   string.Equals(Definition.name, experimentalThreePhasePowerDefinitionName, System.StringComparison.Ordinal);
+        }
+
+        private bool IsExperimentalButtonDefinition()
+        {
+            return string.Equals(Definition.name, experimentalStartButtonDefinitionName, System.StringComparison.Ordinal) ||
+                   string.Equals(Definition.name, experimentalStopButtonDefinitionName, System.StringComparison.Ordinal);
+        }
+
+        private bool IsExperimentalCompoundButtonDefinition()
+        {
+            return string.Equals(Definition.name, experimentalCompoundRedButtonDefinitionName, System.StringComparison.Ordinal) ||
+                   string.Equals(Definition.name, experimentalCompoundGreenButtonDefinitionName, System.StringComparison.Ordinal);
+        }
+
+        private bool IsExperimentalButtonPressed()
+        {
+            if (Definition == null)
+            {
+                return false;
+            }
+
+            if (string.Equals(Definition.name, experimentalStartButtonDefinitionName, System.StringComparison.Ordinal))
+            {
+                return IsClosed;
+            }
+
+            if (string.Equals(Definition.name, experimentalStopButtonDefinitionName, System.StringComparison.Ordinal))
+            {
+                return !IsClosed;
+            }
+
+            return false;
         }
 
         private static void ConfigureMotionStateLabel(Text label)

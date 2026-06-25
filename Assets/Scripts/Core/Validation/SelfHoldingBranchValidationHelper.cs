@@ -51,7 +51,7 @@ namespace ElectricalSim.Core.Validation
                 return false;
             }
 
-            if (HasCompoundPushButton(components) || HasStarDeltaMotor(components))
+            if (HasCompoundPushButton(components) || HasStarDeltaMotor(components) || HasSelfLockingButton(components))
             {
                 result = CreateResult(false, false, false, null, null, null, "Complex control structure skipped.");
                 return false;
@@ -303,6 +303,30 @@ namespace ElectricalSim.Core.Validation
                 component.Definition != null &&
                 component.Definition.kind == ComponentKind.PushButton &&
                 component.Definition.name.IndexOf("Button_Compound", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                component.GetTerminal("11") != null &&
+                component.GetTerminal("12") != null &&
+                component.GetTerminal("23") != null &&
+                component.GetTerminal("24") != null;
+        }
+
+        private static bool HasSelfLockingButton(IReadOnlyList<CircuitComponent> components)
+        {
+            for (int i = 0; i < components.Count; i++)
+            {
+                if (IsSelfLockingButton(components[i]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsSelfLockingButton(CircuitComponent component)
+        {
+            return component != null &&
+                component.Definition != null &&
+                component.Definition.name.IndexOf("Button_SelfLock", StringComparison.OrdinalIgnoreCase) >= 0 &&
                 component.GetTerminal("11") != null &&
                 component.GetTerminal("12") != null &&
                 component.GetTerminal("23") != null &&
