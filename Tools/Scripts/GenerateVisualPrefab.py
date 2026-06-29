@@ -1,115 +1,16 @@
+﻿# ====================================================================
+# Visual Prefab YAML 生成辅助脚本
+# 当前由 Fuse Prefab 生成脚本归档而来，后续可扩展为通用 Visual Prefab 生成器。
+#
+# 注意：
+# - 本脚本不属于 Unity Runtime 代码。
+# - 本脚本不应放入 Assets 目录（避免被 Unity 强行生成 .meta）。
+# ====================================================================
 import os
 import random
-import uuid
 
 def generate_file_id():
     return random.randint(1000000, 9999999)
-
-def generate_guid():
-    return uuid.uuid4().hex
-
-def write_meta(path, guid):
-    meta = f'''fileFormatVersion: 2
-guid: {guid}
-TextureImporter:
-  internalIDToNameTable: []
-  externalObjects: {{}}
-  serializedVersion: 12
-  mipmaps:
-    mipMapMode: 0
-    enableMipMap: 0
-    sRGBTexture: 1
-    linearTexture: 0
-    fadeOut: 0
-    borderMipMap: 0
-    mipMapsPreserveCoverage: 0
-    alphaTestReferenceValue: 0.5
-    mipMapFadeDistanceStart: 1
-    mipMapFadeDistanceEnd: 3
-  bumpmap:
-    convertToNormalMap: 0
-    externalNormalMap: 0
-    heightScale: 0.25
-    normalMapFilter: 0
-  isReadable: 0
-  streamingMipmaps: 0
-  streamingMipmapsPriority: 0
-  vTOnly: 0
-  ignoreMasterTextureLimit: 0
-  useMipMapLimit: 0
-  grayScaleToAlpha: 0
-  generateCubemap: 6
-  cubemapConvolution: 0
-  seamlessCubemap: 0
-  textureFormat: 1
-  maxTextureSize: 2048
-  textureSettings:
-    serializedVersion: 2
-    filterMode: 1
-    aniso: 1
-    mipBias: 0
-    wrapU: 1
-    wrapV: 1
-    wrapW: 1
-  nPOTScale: 0
-  lightmap: 0
-  compressionQuality: 50
-  spriteMode: 1
-  spriteExtrude: 1
-  spriteMeshType: 1
-  alignment: 0
-  spritePivot: {{x: 0.5, y: 0.5}}
-  spritePixelsToUnits: 100
-  spriteBorder: {{x: 0, y: 0, z: 0, w: 0}}
-  spriteGenerateFallbackPhysicsShape: 1
-  alphaUsage: 1
-  alphaIsTransparency: 1
-  spriteTessellationDetail: -1
-  textureType: 8
-  textureShape: 1
-  singleChannelComponent: 0
-  flipbookRows: 1
-  flipbookColumns: 1
-  maxTextureSizeSet: 0
-  compressionQualitySet: 0
-  textureFormatSet: 0
-  ignorePngGamma: 0
-  applyGammaDecoding: 0
-  cookieLightType: 0
-  platformSettings:
-  - serializedVersion: 3
-    buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  spriteSheet:
-    serializedVersion: 2
-    sprites: []
-    outline: []
-    physicsShape: []
-    bones: []
-    spriteID: 5e97eb03825dee720800000000000000
-    internalID: 0
-    vertices: []
-    indices: []
-    edges: []
-    weights: []
-  spritePackingTag: 
-  pSDRemoveMatte: 0
-  pSDShowRemoveMatteOption: 0
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-'''
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(meta)
 
 def create_prefab(template_path, out_path, image_guid, width, height, terminals):
     with open(template_path, 'r', encoding='utf-8') as f:
@@ -309,7 +210,7 @@ RectTransform:
   m_AnchorMin: {{x: 0.5, y: 0.5}}
   m_AnchorMax: {{x: 0.5, y: 0.5}}
   m_AnchoredPosition: {{x: {term['x']:.2f}, y: {term['y']:.2f}}}
-  m_SizeDelta: {{x: 10, y: 10}}
+  m_SizeDelta: {{x: 28, y: 28}}
   m_Pivot: {{x: 0.5, y: 0.5}}
 ''')
 
@@ -326,28 +227,34 @@ RectTransform:
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(prefab_str)
 
-fuse1_guid = generate_guid()
-fuse3_guid = generate_guid()
+import yaml
+def read_guid(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('guid:'):
+                return line.split(':')[1].strip()
+    return None
 
-write_meta('Assets/Art/Components/Fuse_1P_Visual.png.meta', fuse1_guid)
-write_meta('Assets/Art/Components/Fuse_3P_Visual.png.meta', fuse3_guid)
+fuse1_guid = read_guid('Assets/Art/Components/Fuse_1P_Visual.png.meta')
+fuse3_guid = read_guid('Assets/Art/Components/Fuse_3P_Visual.png.meta')
 
-# Create 1P
+# Create 1P: 72 x 205
 terms_1p = [
-    {'name': 'IN', 'x': 0, 'y': 50.21},
-    {'name': 'OUT', 'x': 0, 'y': -49.54}
+    {'name': 'IN', 'x': 0.0, 'y': 80.39},
+    {'name': 'OUT', 'x': 0.0, 'y': -79.28}
 ]
-create_prefab('Assets/Prefab/AC_ThreePhase_Power_Visual.prefab', 'Assets/Prefab/Fuse_1P_Visual.prefab', fuse1_guid, 45, 128, terms_1p)
+create_prefab('Assets/Prefab/AC_ThreePhase_Power_Visual.prefab', 'Assets/Prefab/Fuse_1P_Visual.prefab', fuse1_guid, 72, 205, terms_1p)
 
-# Create 3P
+# Create 3P: 216 x 205
 terms_3p = [
-    {'name': 'L1_IN', 'x': -36.25, 'y': 50.0},
-    {'name': 'L1_OUT', 'x': -36.25, 'y': -50.0},
-    {'name': 'L2_IN', 'x': 0.125, 'y': 50.0},
-    {'name': 'L2_OUT', 'x': 0.125, 'y': -50.0},
-    {'name': 'L3_IN', 'x': 36.86, 'y': 50.0},
-    {'name': 'L3_OUT', 'x': 36.61, 'y': -50.0}
+    {'name': 'L1_IN', 'x': -58.00, 'y': 80.05},
+    {'name': 'L1_OUT', 'x': -58.00, 'y': -80.05},
+    {'name': 'L2_IN', 'x': 0.20, 'y': 80.05},
+    {'name': 'L2_OUT', 'x': 0.20, 'y': -80.05},
+    {'name': 'L3_IN', 'x': 58.98, 'y': 80.05},
+    {'name': 'L3_OUT', 'x': 58.58, 'y': -80.05}
 ]
-create_prefab('Assets/Prefab/AC_ThreePhase_Power_Visual.prefab', 'Assets/Prefab/Fuse_3P_Visual.prefab', fuse3_guid, 135, 128, terms_3p)
+create_prefab('Assets/Prefab/AC_ThreePhase_Power_Visual.prefab', 'Assets/Prefab/Fuse_3P_Visual.prefab', fuse3_guid, 216, 205, terms_3p)
 
-print("Prefabs generated successfully.")
+print("Prefabs regenerated with new sizes successfully.")
+
