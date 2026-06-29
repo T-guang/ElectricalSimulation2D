@@ -1587,6 +1587,7 @@ namespace ElectricalSim.Core
             {
                 case VisualPrefabStateMode.IsClosed:
                     return config.ActiveWhenClosed ? IsClosed : !IsClosed;
+                case VisualPrefabStateMode.IsEnergized:
                 case VisualPrefabStateMode.ContactorEnergized:
                     return IsEnergized;
                 default:

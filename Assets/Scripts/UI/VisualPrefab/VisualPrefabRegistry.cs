@@ -91,6 +91,60 @@ namespace ElectricalSim.Core
                 new VisualPrefabConfig(
                     "Fuse_3P",
                     "Assets/Prefab/Fuse_3P_Visual.prefab")
+            },
+            {
+                "Indicator_Green_220V",
+                new VisualPrefabConfig(
+                    "Indicator_Green_220V",
+                    "Assets/Prefab/Indicator_Green_Visual.prefab",
+                    "Assets/Art/Components/Indicator_Green_Off.png",
+                    "Assets/Art/Components/Indicator_Green_On.png",
+                    VisualPrefabStateMode.IsEnergized)
+            },
+            {
+                "Indicator_Red_220V",
+                new VisualPrefabConfig(
+                    "Indicator_Red_220V",
+                    "Assets/Prefab/Indicator_Red_Visual.prefab",
+                    "Assets/Art/Components/Indicator_Red_Off.png",
+                    "Assets/Art/Components/Indicator_Red_On.png",
+                    VisualPrefabStateMode.IsEnergized)
+            },
+            {
+                "Indicator_Yellow_220V",
+                new VisualPrefabConfig(
+                    "Indicator_Yellow_220V",
+                    "Assets/Prefab/Indicator_Yellow_Visual.prefab",
+                    "Assets/Art/Components/Indicator_Yellow_Off.png",
+                    "Assets/Art/Components/Indicator_Yellow_On.png",
+                    VisualPrefabStateMode.IsEnergized)
+            },
+            {
+                "Indicator_Green_380V",
+                new VisualPrefabConfig(
+                    "Indicator_Green_380V",
+                    "Assets/Prefab/Indicator_Green_Visual.prefab",
+                    "Assets/Art/Components/Indicator_Green_Off.png",
+                    "Assets/Art/Components/Indicator_Green_On.png",
+                    VisualPrefabStateMode.IsEnergized)
+            },
+            {
+                "Indicator_Red_380V",
+                new VisualPrefabConfig(
+                    "Indicator_Red_380V",
+                    "Assets/Prefab/Indicator_Red_Visual.prefab",
+                    "Assets/Art/Components/Indicator_Red_Off.png",
+                    "Assets/Art/Components/Indicator_Red_On.png",
+                    VisualPrefabStateMode.IsEnergized)
+            },
+            {
+                "Indicator_Yellow_380V",
+                new VisualPrefabConfig(
+                    "Indicator_Yellow_380V",
+                    "Assets/Prefab/Indicator_Yellow_Visual.prefab",
+                    "Assets/Art/Components/Indicator_Yellow_Off.png",
+                    "Assets/Art/Components/Indicator_Yellow_On.png",
+                    VisualPrefabStateMode.IsEnergized)
             }
         };
 

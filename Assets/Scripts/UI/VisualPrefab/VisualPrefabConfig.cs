@@ -4,6 +4,7 @@ namespace ElectricalSim.Core
     {
         Static,
         IsClosed,
+        IsEnergized,
         ContactorEnergized,
         TimerPhase,
         MotorRunning
