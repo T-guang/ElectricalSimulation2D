@@ -151,7 +151,8 @@ namespace ElectricalSim.Core
                 new VisualPrefabConfig(
                     "ThermalRelay_FR_380V",
                     "Assets/Prefab/ThermalRelay_FR_Visual.prefab",
-                    "Assets/Art/Components/ThermalRelay_FR_Normal.png")
+                    "Assets/Art/Components/ThermalRelay_FR_Normal.png",
+                    hasOperationHitArea: true)
             }
         };
 

@@ -314,6 +314,20 @@ namespace ElectricalSim.Core
             workspace?.MarkSimulationDirty(statusMessage);
         }
 
+        private bool IsHittingOperationArea(PointerEventData eventData)
+        {
+            if (configuredVisualPrefab != null && configuredVisualPrefab.Config.HasOperationHitArea)
+            {
+                var hitObj = eventData.pointerCurrentRaycast.gameObject;
+                if (hitObj == null)
+                {
+                    hitObj = eventData.pointerPressRaycast.gameObject;
+                }
+                return hitObj != null && hitObj.name == "OperationHitArea";
+            }
+            return true;
+        }
+
         public void OnPointerClick(PointerEventData eventData)
         {
             if (workspace != null && workspace.IsInteractionLocked)
@@ -322,7 +336,7 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            if (eventData.clickCount >= 2 && !IsMomentaryPushButton())
+            if (eventData.clickCount >= 2 && !IsMomentaryPushButton() && IsHittingOperationArea(eventData))
             {
                 Toggle();
             }
@@ -335,7 +349,7 @@ namespace ElectricalSim.Core
         public void OnPointerDown(PointerEventData eventData)
         {
             if (workspace != null && workspace.IsInteractionLocked) return;
-            if (IsMomentaryPushButton())
+            if (IsMomentaryPushButton() && IsHittingOperationArea(eventData))
             {
                 SetMomentaryPressed(true);
             }
