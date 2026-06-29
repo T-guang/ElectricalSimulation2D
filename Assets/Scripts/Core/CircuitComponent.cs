@@ -111,6 +111,7 @@ namespace ElectricalSim.Core
         private RectTransform experimentalFuse3PVisualRoot;
         private Image experimentalFuse3PBodyImage;
         private readonly Dictionary<string, RectTransform> experimentalFuse3PTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
+        private VisualPrefabInstance configuredVisualPrefab;
 
         public void Initialize(ComponentDefinition definition, WorkspaceController owner, string instanceId = null)
         {
@@ -133,12 +134,7 @@ namespace ElectricalSim.Core
             }
 
             TryApplyExperimentalKmVisualPrefab();
-            TryApplyExperimentalButtonVisualPrefab();
-            TryApplyExperimentalCompoundButtonVisualPrefab();
-            TryApplyExperimentalSelfLockButtonVisualPrefab();
-            TryApplyExperimentalThreePhasePowerVisualPrefab();
-            TryApplyExperimentalFuse1PVisualPrefab();
-            TryApplyExperimentalFuse3PVisualPrefab();
+            TryApplyConfiguredVisualPrefab();
             BuildTerminals();
             RefreshVisual();
         }
@@ -939,38 +935,10 @@ namespace ElectricalSim.Core
                 return true;
             }
 
-            if (TryGetExperimentalButtonTerminalPosition(terminalId, out localPosition))
+            if (configuredVisualPrefab != null &&
+                configuredVisualPrefab.TryGetTerminalPosition(terminalId, out localPosition))
             {
-                showDebugMarker = showExperimentalButtonTerminalDebugMarkers;
-                return true;
-            }
-
-            if (TryGetExperimentalCompoundButtonTerminalPosition(terminalId, out localPosition))
-            {
-                showDebugMarker = showExperimentalCompoundButtonTerminalDebugMarkers;
-                return true;
-            }
-            if (TryGetExperimentalSelfLockButtonTerminalPosition(terminalId, out localPosition))
-            {
-                showDebugMarker = showExperimentalSelfLockButtonTerminalDebugMarkers;
-                return true;
-            }
-
-            if (TryGetExperimentalThreePhasePowerTerminalPosition(terminalId, out localPosition))
-            {
-                showDebugMarker = showExperimentalThreePhasePowerTerminalDebugMarkers;
-                return true;
-            }
-
-            if (TryGetExperimentalFuse1PTerminalPosition(terminalId, out localPosition))
-            {
-                showDebugMarker = showExperimentalFuseTerminalDebugMarkers;
-                return true;
-            }
-
-            if (TryGetExperimentalFuse3PTerminalPosition(terminalId, out localPosition))
-            {
-                showDebugMarker = showExperimentalFuseTerminalDebugMarkers;
+                showDebugMarker = configuredVisualPrefab.ShowTerminalDebugMarkers;
                 return true;
             }
 
@@ -1579,6 +1547,52 @@ namespace ElectricalSim.Core
                    string.Equals(terminalId, "22", System.StringComparison.OrdinalIgnoreCase);
         }
 
+        private void TryApplyConfiguredVisualPrefab()
+        {
+            configuredVisualPrefab = null;
+
+            if (Definition == null ||
+                !VisualPrefabRegistry.TryGetConfig(Definition.name, out var config))
+            {
+                return;
+            }
+
+            VisualPrefabInstance.TryCreate(
+                config,
+                transform,
+                rectTransform,
+                body,
+                title,
+                out configuredVisualPrefab);
+        }
+
+        private void UpdateConfiguredVisualPrefabBodySprite()
+        {
+            if (configuredVisualPrefab == null || !configuredVisualPrefab.IsActive)
+            {
+                return;
+            }
+
+            configuredVisualPrefab.UpdateBodySprite(ResolveConfiguredVisualPrefabActiveState(configuredVisualPrefab.Config));
+        }
+
+        private bool ResolveConfiguredVisualPrefabActiveState(VisualPrefabConfig config)
+        {
+            if (config == null)
+            {
+                return false;
+            }
+
+            switch (config.StateMode)
+            {
+                case VisualPrefabStateMode.IsClosed:
+                    return config.ActiveWhenClosed ? IsClosed : !IsClosed;
+                case VisualPrefabStateMode.ContactorEnergized:
+                    return IsEnergized;
+                default:
+                    return false;
+            }
+        }
         private void RefreshVisual()
         {
             if (body != null && Definition != null)
@@ -1589,10 +1603,7 @@ namespace ElectricalSim.Core
                     body.raycastTarget = true;
                     body.color = Color.clear;
                     UpdateExperimentalKmBodySprite();
-                    UpdateExperimentalButtonBodySprite();
-                    UpdateExperimentalCompoundButtonBodySprite();
-                    UpdateExperimentalSelfLockButtonBodySprite();
-                    UpdateExperimentalThreePhasePowerBodySprite();
+                    UpdateConfiguredVisualPrefabBodySprite();
                 }
                 else
                 {
@@ -1661,12 +1672,7 @@ namespace ElectricalSim.Core
         private bool IsExperimentalVisualActive()
         {
             return IsExperimentalKmVisualActive() ||
-                   IsExperimentalButtonVisualActive() ||
-                   IsExperimentalCompoundButtonVisualActive() ||
-                   IsExperimentalSelfLockButtonVisualActive() ||
-                   IsExperimentalThreePhasePowerVisualActive() ||
-                   IsExperimentalFuse1PVisualActive() ||
-                   IsExperimentalFuse3PVisualActive();
+                   (configuredVisualPrefab != null && configuredVisualPrefab.IsActive);
         }
 
         private bool IsExperimentalCompoundButtonVisualActive()
