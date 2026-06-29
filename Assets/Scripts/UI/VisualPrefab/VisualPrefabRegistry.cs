@@ -85,28 +85,36 @@ namespace ElectricalSim.Core
                 new VisualPrefabConfig(
                     "Breaker_1P",
                     "Assets/Prefab/Breaker_1P_Visual.prefab",
-                    "Assets/Art/Components/Breaker_1P.png")
+                    "Assets/Art/Components/Breaker_1P_Off.png",
+                    "Assets/Art/Components/Breaker_1P_On.png",
+                    VisualPrefabStateMode.IsClosed)
             },
             {
                 "Breaker_2P",
                 new VisualPrefabConfig(
                     "Breaker_2P",
                     "Assets/Prefab/Breaker_2P_Visual.prefab",
-                    "Assets/Art/Components/Breaker_2P.png")
+                    "Assets/Art/Components/Breaker_2P_Off.png",
+                    "Assets/Art/Components/Breaker_2P_On.png",
+                    VisualPrefabStateMode.IsClosed)
             },
             {
                 "Breaker_3P",
                 new VisualPrefabConfig(
                     "Breaker_3P",
                     "Assets/Prefab/Breaker_3P_Visual.prefab",
-                    "Assets/Art/Components/Breaker_3P.png")
+                    "Assets/Art/Components/Breaker_3P_Off.png",
+                    "Assets/Art/Components/Breaker_3P_On.png",
+                    VisualPrefabStateMode.IsClosed)
             },
             {
                 "Breaker_4P",
                 new VisualPrefabConfig(
                     "Breaker_4P",
                     "Assets/Prefab/Breaker_4P_Visual.prefab",
-                    "Assets/Art/Components/Breaker_4P.png")
+                    "Assets/Art/Components/Breaker_4P_Off.png",
+                    "Assets/Art/Components/Breaker_4P_On.png",
+                    VisualPrefabStateMode.IsClosed)
             },
             {
                 "Fuse_1P",
