@@ -81,6 +81,34 @@ namespace ElectricalSim.Core
                     "Assets/Art/Components/AC_ThreePhase_Power_Visual.png")
             },
             {
+                "Breaker_1P",
+                new VisualPrefabConfig(
+                    "Breaker_1P",
+                    "Assets/Prefab/Breaker_1P_Visual.prefab",
+                    "Assets/Art/Components/Breaker_1P.png")
+            },
+            {
+                "Breaker_2P",
+                new VisualPrefabConfig(
+                    "Breaker_2P",
+                    "Assets/Prefab/Breaker_2P_Visual.prefab",
+                    "Assets/Art/Components/Breaker_2P.png")
+            },
+            {
+                "Breaker_3P",
+                new VisualPrefabConfig(
+                    "Breaker_3P",
+                    "Assets/Prefab/Breaker_3P_Visual.prefab",
+                    "Assets/Art/Components/Breaker_3P.png")
+            },
+            {
+                "Breaker_4P",
+                new VisualPrefabConfig(
+                    "Breaker_4P",
+                    "Assets/Prefab/Breaker_4P_Visual.prefab",
+                    "Assets/Art/Components/Breaker_4P.png")
+            },
+            {
                 "Fuse_1P",
                 new VisualPrefabConfig(
                     "Fuse_1P",
