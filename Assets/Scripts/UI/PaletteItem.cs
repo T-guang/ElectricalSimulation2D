@@ -5,11 +5,15 @@ using ElectricalSim.Core;
 
 namespace ElectricalSim.UI
 {
-    public sealed class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+    public sealed class PaletteItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] private ComponentDefinition definition;
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text label;
+        [SerializeField] private Image background;
+
+        private Color normalColor = new Color(0.96f, 0.98f, 1f, 1f);
+        private Color hoverColor = new Color(0.88f, 0.93f, 1f, 1f);
 
         public ComponentDefinition Definition => definition;
 
@@ -27,6 +31,23 @@ namespace ElectricalSim.UI
             if (label != null)
             {
                 label.text = definition.displayName;
+            }
+
+            if (background == null)
+            {
+                background = GetComponent<Image>();
+            }
+        }
+
+        public void ConfigureCardVisual(Image cardBackground, Color cardNormalColor, Color cardHoverColor)
+        {
+            background = cardBackground != null ? cardBackground : GetComponent<Image>();
+            normalColor = cardNormalColor;
+            hoverColor = cardHoverColor;
+
+            if (background != null)
+            {
+                background.color = normalColor;
             }
         }
 
@@ -87,6 +108,22 @@ namespace ElectricalSim.UI
             {
                 workspace.SpawnComponent(definition, localPoint);
                 workspace.SetStatus("已放置元件：" + definition.displayName);
+            }
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            if (background != null)
+            {
+                background.color = hoverColor;
+            }
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            if (background != null)
+            {
+                background.color = normalColor;
             }
         }
     }

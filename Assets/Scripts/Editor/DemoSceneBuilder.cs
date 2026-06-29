@@ -1124,7 +1124,10 @@ namespace ElectricalSim.EditorTools
             var wireLayer = CreateRect("WireLayer", canvasContent, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             var componentLayer = CreateRect("ComponentLayer", canvasContent, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
 
-            var logPanel = CreatePanel("ActionLogPanel", simulationRoot, new Color(1f, 1f, 1f, 0.72f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-24f, 8f), new Vector2(500f, 210f));
+            var logPanel = CreatePanel("ActionLogPanel", simulationRoot, new Color(0.97f, 0.98f, 0.99f, 1f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(10f, 10f), new Vector2(400f, 176f));
+            var logOutline = logPanel.gameObject.AddComponent<Outline>();
+            logOutline.effectColor = new Color(0.68f, 0.76f, 0.86f, 0.7f);
+            logOutline.effectDistance = new Vector2(1f, -1f);
             var actionLogScroll = logPanel.gameObject.AddComponent<ScrollRect>();
             actionLogScroll.horizontal = false;
             actionLogScroll.vertical = true;
@@ -1134,15 +1137,17 @@ namespace ElectricalSim.EditorTools
             var logTitle = CreateText("ActionLogTitle", logPanel, "操作记录", 20, TextAnchor.MiddleLeft);
             logTitle.color = new Color(0.05f, 0.08f, 0.14f);
             logTitle.raycastTarget = false;
-            SetRect(logTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(16f, -8f), new Vector2(-32f, 34f));
+            SetRect(logTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -6f), new Vector2(-24f, 28f));
 
             var status = CreateText("CurrentStatus", logPanel, "家庭电路组件：拖拽元件到画布，点击端子接线。", 17, TextAnchor.MiddleLeft);
             status.color = new Color(0.12f, 0.32f, 0.64f);
             status.raycastTarget = false;
             status.horizontalOverflow = HorizontalWrapMode.Wrap;
-            SetRect(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(16f, -42f), new Vector2(-32f, 34f));
+            SetRect(status.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(-24f, 32f));
 
-            var logViewport = CreatePanel("ActionLogViewport", logPanel, new Color(1f, 1f, 1f, 0.28f), new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(16f, -66f), new Vector2(-32f, -106f));
+            var logViewport = CreatePanel("ActionLogViewport", logPanel, Color.white, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(-24f, -84f));
+            logViewport.offsetMin = new Vector2(12f, 10f);
+            logViewport.offsetMax = new Vector2(-12f, -74f);
             logViewport.gameObject.AddComponent<Mask>().showMaskGraphic = false;
 
             var actionLog = CreateText("ActionLogText", logViewport, "等待操作...", 15, TextAnchor.UpperLeft);
