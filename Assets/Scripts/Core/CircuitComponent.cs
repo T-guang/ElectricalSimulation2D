@@ -326,7 +326,7 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            if (eventData.clickCount >= 2 && !IsCompoundPushButton())
+            if (eventData.clickCount >= 2 && !IsMomentaryPushButton())
             {
                 Toggle();
             }
@@ -339,30 +339,78 @@ namespace ElectricalSim.Core
         public void OnPointerDown(PointerEventData eventData)
         {
             if (workspace != null && workspace.IsInteractionLocked) return;
-            if (IsCompoundPushButton())
+            if (IsMomentaryPushButton())
             {
-                workspace?.RecordHistoryCheckpoint();
-                IsClosed = true;
-                RefreshVisual();
-                workspace?.MarkSimulationDirty("复合按钮已按下。");
+                SetMomentaryPressed(true);
             }
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
             if (workspace != null && workspace.IsInteractionLocked) return;
-            if (IsCompoundPushButton())
+            if (IsMomentaryPushButton())
             {
-                workspace?.RecordHistoryCheckpoint();
-                IsClosed = false;
-                RefreshVisual();
-                workspace?.MarkSimulationDirty("复合按钮已释放。");
+                SetMomentaryPressed(false);
             }
+        }
+
+        private void SetMomentaryPressed(bool pressed)
+        {
+            if (Definition == null)
+            {
+                return;
+            }
+
+            var targetClosed = pressed ? !Definition.startsClosed : Definition.startsClosed;
+            if (IsClosed == targetClosed)
+            {
+                return;
+            }
+
+            IsClosed = targetClosed;
+            RefreshVisual();
+            workspace?.MarkSimulationDirty(pressed ? "瞬时按钮已按下，点击开始仿真刷新结果。" : "瞬时按钮已释放，点击开始仿真刷新结果。");
+        }
+
+        private void OnDisable()
+        {
+            if (Definition == null || !IsMomentaryPushButton() || IsClosed == Definition.startsClosed)
+            {
+                return;
+            }
+
+            IsClosed = Definition.startsClosed;
+            RefreshVisual();
+        }
+
+        private bool IsStartPushButton()
+        {
+            return Definition != null && Definition.name.IndexOf("Button_Start", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private bool IsStopPushButton()
+        {
+            return Definition != null && Definition.name.IndexOf("Button_Stop", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private bool IsCompoundPushButton()
         {
             return Definition != null && Definition.name.IndexOf("Button_Compound", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private bool IsSelfLockingButton()
+        {
+            return Definition != null && Definition.name.IndexOf("Button_SelfLock", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private bool IsMomentaryPushButton()
+        {
+            if (IsSelfLockingButton())
+            {
+                return false;
+            }
+
+            return IsStartPushButton() || IsStopPushButton() || IsCompoundPushButton();
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -371,6 +419,11 @@ namespace ElectricalSim.Core
             {
                 workspace.SetStatus("画布已锁定，解锁后再移动元件。");
                 return;
+            }
+
+            if (IsMomentaryPushButton())
+            {
+                SetMomentaryPressed(false);
             }
 
             workspace?.RecordHistoryCheckpoint();
