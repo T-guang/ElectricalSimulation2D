@@ -24,6 +24,11 @@ namespace ElectricalSim.UI
                 logoutButton = logoutObject != null ? logoutObject.GetComponent<Button>() : null;
             }
 
+            if (logoutButton != null)
+            {
+                logoutButton.gameObject.SetActive(false);
+            }
+
             logoutButton?.onClick.AddListener(LogoutToLoginScene);
         }
 
@@ -44,9 +49,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            currentUserText.text = AppSession.IsLoggedIn
-                ? "\u5f53\u524d\u7528\u6237\uff1a" + AppSession.CurrentUser
-                : "\u5f53\u524d\u7528\u6237\uff1a\u672a\u767b\u5f55";
+            currentUserText.text = "当前状态：单机本地模式";
         }
 
         public void LogoutToLoginScene()

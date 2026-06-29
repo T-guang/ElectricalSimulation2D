@@ -76,10 +76,8 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            EnsureDemoAccount();
-            PlayerPrefs.DeleteKey(LegacySessionKey);
-            PlayerPrefs.Save();
-            ShowLogin();
+            AppSession.Login("local");
+            SceneManager.LoadScene(demoSceneName);
         }
 
         private void HandleLogin()
