@@ -668,6 +668,10 @@ namespace ElectricalSim.Core
                     {
                         ConnectIfExists(component, "95", "96", unionFind);
                     }
+                    else
+                    {
+                        ConnectIfExists(component, "97", "98", unionFind);
+                    }
 
                     continue;
                 }
@@ -1432,8 +1436,8 @@ namespace ElectricalSim.Core
                     info.SummaryGroup = ComponentStateInfo.GroupControl;
                     info.State = "Conducting";
                     info.Judgement = component.IsClosed
-                        ? "V1.2 按当前状态传播热继电器 95/96 控制触点；主回路仍按 V1.0 静态传播。"
-                        : "热继电器当前断开，95/96 控制触点不导通；主回路仍按 V1.0 静态传播。";
+                        ? "热继正常，95/96 常闭触点导通，97/98 常开触点断开。"
+                        : "热继已跳闸，95/96 常闭触点断开，97/98 常开触点闭合；主回路端子仍保持物理通路，电机停止通常由 KM 线圈失电导致。";
                 }
                 else if (IsKnifeSwitch(component))
                 {

@@ -1507,7 +1507,7 @@ namespace ElectricalSim.Core
 
         private void AddThermalRelayInternalConnections(CircuitComponent component)
         {
-            if (component == null || !component.IsClosed)
+            if (component == null)
             {
                 return;
             }
@@ -1515,7 +1515,15 @@ namespace ElectricalSim.Core
             ConnectById(component, "L1", "T1");
             ConnectById(component, "L2", "T2");
             ConnectById(component, "L3", "T3");
-            ConnectById(component, "95", "96");
+
+            if (component.IsClosed)
+            {
+                ConnectById(component, "95", "96");
+            }
+            else
+            {
+                ConnectById(component, "97", "98");
+            }
         }
 
         private static bool IsThermalRelayComponent(CircuitComponent component)

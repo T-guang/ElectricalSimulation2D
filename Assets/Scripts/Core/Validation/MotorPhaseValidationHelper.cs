@@ -302,12 +302,17 @@ namespace ElectricalSim.Core.Validation
 
             if (IsThermalRelay(component))
             {
+                ConnectById(component, TerminalConstants.L1, TerminalConstants.T1);
+                ConnectById(component, TerminalConstants.L2, TerminalConstants.T2);
+                ConnectById(component, TerminalConstants.L3, TerminalConstants.T3);
+
                 if (component.IsClosed)
                 {
-                    ConnectById(component, TerminalConstants.L1, TerminalConstants.T1);
-                    ConnectById(component, TerminalConstants.L2, TerminalConstants.T2);
-                    ConnectById(component, TerminalConstants.L3, TerminalConstants.T3);
                     ConnectById(component, TerminalConstants.ThermalNC95, TerminalConstants.ThermalNC96);
+                }
+                else
+                {
+                    ConnectById(component, TerminalConstants.ThermalNO97, TerminalConstants.ThermalNO98);
                 }
 
                 return;
