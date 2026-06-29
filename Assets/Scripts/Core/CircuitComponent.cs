@@ -665,8 +665,8 @@ namespace ElectricalSim.Core
 
         private static bool TryGetExperimentalKmCoordinateTablePosition(string terminalId, out Vector2 localPosition)
         {
-            const float prefabWidth = 280f;
-            const float prefabHeight = 350f;
+            const float prefabWidth = 240f;
+            const float prefabHeight = 300f;
             var x = 0f;
             var y = 0f;
 
