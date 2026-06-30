@@ -39,14 +39,25 @@ namespace ElectricalSim.UI
 
         private void Awake()
         {
-            // Initialize dynamicTemplates with nulls for static items
+            // Scene-authored cards are legacy gallery placeholders. Keep one as
+            // the clone template, but exclude every static card from filtering
+            // and counts so the gallery is driven only by template_catalog.json.
             for (var i = 0; i < blueprintButtons.Count; i++)
             {
                 dynamicTemplates.Add(null);
-                if (i < blueprintCategories.Count && blueprintCategories[i] == 1)
+                if (i < blueprintCategories.Count)
                 {
-                    blueprintCategories[i] = -1; // Hide existing static family circuits
-                    if (blueprintCards[i] != null) blueprintCards[i].SetActive(false);
+                    blueprintCategories[i] = -1;
+                }
+
+                if (i < blueprintDifficulties.Count)
+                {
+                    blueprintDifficulties[i] = -1;
+                }
+
+                if (i < blueprintCards.Count && blueprintCards[i] != null)
+                {
+                    blueprintCards[i].SetActive(false);
                 }
             }
 
