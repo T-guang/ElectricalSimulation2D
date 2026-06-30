@@ -245,6 +245,34 @@ namespace ElectricalSim.Core
                     hideLegacyTerminalLabel: true,
                     disableLegacyTerminalOffset: true,
                     hasOperationHitArea: false)
+            },
+            {
+                "Single_Control_Switch",
+                new VisualPrefabConfig(
+                    "Single_Control_Switch",
+                    "Assets/Prefab/Switch_SingleControl_Visual.prefab",
+                    "Assets/Art/Components/Switches/SingleControl/单开单控开关_关.png",
+                    "Assets/Art/Components/Switches/SingleControl/单开单控开关_开.png",
+                    VisualPrefabStateMode.IsClosed,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: true)
+            },
+            {
+                "Two_Way_Switch",
+                new VisualPrefabConfig(
+                    "Two_Way_Switch",
+                    "Assets/Prefab/Switch_TwoWay_Visual.prefab",
+                    "Assets/Art/Components/Switches/TwoWay/单开双控开关_关.png",
+                    "Assets/Art/Components/Switches/TwoWay/单开双控开关_开.png",
+                    VisualPrefabStateMode.IsClosed,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: true)
             }
         };
 
