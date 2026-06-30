@@ -6,7 +6,7 @@ namespace ElectricalSim.UI.VisualPrefab
     public class MotorVisualController : MonoBehaviour
     {
         [SerializeField] private RectTransform fanPivot;
-        [SerializeField] private float rotationSpeed = -540f;
+        [SerializeField] private float rotationSpeed = -1080f;
 
         private CircuitComponent component;
 
