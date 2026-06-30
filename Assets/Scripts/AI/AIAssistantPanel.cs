@@ -11,7 +11,7 @@ namespace ElectricalSim.AI
 {
     public sealed class AIAssistantPanel : MonoBehaviour
     {
-        private const float PanelWidth = 340f;
+        private const float PanelWidth = 300f;
         private const float PanelMargin = 12f;
         private const float HeaderHeight = 42f;
         private const float QuickActionsHeight = 208f;
@@ -80,7 +80,7 @@ namespace ElectricalSim.AI
             SetAssistantMode(AIAssistantMode.LocalMock, false);
 
             BindButton(sendButton, SendQuestion);
-            BindButton(switchModeButton, ToggleAssistantMode);
+            // BindButton(switchModeButton, ToggleAssistantMode);
             BindButton(explainButton, ExplainCurrentCircuit);
             BindButton(checkButton, CheckCurrentCircuit);
             BindButton(submitPracticeButton, SubmitPracticeCheck);
@@ -130,7 +130,9 @@ namespace ElectricalSim.AI
             actionLayout.childForceExpandHeight = false;
 
             modeText = CreateLayoutText("ModeText", quickActions, "当前模式：本地助教", 13, TextAnchor.MiddleLeft, 22f);
+            modeText.gameObject.SetActive(false);
             switchModeButton = CreateButton("SwitchModeButton", quickActions, "切换检查模式", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
+            switchModeButton.gameObject.SetActive(false);
             explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.16f, 0.45f, 0.95f), Color.white, 30f);
             checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
             submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", new Color(0.12f, 0.65f, 0.25f), Color.white, 30f);
