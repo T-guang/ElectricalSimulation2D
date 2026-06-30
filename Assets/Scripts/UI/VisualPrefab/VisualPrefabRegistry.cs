@@ -217,6 +217,20 @@ namespace ElectricalSim.Core
                     hideLegacyTerminalLabel: true,
                     disableLegacyTerminalOffset: true,
                     hasOperationHitArea: false)
+            },
+            {
+                "Motor_StarDelta_380V",
+                new VisualPrefabConfig(
+                    "Motor_StarDelta_380V",
+                    "Assets/Prefab/Motor_StarDelta_380V_Visual.prefab",
+                    null,
+                    null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
             }
         };
 
