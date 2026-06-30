@@ -112,6 +112,7 @@ namespace ElectricalSim.Core
         private Image experimentalFuse3PBodyImage;
         private readonly Dictionary<string, RectTransform> experimentalFuse3PTerminalAnchors = new Dictionary<string, RectTransform>(System.StringComparer.OrdinalIgnoreCase);
         private VisualPrefabInstance configuredVisualPrefab;
+        private KTTimerVisualController ktTimerVisualController;
 
         public void Initialize(ComponentDefinition definition, WorkspaceController owner, string instanceId = null)
         {
@@ -1578,6 +1579,28 @@ namespace ElectricalSim.Core
                 body,
                 title,
                 out configuredVisualPrefab);
+
+            ConfigureKtTimerVisualController();
+        }
+
+        private void ConfigureKtTimerVisualController()
+        {
+            ktTimerVisualController = null;
+            if (configuredVisualPrefab == null ||
+                !configuredVisualPrefab.IsActive ||
+                !IsOnDelayTimerRelay() ||
+                configuredVisualPrefab.Root == null)
+            {
+                return;
+            }
+
+            ktTimerVisualController = configuredVisualPrefab.Root.GetComponent<KTTimerVisualController>();
+            if (ktTimerVisualController == null)
+            {
+                ktTimerVisualController = configuredVisualPrefab.Root.gameObject.AddComponent<KTTimerVisualController>();
+            }
+
+            ktTimerVisualController.Initialize(this, workspace);
         }
 
         private void UpdateConfiguredVisualPrefabBodySprite()
@@ -1666,6 +1689,8 @@ namespace ElectricalSim.Core
                     stateLabel.color = new Color(0.05f, 0.45f, 0.95f);
                 }
             }
+
+            ktTimerVisualController?.RefreshNow();
         }
 
         private bool IsExperimentalKmVisualActive()

@@ -183,6 +183,20 @@ namespace ElectricalSim.Core
                     VisualPrefabStateMode.IsEnergized)
             },
             {
+                "Timer_OnDelay_220V",
+                new VisualPrefabConfig(
+                    "Timer_OnDelay_220V",
+                    "Assets/Prefab/KT_Timer_Visual.prefab",
+                    "Assets/Art/Components/KT_Timer_Normal.png")
+            },
+            {
+                "Timer_OnDelay_380V",
+                new VisualPrefabConfig(
+                    "Timer_OnDelay_380V",
+                    "Assets/Prefab/KT_Timer_Visual.prefab",
+                    "Assets/Art/Components/KT_Timer_Normal.png")
+            },
+            {
                 "ThermalRelay_FR_380V",
                 new VisualPrefabConfig(
                     "ThermalRelay_FR_380V",

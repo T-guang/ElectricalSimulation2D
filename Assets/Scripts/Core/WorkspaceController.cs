@@ -419,6 +419,16 @@ namespace ElectricalSim.Core
             RefreshMeasurementPanel();
         }
 
+        public void RefreshParameterPanelFor(CircuitComponent component)
+        {
+            if (componentParameterView == null || component == null || component != selectedComponent)
+            {
+                return;
+            }
+
+            componentParameterView.Show(component, this);
+        }
+
         public void SelectWire(WireView wire)
         {
             if (IsInteractionLocked)

@@ -30,6 +30,7 @@ namespace ElectricalSim.Core
         }
 
         public VisualPrefabConfig Config => config;
+        public RectTransform Root => root;
         public bool IsActive => root != null;
         public bool ShowTerminalDebugMarkers => config != null && config.ShowTerminalDebugMarkers;
 
