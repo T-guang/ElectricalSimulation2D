@@ -203,6 +203,20 @@ namespace ElectricalSim.Core
                     "Assets/Prefab/ThermalRelay_FR_Visual.prefab",
                     "Assets/Art/Components/ThermalRelay_FR_Normal.png",
                     hasOperationHitArea: true)
+            },
+            {
+                "Motor_ThreePhase_380V",
+                new VisualPrefabConfig(
+                    "Motor_ThreePhase_380V",
+                    "Assets/Prefab/Motor_ThreePhase_380V_Visual.prefab",
+                    null,
+                    null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
             }
         };
 
