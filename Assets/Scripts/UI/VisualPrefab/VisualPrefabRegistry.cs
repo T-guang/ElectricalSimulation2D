@@ -231,6 +231,20 @@ namespace ElectricalSim.Core
                     hideLegacyTerminalLabel: true,
                     disableLegacyTerminalOffset: true,
                     hasOperationHitArea: false)
+            },
+            {
+                "Single_Phase_Meter",
+                new VisualPrefabConfig(
+                    "Single_Phase_Meter",
+                    "Assets/Prefab/SinglePhase_EnergyMeter_Visual.prefab",
+                    "Assets/Art/Components/Single_Phase_Meter/单相电能表.png",
+                    null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
             }
         };
 
