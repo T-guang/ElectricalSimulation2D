@@ -53,7 +53,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fanPivot: {fileID: 454954849143808318}
-  rotationSpeed: -1080
+  rotationSpeed: -720
 
 --- !u!1 &420341020446695363
 GameObject:
