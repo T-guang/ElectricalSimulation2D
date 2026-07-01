@@ -794,14 +794,22 @@ namespace ElectricalSim.Core
                 AreConnected(button12, contactor13) ||
                 AreConnected(button12, contactor14);
         }
-        private static bool IsClosedContinuousStartComponent(CircuitComponent component)
+        private bool IsClosedContinuousStartComponent(CircuitComponent component)
         {
-            return component != null &&
-                component.Definition != null &&
-                component.Definition.kind == ComponentKind.PushButton &&
-                component.IsClosed &&
-                component.GetTerminal("23") != null &&
-                component.GetTerminal("24") != null;
+            if (component == null ||
+                component.Definition == null ||
+                component.GetTerminal("23") == null ||
+                component.GetTerminal("24") == null)
+            {
+                return false;
+            }
+
+            if (IsLimitSwitch(component))
+            {
+                return IsLimitSwitchEffectivelyTriggered(component);
+            }
+
+            return component.Definition.kind == ComponentKind.PushButton && component.IsClosed;
         }
 
         private void ResolveMutualInterlockConflicts()

@@ -273,6 +273,167 @@ namespace ElectricalSim.Core
                     hideLegacyTerminalLabel: true,
                     disableLegacyTerminalOffset: true,
                     hasOperationHitArea: true)
+            },
+            {
+                "LimitSwitch_SelfLock",
+                new VisualPrefabConfig(
+                    "LimitSwitch_SelfLock",
+                    "Assets/Prefab/LimitSwitch_SelfLock_Visual.prefab",
+                    "Assets/Art/Components/LimitSwitch/限位开关_关.png",
+                    "Assets/Art/Components/LimitSwitch/限位开关_开.png",
+                    VisualPrefabStateMode.LimitSwitchTriggered,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: true)
+            },
+            {
+                "LimitSwitch_Compound",
+                new VisualPrefabConfig(
+                    "LimitSwitch_Compound",
+                    "Assets/Prefab/LimitSwitch_Compound_Visual.prefab",
+                    "Assets/Art/Components/LimitSwitch/限位开关_关.png",
+                    "Assets/Art/Components/LimitSwitch/限位开关_开.png",
+                    VisualPrefabStateMode.LimitSwitchTriggered,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: true)
+            },
+            {
+                "TerminalBlock_2H",
+                new VisualPrefabConfig(
+                    "TerminalBlock_2H",
+                    "Assets/Prefab/TerminalBlock_2H_Visual.prefab",
+                    null, null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "TerminalBlock_3H",
+                new VisualPrefabConfig(
+                    "TerminalBlock_3H",
+                    "Assets/Prefab/TerminalBlock_3H_Visual.prefab",
+                    null, null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "TerminalBlock_6H",
+                new VisualPrefabConfig(
+                    "TerminalBlock_6H",
+                    "Assets/Prefab/TerminalBlock_6H_Visual.prefab",
+                    null, null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "TerminalBlock_2V",
+                new VisualPrefabConfig(
+                    "TerminalBlock_2V",
+                    "Assets/Prefab/TerminalBlock_2V_Visual.prefab",
+                    null, null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "TerminalBlock_3V",
+                new VisualPrefabConfig(
+                    "TerminalBlock_3V",
+                    "Assets/Prefab/TerminalBlock_3V_Visual.prefab",
+                    null, null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "TerminalBlock_6V",
+                new VisualPrefabConfig(
+                    "TerminalBlock_6V",
+                    "Assets/Prefab/TerminalBlock_6V_Visual.prefab",
+                    null, null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "AC_220V_Power",
+                new VisualPrefabConfig(
+                    "AC_220V_Power",
+                    "Assets/Prefab/AC_220V_Power_Visual.prefab",
+                    null, null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "KnifeSwitch_QS",
+                new VisualPrefabConfig(
+                    "KnifeSwitch_QS",
+                    "Assets/Prefab/KnifeSwitch_QS_Visual.prefab",
+                    "Assets/Art/Components/KnifeSwitch/刀开关_开.png", // default = 断开
+                    "Assets/Art/Components/KnifeSwitch/刀开关_关.png", // active = 合上
+                    VisualPrefabStateMode.IsClosed,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: true)
+            },
+            {
+                "Lamp_220V",
+                new VisualPrefabConfig(
+                    "Lamp_220V",
+                    "Assets/Prefab/Lamp_220V_Visual.prefab",
+                    "Assets/Art/Components/Lamp/未发光.png",
+                    "Assets/Art/Components/Lamp/发光.png",
+                    VisualPrefabStateMode.IsEnergized,
+                    activeWhenClosed: true,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
+            },
+            {
+                "Fan_220V",
+                new VisualPrefabConfig(
+                    "Fan_220V",
+                    "Assets/Prefab/Fan_220V_Visual.prefab",
+                    null,
+                    null,
+                    VisualPrefabStateMode.Static,
+                    activeWhenClosed: false,
+                    useTransparentTerminalView: true,
+                    hideLegacyTerminalLabel: true,
+                    disableLegacyTerminalOffset: true,
+                    hasOperationHitArea: false)
             }
         };
 

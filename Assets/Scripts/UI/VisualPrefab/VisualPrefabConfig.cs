@@ -6,6 +6,7 @@ namespace ElectricalSim.Core
         IsClosed,
         IsEnergized,
         ContactorEnergized,
+        LimitSwitchTriggered,
         TimerPhase,
         MotorRunning
     }

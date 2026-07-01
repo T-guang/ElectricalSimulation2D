@@ -1627,10 +1627,37 @@ namespace ElectricalSim.Core
                 case VisualPrefabStateMode.IsEnergized:
                 case VisualPrefabStateMode.ContactorEnergized:
                     return IsEnergized;
+                case VisualPrefabStateMode.LimitSwitchTriggered:
+                    return ResolveLimitSwitchTriggeredVisualState();
                 default:
                     return false;
             }
         }
+
+        private bool ResolveLimitSwitchTriggeredVisualState()
+        {
+            if (IsClosed)
+            {
+                return true;
+            }
+
+            if (string.Equals(InstanceId, "sq_left", System.StringComparison.OrdinalIgnoreCase) &&
+                RuntimeStateManager.Shared.TryGetMotionState("motor_1", out var leftMotionState) &&
+                leftMotionState != null)
+            {
+                return leftMotionState.LeftLimitTriggered;
+            }
+
+            if (string.Equals(InstanceId, "sq_right", System.StringComparison.OrdinalIgnoreCase) &&
+                RuntimeStateManager.Shared.TryGetMotionState("motor_1", out var rightMotionState) &&
+                rightMotionState != null)
+            {
+                return rightMotionState.RightLimitTriggered;
+            }
+
+            return false;
+        }
+
         private void RefreshVisual()
         {
             if (body != null && Definition != null)
