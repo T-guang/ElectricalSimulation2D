@@ -19,6 +19,17 @@ namespace ElectricalSim.Core
                     hasOperationHitArea: true)
             },
             {
+                "EmergencyStop_NC",
+                new VisualPrefabConfig(
+                    "EmergencyStop_NC",
+                    "Assets/Prefab/EmergencyStopButton_Visual.prefab",
+                    "Assets/Art/Components/EmergencyStop/EmergencyStopButton_Default.png",
+                    "Assets/Art/Components/EmergencyStop/EmergencyStopButton_Pressed.png",
+                    VisualPrefabStateMode.IsClosed,
+                    activeWhenClosed: false,
+                    hasOperationHitArea: true)
+            },
+            {
                 "Button_Stop_NC",
                 new VisualPrefabConfig(
                     "Button_Stop_NC",
