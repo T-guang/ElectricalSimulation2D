@@ -14,6 +14,9 @@ namespace ElectricalSim.UI
 
         private Color normalColor = new Color(0.96f, 0.98f, 1f, 1f);
         private Color hoverColor = new Color(0.88f, 0.93f, 1f, 1f);
+        private Outline outline;
+        private Color normalOutlineColor = new Color(0.91f, 0.94f, 0.97f, 0.55f);
+        private Color hoverOutlineColor = new Color(0.58f, 0.77f, 0.99f, 1f);
 
         public ComponentDefinition Definition => definition;
 
@@ -39,15 +42,29 @@ namespace ElectricalSim.UI
             }
         }
 
-        public void ConfigureCardVisual(Image cardBackground, Color cardNormalColor, Color cardHoverColor)
+        public void ConfigureCardVisual(
+            Image cardBackground,
+            Color cardNormalColor,
+            Color cardHoverColor,
+            Outline cardOutline,
+            Color cardNormalOutlineColor,
+            Color cardHoverOutlineColor)
         {
             background = cardBackground != null ? cardBackground : GetComponent<Image>();
             normalColor = cardNormalColor;
             hoverColor = cardHoverColor;
+            outline = cardOutline != null ? cardOutline : GetComponent<Outline>();
+            normalOutlineColor = cardNormalOutlineColor;
+            hoverOutlineColor = cardHoverOutlineColor;
 
             if (background != null)
             {
                 background.color = normalColor;
+            }
+
+            if (outline != null)
+            {
+                outline.effectColor = normalOutlineColor;
             }
         }
 
@@ -117,6 +134,11 @@ namespace ElectricalSim.UI
             {
                 background.color = hoverColor;
             }
+
+            if (outline != null)
+            {
+                outline.effectColor = hoverOutlineColor;
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
@@ -124,6 +146,11 @@ namespace ElectricalSim.UI
             if (background != null)
             {
                 background.color = normalColor;
+            }
+
+            if (outline != null)
+            {
+                outline.effectColor = normalOutlineColor;
             }
         }
     }

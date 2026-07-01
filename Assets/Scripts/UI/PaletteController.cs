@@ -26,15 +26,18 @@ namespace ElectricalSim.UI
             Industrial
         }
 
-        private const float CardWidth = 108f;
-        private const float CardHeight = 124f;
-        private const float CardGapX = 18f;
-        private const float CardGapY = 16f;
-        private const float ContentLeft = 18f;
+        private const float PaletteWidth = 350f;
+        private const float PalettePadding = 16f;
+        private const float CardWidth = 96f;
+        private const float CardHeight = 128f;
+        private const float CardGapX = 8f;
+        private const float CardGapY = 14f;
+        private const float ContentLeft = 12f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
-        private const float OperationLogHeight = 176f;
-        private const float OperationLogMargin = 10f;
+        private const float OperationLogHeight = 186f;
+        private const float OperationLogMargin = 16f;
+        private const float OperationLogWidth = PaletteWidth - PalettePadding * 2f;
 
         private readonly ComponentCategory[] categoryOrder =
         {
@@ -73,14 +76,33 @@ namespace ElectricalSim.UI
                 return;
             }
 
+            root.sizeDelta = new Vector2(PaletteWidth, root.sizeDelta.y);
+
+            var rootImage = root.GetComponent<Image>() ?? root.gameObject.AddComponent<Image>();
+            rootImage.color = Color.white;
+            rootImage.raycastTarget = true;
+
+            var rootOutline = root.GetComponent<Outline>() ?? root.gameObject.AddComponent<Outline>();
+            rootOutline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
+            rootOutline.effectDistance = new Vector2(1f, 0f);
+
+            AlignWorkspaceToPalette(root);
+
             var title = transform.Find("PaletteTitle") as RectTransform;
             if (title != null)
             {
                 title.anchorMin = new Vector2(0f, 1f);
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
-                title.anchoredPosition = new Vector2(0f, -16f);
-                title.sizeDelta = new Vector2(-36f, 38f);
+                title.anchoredPosition = new Vector2(0f, -12f);
+                title.sizeDelta = new Vector2(-PalettePadding * 2f, 38f);
+                var titleText = title.GetComponent<Text>();
+                if (titleText != null)
+                {
+                    titleText.fontSize = 18;
+                    titleText.fontStyle = FontStyle.Bold;
+                    titleText.color = new Color(0.12f, 0.16f, 0.22f);
+                }
             }
 
             EnsureFilterButtons(root);
@@ -88,6 +110,24 @@ namespace ElectricalSim.UI
             EnsureViewportPosition();
             EnsureActionLogLayout();
             EnsureSectionTitleObjects();
+        }
+
+        private void AlignWorkspaceToPalette(RectTransform root)
+        {
+            var parent = root.parent;
+            if (parent == null)
+            {
+                return;
+            }
+
+            var workspace = parent.Find("Workspace") as RectTransform;
+            if (workspace == null)
+            {
+                return;
+            }
+
+            workspace.anchoredPosition = new Vector2(PaletteWidth * 0.5f, workspace.anchoredPosition.y);
+            workspace.sizeDelta = new Vector2(-PaletteWidth, workspace.sizeDelta.y);
         }
 
         private void EnsureFilterButtons(RectTransform root)
@@ -100,7 +140,7 @@ namespace ElectricalSim.UI
                 row.anchorMax = new Vector2(1f, 1f);
                 row.pivot = new Vector2(0.5f, 1f);
                 row.anchoredPosition = new Vector2(0f, -58f);
-                row.sizeDelta = new Vector2(-28f, 34f);
+                row.sizeDelta = new Vector2(-PalettePadding * 2f, 34f);
 
                 var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
                 layout.spacing = 8f;
@@ -109,9 +149,9 @@ namespace ElectricalSim.UI
                 layout.childAlignment = TextAnchor.MiddleLeft;
             }
 
-            allFilterButton = allFilterButton != null ? allFilterButton : EnsureFilterButton(row, "Filter_All", "全部", 68f);
-            householdFilterButton = householdFilterButton != null ? householdFilterButton : EnsureFilterButton(row, "Filter_Household", "家庭电路组件", 126f);
-            industrialFilterButton = industrialFilterButton != null ? industrialFilterButton : EnsureFilterButton(row, "Filter_Industrial", "工业电路组件", 126f);
+            allFilterButton = allFilterButton != null ? allFilterButton : EnsureFilterButton(row, "Filter_All", "全部", 56f);
+            householdFilterButton = householdFilterButton != null ? householdFilterButton : EnsureFilterButton(row, "Filter_Household", "家庭电路组件", 118f);
+            industrialFilterButton = industrialFilterButton != null ? industrialFilterButton : EnsureFilterButton(row, "Filter_Industrial", "工业电路组件", 118f);
         }
 
         private Button EnsureFilterButton(RectTransform row, string name, string label, float width)
@@ -120,7 +160,6 @@ namespace ElectricalSim.UI
             if (rect == null)
             {
                 rect = CreateRect(name, row);
-                rect.sizeDelta = new Vector2(width, 30f);
                 rect.gameObject.AddComponent<Image>();
                 rect.gameObject.AddComponent<Button>();
 
@@ -139,8 +178,10 @@ namespace ElectricalSim.UI
                 text.raycastTarget = false;
             }
 
+            rect.sizeDelta = new Vector2(width, 32f);
+
             var image = rect.GetComponent<Image>() ?? rect.gameObject.AddComponent<Image>();
-            image.color = new Color(0.91f, 0.94f, 0.98f, 1f);
+            image.color = new Color(0.92f, 0.95f, 0.98f, 1f);
 
             var button = rect.GetComponent<Button>() ?? rect.gameObject.AddComponent<Button>();
             var labelText = rect.GetComponentInChildren<Text>();
@@ -152,7 +193,7 @@ namespace ElectricalSim.UI
 
             var layout = rect.GetComponent<LayoutElement>() ?? rect.gameObject.AddComponent<LayoutElement>();
             layout.preferredWidth = width;
-            layout.preferredHeight = 30f;
+            layout.preferredHeight = 32f;
             return button;
         }
 
@@ -183,8 +224,12 @@ namespace ElectricalSim.UI
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
             viewport.pivot = new Vector2(0.5f, 0.5f);
-            viewport.offsetMin = new Vector2(8f, OperationLogHeight + OperationLogMargin * 2f + 8f);
-            viewport.offsetMax = new Vector2(-8f, -100f);
+            viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + OperationLogMargin + 16f);
+            viewport.offsetMax = new Vector2(-PalettePadding, -104f);
+
+            var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
+            viewportImage.color = Color.white;
+            viewportImage.raycastTarget = true;
         }
 
         private void EnsureActionLogLayout()
@@ -205,15 +250,15 @@ namespace ElectricalSim.UI
             logPanel.anchorMax = new Vector2(0f, 0f);
             logPanel.pivot = new Vector2(0f, 0f);
             logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogMargin);
-            logPanel.sizeDelta = new Vector2(400f, OperationLogHeight);
+            logPanel.sizeDelta = new Vector2(OperationLogWidth, OperationLogHeight);
             logPanel.SetAsLastSibling();
 
             var panelImage = logPanel.GetComponent<Image>() ?? logPanel.gameObject.AddComponent<Image>();
-            panelImage.color = new Color(0.97f, 0.98f, 0.99f, 1f);
+            panelImage.color = Color.white;
             panelImage.raycastTarget = true;
 
             var outline = logPanel.GetComponent<Outline>() ?? logPanel.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.68f, 0.76f, 0.86f, 0.7f);
+            outline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
             outline.effectDistance = new Vector2(1f, -1f);
 
             var title = logPanel.Find("ActionLogTitle") as RectTransform;
@@ -223,7 +268,14 @@ namespace ElectricalSim.UI
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
                 title.anchoredPosition = new Vector2(0f, -6f);
-                title.sizeDelta = new Vector2(-24f, 28f);
+                title.sizeDelta = new Vector2(-20f, 28f);
+                var titleText = title.GetComponent<Text>();
+                if (titleText != null)
+                {
+                    titleText.fontSize = 16;
+                    titleText.fontStyle = FontStyle.Bold;
+                    titleText.color = new Color(0.12f, 0.16f, 0.22f);
+                }
             }
 
             var status = logPanel.Find("CurrentStatus") as RectTransform;
@@ -242,11 +294,11 @@ namespace ElectricalSim.UI
                 viewport.anchorMin = Vector2.zero;
                 viewport.anchorMax = Vector2.one;
                 viewport.pivot = new Vector2(0.5f, 0.5f);
-                viewport.offsetMin = new Vector2(12f, 10f);
-                viewport.offsetMax = new Vector2(-12f, -74f);
+                viewport.offsetMin = new Vector2(10f, 10f);
+                viewport.offsetMax = new Vector2(-10f, -74f);
 
                 var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
-                viewportImage.color = Color.white;
+                viewportImage.color = new Color(0.98f, 0.99f, 1f, 1f);
                 viewportImage.raycastTarget = true;
             }
         }
@@ -265,11 +317,11 @@ namespace ElectricalSim.UI
                 titleRect.anchorMin = new Vector2(0f, 1f);
                 titleRect.anchorMax = new Vector2(0f, 1f);
                 titleRect.pivot = new Vector2(0f, 1f);
-                titleRect.sizeDelta = new Vector2(320f, 34f);
+                titleRect.sizeDelta = new Vector2(OperationLogWidth, 34f);
 
                 var title = titleRect.gameObject.AddComponent<Text>();
                 title.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                title.fontSize = 19;
+                title.fontSize = 17;
                 title.alignment = TextAnchor.MiddleLeft;
                 title.color = new Color(0.07f, 0.12f, 0.18f);
                 title.raycastTarget = false;
@@ -382,7 +434,7 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(CardWidth, CardHeight);
 
             var background = rect.GetComponent<Image>() ?? rect.gameObject.AddComponent<Image>();
-            background.color = new Color(0.96f, 0.98f, 1f, 1f);
+            background.color = Color.white;
             background.raycastTarget = true;
 
             var iconImage = EnsureChildImage(rect, "Icon");
@@ -390,42 +442,166 @@ namespace ElectricalSim.UI
             iconRect.anchorMin = new Vector2(0.5f, 1f);
             iconRect.anchorMax = new Vector2(0.5f, 1f);
             iconRect.pivot = new Vector2(0.5f, 1f);
-            iconRect.anchoredPosition = new Vector2(0f, -12f);
-            iconRect.sizeDelta = new Vector2(64f, 58f);
-            iconImage.sprite = definition.sprite != null ? definition.sprite : GetFallbackIcon();
-            iconImage.color = definition.sprite != null ? Color.white : GetCategoryIconColor(definition.category);
+            iconRect.anchoredPosition = new Vector2(0f, -10f);
+            iconRect.sizeDelta = GetPaletteIconSize(definition);
+            var paletteSprite = ResolvePaletteIcon(definition);
+            iconImage.sprite = paletteSprite != null ? paletteSprite : GetFallbackIcon();
+            iconImage.color = paletteSprite != null ? Color.white : GetCategoryIconColor(definition.category);
             iconImage.preserveAspect = true;
             iconImage.raycastTarget = false;
 
             var label = EnsureChildText(rect, "Label");
             label.text = definition.displayName;
-            label.fontSize = 12;
+            label.fontSize = 13;
             label.alignment = TextAnchor.UpperCenter;
-            label.color = new Color(0.08f, 0.12f, 0.2f);
+            label.color = new Color(0.12f, 0.16f, 0.22f);
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
             label.verticalOverflow = VerticalWrapMode.Truncate;
             label.resizeTextForBestFit = true;
-            label.resizeTextMinSize = 9;
-            label.resizeTextMaxSize = 12;
+            label.resizeTextMinSize = 10;
+            label.resizeTextMaxSize = 13;
             label.raycastTarget = false;
 
             var labelRect = label.rectTransform;
             labelRect.anchorMin = new Vector2(0f, 0f);
             labelRect.anchorMax = new Vector2(1f, 0f);
             labelRect.pivot = new Vector2(0.5f, 0f);
-            labelRect.anchoredPosition = new Vector2(0f, 8f);
-            labelRect.sizeDelta = new Vector2(-12f, 46f);
+            labelRect.anchoredPosition = new Vector2(0f, 9f);
+            labelRect.sizeDelta = new Vector2(-12f, 36f);
 
             var outline = rect.GetComponent<Outline>() ?? rect.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.68f, 0.76f, 0.86f, 0.7f);
+            var normalOutline = new Color(0.91f, 0.94f, 0.97f, 0.48f);
+            var hoverOutline = new Color(0.58f, 0.77f, 0.99f, 1f);
+            outline.effectColor = normalOutline;
             outline.effectDistance = new Vector2(1f, -1f);
 
             var paletteItem = rect.GetComponent<PaletteItem>();
             if (paletteItem != null)
             {
-                paletteItem.ConfigureCardVisual(background, new Color(0.96f, 0.98f, 1f, 1f), new Color(0.88f, 0.93f, 1f, 1f));
+                paletteItem.ConfigureCardVisual(
+                    background,
+                    Color.white,
+                    new Color(0.97f, 0.98f, 1f, 1f),
+                    outline,
+                    normalOutline,
+                    hoverOutline);
             }
         }
+
+        private static Vector2 GetPaletteIconSize(ComponentDefinition definition)
+        {
+            var name = definition != null ? definition.name : string.Empty;
+
+            if (ContainsName(name, "AC_ThreePhase_Power") ||
+                ContainsName(name, "TerminalBlock") ||
+                ContainsName(name, "Fuse_1P") ||
+                ContainsName(name, "Fuse_3P") ||
+                ContainsName(name, "KnifeSwitch"))
+            {
+                return new Vector2(84f, 58f);
+            }
+
+            if (ContainsName(name, "AC_220V_Power") ||
+                ContainsName(name, "Single_Phase_Meter") ||
+                ContainsName(name, "Breaker_1P"))
+            {
+                return new Vector2(62f, 76f);
+            }
+
+            if (ContainsName(name, "Contactor_KM") ||
+                ContainsName(name, "ThermalRelay") ||
+                ContainsName(name, "Timer_") ||
+                ContainsName(name, "TimerRelay") ||
+                ContainsName(name, "Motor_") ||
+                ContainsName(name, "LimitSwitch") ||
+                ContainsName(name, "Breaker_2P") ||
+                ContainsName(name, "Breaker_3P") ||
+                ContainsName(name, "Breaker_4P"))
+            {
+                return new Vector2(76f, 76f);
+            }
+
+            return new Vector2(66f, 66f);
+        }
+
+        private static bool ContainsName(string value, string pattern)
+        {
+            return !string.IsNullOrWhiteSpace(value) &&
+                   value.IndexOf(pattern, System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static Sprite ResolvePaletteIcon(ComponentDefinition definition)
+        {
+            if (definition == null)
+            {
+                return null;
+            }
+
+#if UNITY_EDITOR
+            var specialIcon = LoadSpecialPaletteIcon(definition.name);
+            if (specialIcon != null)
+            {
+                return specialIcon;
+            }
+
+            if (VisualPrefabRegistry.TryGetConfig(definition.name, out var config) && config != null)
+            {
+                var sprite = LoadSpriteAtPath(config.DefaultSpritePath);
+                if (sprite != null)
+                {
+                    return sprite;
+                }
+
+                sprite = LoadSpriteFromVisualPrefab(config.PrefabPath);
+                if (sprite != null)
+                {
+                    return sprite;
+                }
+            }
+#endif
+
+            return definition.sprite;
+        }
+
+#if UNITY_EDITOR
+        private static Sprite LoadSpecialPaletteIcon(string definitionName)
+        {
+            if (string.IsNullOrWhiteSpace(definitionName))
+            {
+                return null;
+            }
+
+            if (definitionName.IndexOf("Contactor_KM", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return LoadSpriteAtPath("Assets/Art/Components/Contactor_KM_380V_Default.png");
+            }
+
+            return null;
+        }
+
+        private static Sprite LoadSpriteAtPath(string path)
+        {
+            return string.IsNullOrWhiteSpace(path) ? null : UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        }
+
+        private static Sprite LoadSpriteFromVisualPrefab(string prefabPath)
+        {
+            if (string.IsNullOrWhiteSpace(prefabPath))
+            {
+                return null;
+            }
+
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                return null;
+            }
+
+            var body = prefab.transform.Find("Body");
+            var image = body != null ? body.GetComponent<Image>() : prefab.GetComponentInChildren<Image>(true);
+            return image != null ? image.sprite : null;
+        }
+#endif
 
         private static Image EnsureChildImage(RectTransform parent, string name)
         {
@@ -512,7 +688,7 @@ namespace ElectricalSim.UI
         private void ApplyFilter()
         {
             var query = searchInput != null ? searchInput.text.Trim() : string.Empty;
-            var y = -8f;
+            var y = -14f;
             UpdateFilterButtonState();
 
             for (var sectionIndex = 0; sectionIndex < categoryOrder.Length; sectionIndex++)
@@ -549,12 +725,12 @@ namespace ElectricalSim.UI
                 if (title != null)
                 {
                     title.gameObject.SetActive(visibleCount > 0);
-                    title.anchoredPosition = new Vector2(20f, y);
+                    title.anchoredPosition = new Vector2(18f, y);
                     var titleText = title.GetComponent<Text>();
                     if (titleText != null && sectionDisplayNames.TryGetValue(categoryEnum, out var sectionName))
                     {
                         titleText.text = sectionName;
-                        titleText.fontSize = 19;
+                        titleText.fontSize = 17;
                     }
                 }
 
@@ -564,7 +740,7 @@ namespace ElectricalSim.UI
                     continue;
                 }
 
-                y -= SectionTitleHeight + 8f;
+                y -= SectionTitleHeight + 12f;
                 var visibleIndex = 0;
                 for (var i = 0; i < itemRects.Count; i++)
                 {

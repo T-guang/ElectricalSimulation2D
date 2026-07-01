@@ -11,11 +11,11 @@ namespace ElectricalSim.AI
 {
     public sealed class AIAssistantPanel : MonoBehaviour
     {
-        private const float PanelWidth = 300f;
-        private const float PanelMargin = 12f;
+        private const float PanelWidth = 320f;
+        private const float PanelMargin = 16f;
         private const float HeaderHeight = 42f;
-        private const float QuickActionsHeight = 208f;
-        private const float InputAreaHeight = 58f;
+        private const float QuickActionsHeight = 166f;
+        private const float InputAreaHeight = 0f;
 
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text titleText;
@@ -63,7 +63,7 @@ namespace ElectricalSim.AI
                 panel = root.GetComponent<AIAssistantPanel>();
             }
 
-            image.color = new Color(0.97f, 0.98f, 1f, 1f);
+            image.color = new Color(0.95f, 0.97f, 0.99f, 1f);
             image.raycastTarget = true;
 
             panel.BuildUi(rect);
@@ -133,15 +133,15 @@ namespace ElectricalSim.AI
             modeText.gameObject.SetActive(false);
             switchModeButton = CreateButton("SwitchModeButton", quickActions, "切换检查模式", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
             switchModeButton.gameObject.SetActive(false);
-            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.16f, 0.45f, 0.95f), Color.white, 30f);
-            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
+            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
+            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.15f, 0.39f, 0.92f), Color.white, 34f);
             submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", new Color(0.12f, 0.65f, 0.25f), Color.white, 30f);
             submitPracticeButton.gameObject.SetActive(false);
             exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", new Color(0.85f, 0.18f, 0.16f), Color.white, 30f);
             exitPracticeButton.gameObject.SetActive(false);
-            clearChatButton = CreateButton("ClearChatButton", quickActions, "清空对话", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
+            clearChatButton = CreateButton("ClearChatButton", quickActions, "清空结果", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
 
-            var chatRoot = CreatePanelSection("ChatScrollView", root, 0f, 1f, new Color(0.94f, 0.97f, 1f, 1f));
+            var chatRoot = CreatePanelSection("ChatScrollView", root, 0f, 1f, Color.white);
             chatScrollRect = chatRoot.gameObject.AddComponent<ScrollRect>();
             chatScrollRect.horizontal = false;
             chatScrollRect.vertical = true;
@@ -153,7 +153,7 @@ namespace ElectricalSim.AI
             viewport.offsetMin = Vector2.zero;
             viewport.offsetMax = Vector2.zero;
             var viewportImage = viewport.gameObject.AddComponent<Image>();
-            viewportImage.color = new Color(0.94f, 0.97f, 1f, 1f);
+            viewportImage.color = Color.white;
             var mask = viewport.gameObject.AddComponent<Mask>();
             mask.showMaskGraphic = true;
 
@@ -197,6 +197,7 @@ namespace ElectricalSim.AI
             var sendLayout = sendButton.GetComponent<LayoutElement>();
             sendLayout.minWidth = 68f;
             sendLayout.preferredWidth = 68f;
+            inputArea.gameObject.SetActive(false);
         }
 
         private void AdjustWorkspaceForPanel(RectTransform parent, WorkspaceController workspaceController)
