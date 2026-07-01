@@ -574,7 +574,7 @@ namespace ElectricalSim.Core
 
             if (!useExperimentalKmVisualPrefab ||
                 Definition == null ||
-                !string.Equals(Definition.name, experimentalKmVisualDefinitionName, System.StringComparison.Ordinal))
+                !(string.Equals(Definition.name, experimentalKmVisualDefinitionName, System.StringComparison.Ordinal) || string.Equals(Definition.name, "Contactor_KM_220V", System.StringComparison.Ordinal)))
             {
                 return;
             }
@@ -1725,7 +1725,7 @@ namespace ElectricalSim.Core
             return useExperimentalKmVisualPrefab &&
                    experimentalKmVisualRoot != null &&
                    Definition != null &&
-                   string.Equals(Definition.name, experimentalKmVisualDefinitionName, System.StringComparison.Ordinal);
+                   (string.Equals(Definition.name, experimentalKmVisualDefinitionName, System.StringComparison.Ordinal) || string.Equals(Definition.name, "Contactor_KM_220V", System.StringComparison.Ordinal));
         }
 
         private bool IsExperimentalButtonVisualActive()
