@@ -1,4 +1,4 @@
-﻿{
+{
     "templateId": "double_control_lamp_template",
     "templateName": "双控照明电路",
     "category": "家庭电路",
@@ -13,7 +13,8 @@
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "voltage", "displayName": "输出电压",
+                    "key": "voltage",
+                    "displayName": "输出电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -27,10 +28,11 @@
             "definitionName": "Two_Way_Switch",
             "x": -192.0,
             "y": 120.0,
-            "isClosed": false,
+            "isClosed": true,
             "parameters": [
                 {
-                    "key": "switchType", "displayName": "开关类型",
+                    "key": "switchType",
+                    "displayName": "开关类型",
                     "value": 2.0,
                     "unit": "",
                     "min": 0.0,
@@ -47,7 +49,8 @@
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "switchType", "displayName": "开关类型",
+                    "key": "switchType",
+                    "displayName": "开关类型",
                     "value": 2.0,
                     "unit": "",
                     "min": 0.0,
@@ -64,7 +67,8 @@
             "isClosed": false,
             "parameters": [
                 {
-                    "key": "ratedVoltage", "displayName": "额定电压",
+                    "key": "ratedVoltage",
+                    "displayName": "额定电压",
                     "value": 220.0,
                     "unit": "V",
                     "min": 0.0,
@@ -72,7 +76,8 @@
                     "editable": false
                 },
                 {
-                    "key": "power", "displayName": "功率",
+                    "key": "power",
+                    "displayName": "功率",
                     "value": 60.0,
                     "unit": "W",
                     "min": 1.0,
@@ -101,9 +106,34 @@
             "endTerminalId": "L1",
             "color": "#F21F1F",
             "style": "Orthogonal",
-            "manualRoutePoints": [],
-            "manualRouteHorizontal": false,
-            "manualRouteAxis": 0.0
+            "manualRoutePoints": [
+                {
+                    "x": -231.6599884033203,
+                    "y": 8.620001792907715
+                },
+                {
+                    "x": -231.6599884033203,
+                    "y": -19.37999725341797
+                },
+                {
+                    "x": -231.6599884033203,
+                    "y": -36.0
+                },
+                {
+                    "x": 80.34000396728516,
+                    "y": -36.0
+                },
+                {
+                    "x": 80.34000396728516,
+                    "y": -19.37999725341797
+                },
+                {
+                    "x": 80.34000396728516,
+                    "y": 8.620001792907715
+                }
+            ],
+            "manualRouteHorizontal": true,
+            "manualRouteAxis": -36.0
         },
         {
             "startComponentId": "switch_a",
@@ -114,32 +144,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -167.79998779296875,
-                    "y": 55.0
+                    "x": -151.780029296875,
+                    "y": 8.620001792907715
                 },
                 {
-                    "x": -167.79998779296875,
-                    "y": 27.0
+                    "x": -151.780029296875,
+                    "y": -19.37999725341797
                 },
                 {
-                    "x": -167.79998779296875,
-                    "y": 0.0
+                    "x": -151.780029296875,
+                    "y": -60.0
                 },
                 {
-                    "x": 144.199951171875,
-                    "y": 0.0
+                    "x": 160.2200469970703,
+                    "y": -60.0
                 },
                 {
-                    "x": 144.199951171875,
-                    "y": 27.0
+                    "x": 160.2200469970703,
+                    "y": -19.37999725341797
                 },
                 {
-                    "x": 144.199951171875,
-                    "y": 55.0
+                    "x": 160.2200469970703,
+                    "y": 8.620001792907715
                 }
             ],
             "manualRouteHorizontal": true,
-            "manualRouteAxis": 0.0
+            "manualRouteAxis": -60.0
         },
         {
             "startComponentId": "switch_b",
@@ -161,35 +191,32 @@
             "style": "Orthogonal",
             "manualRoutePoints": [
                 {
-                    "x": -503.79998779296875,
-                    "y": 55.0
+                    "x": -536.7499389648438,
+                    "y": 54.6500129699707
                 },
                 {
-                    "x": -503.79998779296875,
-                    "y": 27.0
+                    "x": -536.7499389648438,
+                    "y": 26.650012969970704
                 },
                 {
-                    "x": -503.79998779296875,
+                    "x": -536.7499389648438,
                     "y": -84.0
                 },
                 {
-                    "x": 459.5,
+                    "x": 515.6300048828125,
                     "y": -84.0
                 },
                 {
-                    "x": 459.5,
-                    "y": 27.0
+                    "x": 515.6300048828125,
+                    "y": 64.69001770019531
                 },
                 {
-                    "x": 459.5,
-                    "y": 55.0
+                    "x": 487.6300354003906,
+                    "y": 64.69001770019531
                 }
             ],
             "manualRouteHorizontal": true,
             "manualRouteAxis": -84.0
         }
-    ],
-    "description": ""
+    ]
 }
-
-

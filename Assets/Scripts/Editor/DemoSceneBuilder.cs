@@ -1114,8 +1114,8 @@ namespace ElectricalSim.EditorTools
             emptyRoot.gameObject.SetActive(false);
 
             var topBar = CreatePanel("TopBar", simulationRoot, new Color(0.98f, 0.99f, 1f), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -82f), new Vector2(0f, 84f));
-            var palette = CreatePanel("Palette", simulationRoot, Color.white, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(0f, -83f), new Vector2(350f, -166f));
-            var workspacePanel = CreatePanel("Workspace", simulationRoot, new Color(0.96f, 0.98f, 1f), new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(175f, -83f), new Vector2(-350f, -166f));
+            var palette = CreatePanel("Palette", simulationRoot, Color.white, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(0f, -83f), new Vector2(380f, -166f));
+            var workspacePanel = CreatePanel("Workspace", simulationRoot, new Color(0.96f, 0.98f, 1f), new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(190f, -83f), new Vector2(-380f, -166f));
             workspacePanel.gameObject.AddComponent<RectMask2D>();
 
             var canvasContent = CreateRect("CanvasContent", workspacePanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(14000f, 9000f));
@@ -1124,7 +1124,7 @@ namespace ElectricalSim.EditorTools
             var wireLayer = CreateRect("WireLayer", canvasContent, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             var componentLayer = CreateRect("ComponentLayer", canvasContent, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
 
-            var logPanel = CreatePanel("ActionLogPanel", simulationRoot, Color.white, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 16f), new Vector2(318f, 186f));
+            var logPanel = CreatePanel("ActionLogPanel", simulationRoot, Color.white, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(16f, 16f), new Vector2(348f, 180f));
             var logOutline = logPanel.gameObject.AddComponent<Outline>();
             logOutline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
             logOutline.effectDistance = new Vector2(1f, -1f);

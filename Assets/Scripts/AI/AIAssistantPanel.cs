@@ -12,7 +12,9 @@ namespace ElectricalSim.AI
     public sealed class AIAssistantPanel : MonoBehaviour
     {
         private const float PanelWidth = 320f;
-        private const float PanelMargin = 16f;
+        private const float CollapsedPanelWidth = 0f;
+        private const float PanelMargin = 12f;
+        private const float CollapseHandleSize = 36f;
         private const float HeaderHeight = 42f;
         private const float QuickActionsHeight = 166f;
         private const float InputAreaHeight = 0f;
@@ -34,6 +36,10 @@ namespace ElectricalSim.AI
         private IAIAssistantService assistantService;
         private AIAssistantMode currentMode = AIAssistantMode.LocalMock;
         private CircuitSummaryBuilder summaryBuilder;
+        private Sprite collapseHandleSprite;
+        private Button collapseHandleButton;
+        private Text collapseHandleLabel;
+        private bool isRightPanelCollapsed;
 
         public static AIAssistantPanel Create(RectTransform parent, WorkspaceController workspace)
         {
@@ -63,13 +69,14 @@ namespace ElectricalSim.AI
                 panel = root.GetComponent<AIAssistantPanel>();
             }
 
-            image.color = new Color(0.95f, 0.97f, 0.99f, 1f);
+            image.color = Color.white;
             image.raycastTarget = true;
 
             panel.BuildUi(rect);
             panel.Initialize(workspace);
-            panel.AdjustWorkspaceForPanel(parent, workspace);
             panel.transform.SetAsLastSibling();
+            panel.EnsureCollapseHandle(parent);
+            panel.ApplyRightPanelLayout(false);
             return panel;
         }
 
@@ -200,26 +207,181 @@ namespace ElectricalSim.AI
             inputArea.gameObject.SetActive(false);
         }
 
-        private void AdjustWorkspaceForPanel(RectTransform parent, WorkspaceController workspaceController)
+        private void EnsureCollapseHandle(RectTransform parent)
         {
-            var workspaceRect = workspaceController != null ? workspaceController.WorkspaceRect : null;
-            if (workspaceRect == null || workspaceRect.parent != parent)
+            if (parent == null)
             {
                 return;
             }
 
-            var rect = GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(1f, workspaceRect.anchorMin.y);
-            rect.anchorMax = new Vector2(1f, workspaceRect.anchorMax.y);
-            rect.pivot = new Vector2(1f, 0.5f);
-            rect.offsetMin = new Vector2(-PanelWidth - PanelMargin, workspaceRect.offsetMin.y + PanelMargin);
-            rect.offsetMax = new Vector2(-PanelMargin, workspaceRect.offsetMax.y - PanelMargin);
-
-            var targetRight = -(PanelWidth + PanelMargin * 2f);
-            if (workspaceRect.anchorMax.x > 0.98f && workspaceRect.offsetMax.x > targetRight)
+            var handle = parent.Find("RightAssistantCollapseHandle") as RectTransform;
+            if (handle == null)
             {
-                workspaceRect.offsetMax = new Vector2(targetRight, workspaceRect.offsetMax.y);
+                handle = CreateRect("RightAssistantCollapseHandle", parent);
+                handle.gameObject.AddComponent<Image>();
+                handle.gameObject.AddComponent<Button>();
+
+                var labelRect = CreateRect("Arrow", handle);
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+
+                var label = labelRect.gameObject.AddComponent<Text>();
+                label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                label.fontSize = 21;
+                label.alignment = TextAnchor.MiddleCenter;
+                label.raycastTarget = false;
             }
+
+            handle.SetAsLastSibling();
+            handle.anchorMin = new Vector2(1f, 0.5f);
+            handle.anchorMax = new Vector2(1f, 0.5f);
+            handle.pivot = new Vector2(0.5f, 0.5f);
+            handle.sizeDelta = new Vector2(CollapseHandleSize, CollapseHandleSize);
+
+            var image = handle.GetComponent<Image>() ?? handle.gameObject.AddComponent<Image>();
+            image.sprite = GetCollapseHandleSprite();
+            image.type = Image.Type.Simple;
+            image.color = Color.white;
+            image.raycastTarget = true;
+
+            var outline = handle.GetComponent<Outline>() ?? handle.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            var shadow = handle.GetComponent<Shadow>() ?? handle.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.14f);
+            shadow.effectDistance = new Vector2(0f, -2f);
+
+            collapseHandleButton = handle.GetComponent<Button>() ?? handle.gameObject.AddComponent<Button>();
+            collapseHandleButton.onClick.RemoveListener(ToggleRightPanelCollapsed);
+            collapseHandleButton.onClick.AddListener(ToggleRightPanelCollapsed);
+            var colors = collapseHandleButton.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(0.97f, 0.98f, 1f, 1f);
+            colors.pressedColor = new Color(0.93f, 0.96f, 1f, 1f);
+            colors.selectedColor = Color.white;
+            collapseHandleButton.colors = colors;
+
+            collapseHandleLabel = handle.GetComponentInChildren<Text>(true);
+            if (collapseHandleLabel != null)
+            {
+                collapseHandleLabel.color = new Color(0.58f, 0.64f, 0.72f, 1f);
+            }
+        }
+
+        private void ToggleRightPanelCollapsed()
+        {
+            ApplyRightPanelLayout(!isRightPanelCollapsed);
+        }
+
+        private void ApplyRightPanelLayout(bool collapsed)
+        {
+            isRightPanelCollapsed = collapsed;
+            GetAssistantVerticalOffsets(out var bottom, out var top);
+
+            var rect = GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                if (isRightPanelCollapsed)
+                {
+                    rect.offsetMin = new Vector2(-CollapsedPanelWidth, bottom);
+                    rect.offsetMax = new Vector2(0f, top);
+                }
+                else
+                {
+                    rect.offsetMin = new Vector2(-PanelWidth - PanelMargin, bottom);
+                    rect.offsetMax = new Vector2(-PanelMargin, top);
+                }
+            }
+
+            SetAssistantContentVisible(!isRightPanelCollapsed);
+            AdjustWorkspaceForPanel(workspace);
+            AlignCollapseHandle();
+        }
+
+        private void GetAssistantVerticalOffsets(out float bottom, out float top)
+        {
+            var workspaceRect = workspace != null ? workspace.WorkspaceRect : null;
+            if (workspaceRect != null)
+            {
+                bottom = workspaceRect.offsetMin.y + PanelMargin;
+                top = workspaceRect.offsetMax.y - PanelMargin;
+                return;
+            }
+
+            bottom = PanelMargin;
+            top = -PanelMargin;
+        }
+
+        private void SetAssistantContentVisible(bool visible)
+        {
+            for (var i = 0; i < transform.childCount; i++)
+            {
+                transform.GetChild(i).gameObject.SetActive(visible);
+            }
+        }
+
+        private void AdjustWorkspaceForPanel(WorkspaceController workspaceController)
+        {
+            var workspaceRect = workspaceController != null ? workspaceController.WorkspaceRect : null;
+            if (workspaceRect == null)
+            {
+                return;
+            }
+
+            var reservedWidth = isRightPanelCollapsed ? 0f : PanelWidth + PanelMargin * 2f;
+            workspaceRect.offsetMax = new Vector2(-reservedWidth, workspaceRect.offsetMax.y);
+        }
+
+        private void AlignCollapseHandle()
+        {
+            if (collapseHandleButton == null)
+            {
+                return;
+            }
+
+            var handle = collapseHandleButton.transform as RectTransform;
+            if (handle != null)
+            {
+                handle.SetAsLastSibling();
+                GetAssistantVerticalOffsets(out var bottom, out var top);
+                var x = isRightPanelCollapsed
+                    ? -CollapseHandleSize * 0.5f
+                    : -(PanelWidth + PanelMargin * 2f);
+                handle.anchoredPosition = new Vector2(x, (bottom + top) * 0.5f);
+            }
+
+            if (collapseHandleLabel != null)
+            {
+                collapseHandleLabel.text = isRightPanelCollapsed ? "<" : ">";
+            }
+        }
+
+        private Sprite GetCollapseHandleSprite()
+        {
+            if (collapseHandleSprite != null)
+            {
+                return collapseHandleSprite;
+            }
+
+            var texture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            var clear = new Color(0f, 0f, 0f, 0f);
+            var fill = Color.white;
+            var center = new Vector2(31.5f, 31.5f);
+            for (var y = 0; y < 64; y++)
+            {
+                for (var x = 0; x < 64; x++)
+                {
+                    var distance = Vector2.Distance(new Vector2(x, y), center);
+                    texture.SetPixel(x, y, distance <= 30f ? fill : clear);
+                }
+            }
+
+            texture.Apply();
+            collapseHandleSprite = Sprite.Create(texture, new Rect(0f, 0f, 64f, 64f), new Vector2(0.5f, 0.5f), 64f);
+            return collapseHandleSprite;
         }
 
         private void ToggleAssistantMode()

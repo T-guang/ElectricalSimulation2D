@@ -26,16 +26,19 @@ namespace ElectricalSim.UI
             Industrial
         }
 
-        private const float PaletteWidth = 350f;
+        private const float PaletteWidth = 380f;
+        private const float CollapsedPaletteWidth = 0f;
         private const float PalettePadding = 16f;
-        private const float CardWidth = 96f;
-        private const float CardHeight = 128f;
-        private const float CardGapX = 8f;
-        private const float CardGapY = 14f;
-        private const float ContentLeft = 12f;
+        private const float PaletteVerticalOffset = -83f;
+        private const float CollapseHandleSize = 36f;
+        private const float CardWidth = 100f;
+        private const float CardHeight = 122f;
+        private const float CardGapX = 10f;
+        private const float CardGapY = 12f;
+        private const float ContentLeft = 8f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
-        private const float OperationLogHeight = 186f;
+        private const float OperationLogHeight = 180f;
         private const float OperationLogMargin = 16f;
         private const float OperationLogWidth = PaletteWidth - PalettePadding * 2f;
 
@@ -55,6 +58,10 @@ namespace ElectricalSim.UI
 
         private PaletteFilter currentFilter = PaletteFilter.All;
         private Sprite fallbackIcon;
+        private Sprite collapseHandleSprite;
+        private Button collapseHandleButton;
+        private Text collapseHandleLabel;
+        private bool isLeftPanelCollapsed;
 
         private void Awake()
         {
@@ -77,6 +84,10 @@ namespace ElectricalSim.UI
             }
 
             root.sizeDelta = new Vector2(PaletteWidth, root.sizeDelta.y);
+            if (root.GetComponent<RectMask2D>() == null)
+            {
+                root.gameObject.AddComponent<RectMask2D>();
+            }
 
             var rootImage = root.GetComponent<Image>() ?? root.gameObject.AddComponent<Image>();
             rootImage.color = Color.white;
@@ -86,7 +97,7 @@ namespace ElectricalSim.UI
             rootOutline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
             rootOutline.effectDistance = new Vector2(1f, 0f);
 
-            AlignWorkspaceToPalette(root);
+            EnsureCollapseHandle(root);
 
             var title = transform.Find("PaletteTitle") as RectTransform;
             if (title != null)
@@ -110,11 +121,125 @@ namespace ElectricalSim.UI
             EnsureViewportPosition();
             EnsureActionLogLayout();
             EnsureSectionTitleObjects();
+            ApplyLeftPanelLayout(PaletteWidth);
         }
 
-        private void AlignWorkspaceToPalette(RectTransform root)
+        private void EnsureCollapseHandle(RectTransform root)
         {
-            var parent = root.parent;
+            var parent = root.parent as RectTransform;
+            if (parent == null)
+            {
+                return;
+            }
+
+            var handle = parent.Find("LeftPaletteCollapseHandle") as RectTransform;
+            if (handle == null)
+            {
+                handle = CreateRect("LeftPaletteCollapseHandle", parent);
+                handle.gameObject.AddComponent<Image>();
+                handle.gameObject.AddComponent<Button>();
+
+                var labelRect = CreateRect("Arrow", handle);
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+
+                var label = labelRect.gameObject.AddComponent<Text>();
+                label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                label.fontSize = 21;
+                label.alignment = TextAnchor.MiddleCenter;
+                label.raycastTarget = false;
+            }
+
+            handle.SetAsLastSibling();
+            handle.anchorMin = new Vector2(0f, 0.5f);
+            handle.anchorMax = new Vector2(0f, 0.5f);
+            handle.pivot = new Vector2(0.5f, 0.5f);
+            handle.sizeDelta = new Vector2(CollapseHandleSize, CollapseHandleSize);
+
+            var image = handle.GetComponent<Image>() ?? handle.gameObject.AddComponent<Image>();
+            image.sprite = GetCollapseHandleSprite();
+            image.type = Image.Type.Simple;
+            image.color = Color.white;
+            image.raycastTarget = true;
+
+            var outline = handle.GetComponent<Outline>() ?? handle.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            var shadow = handle.GetComponent<Shadow>() ?? handle.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.14f);
+            shadow.effectDistance = new Vector2(0f, -2f);
+
+            collapseHandleButton = handle.GetComponent<Button>() ?? handle.gameObject.AddComponent<Button>();
+            collapseHandleButton.onClick.RemoveListener(ToggleLeftPanelCollapsed);
+            collapseHandleButton.onClick.AddListener(ToggleLeftPanelCollapsed);
+            var colors = collapseHandleButton.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(0.97f, 0.98f, 1f, 1f);
+            colors.pressedColor = new Color(0.93f, 0.96f, 1f, 1f);
+            colors.selectedColor = Color.white;
+            collapseHandleButton.colors = colors;
+
+            collapseHandleLabel = handle.GetComponentInChildren<Text>(true);
+            if (collapseHandleLabel != null)
+            {
+                collapseHandleLabel.color = new Color(0.58f, 0.64f, 0.72f, 1f);
+            }
+        }
+
+        private void ToggleLeftPanelCollapsed()
+        {
+            isLeftPanelCollapsed = !isLeftPanelCollapsed;
+            ApplyLeftPanelLayout(isLeftPanelCollapsed ? CollapsedPaletteWidth : PaletteWidth);
+        }
+
+        private void ApplyLeftPanelLayout(float width)
+        {
+            var root = transform as RectTransform;
+            if (root != null)
+            {
+                root.sizeDelta = new Vector2(width, root.sizeDelta.y);
+            }
+
+            SetPaletteContentVisible(!isLeftPanelCollapsed);
+            AlignWorkspaceToPalette(width);
+            AlignActionLogToPalette();
+            AlignCollapseHandle(width);
+        }
+
+        private void SetPaletteContentVisible(bool visible)
+        {
+            var title = transform.Find("PaletteTitle");
+            if (title != null)
+            {
+                title.gameObject.SetActive(visible);
+            }
+
+            var filterRow = transform.Find("PaletteFilterRow");
+            if (filterRow != null)
+            {
+                filterRow.gameObject.SetActive(visible);
+            }
+
+            var viewport = transform.Find("PaletteViewport");
+            if (viewport != null)
+            {
+                viewport.gameObject.SetActive(visible);
+            }
+
+            var parent = transform.parent;
+            var logPanel = parent != null ? parent.Find("ActionLogPanel") : null;
+            if (logPanel != null)
+            {
+                logPanel.gameObject.SetActive(visible);
+            }
+        }
+
+        private void AlignWorkspaceToPalette(float width)
+        {
+            var parent = transform.parent;
             if (parent == null)
             {
                 return;
@@ -126,8 +251,41 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            workspace.anchoredPosition = new Vector2(PaletteWidth * 0.5f, workspace.anchoredPosition.y);
-            workspace.sizeDelta = new Vector2(-PaletteWidth, workspace.sizeDelta.y);
+            workspace.offsetMin = new Vector2(width, workspace.offsetMin.y);
+        }
+
+        private void AlignActionLogToPalette()
+        {
+            var parent = transform.parent;
+            var logPanel = parent != null ? parent.Find("ActionLogPanel") as RectTransform : null;
+            if (logPanel == null)
+            {
+                return;
+            }
+
+            logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogMargin);
+            logPanel.sizeDelta = new Vector2(OperationLogWidth, OperationLogHeight);
+        }
+
+        private void AlignCollapseHandle(float width)
+        {
+            if (collapseHandleButton == null)
+            {
+                return;
+            }
+
+            var handle = collapseHandleButton.transform as RectTransform;
+            if (handle != null)
+            {
+                handle.SetAsLastSibling();
+                var x = isLeftPanelCollapsed ? CollapseHandleSize * 0.5f : width;
+                handle.anchoredPosition = new Vector2(x, PaletteVerticalOffset);
+            }
+
+            if (collapseHandleLabel != null)
+            {
+                collapseHandleLabel.text = isLeftPanelCollapsed ? ">" : "<";
+            }
         }
 
         private void EnsureFilterButtons(RectTransform root)
@@ -498,14 +656,14 @@ namespace ElectricalSim.UI
                 ContainsName(name, "Fuse_3P") ||
                 ContainsName(name, "KnifeSwitch"))
             {
-                return new Vector2(84f, 58f);
+                return new Vector2(76f, 40f);
             }
 
             if (ContainsName(name, "AC_220V_Power") ||
                 ContainsName(name, "Single_Phase_Meter") ||
                 ContainsName(name, "Breaker_1P"))
             {
-                return new Vector2(62f, 76f);
+                return new Vector2(52f, 72f);
             }
 
             if (ContainsName(name, "Contactor_KM") ||
@@ -518,10 +676,10 @@ namespace ElectricalSim.UI
                 ContainsName(name, "Breaker_3P") ||
                 ContainsName(name, "Breaker_4P"))
             {
-                return new Vector2(76f, 76f);
+                return new Vector2(72f, 72f);
             }
 
-            return new Vector2(66f, 66f);
+            return new Vector2(64f, 64f);
         }
 
         private static bool ContainsName(string value, string pattern)
@@ -668,6 +826,31 @@ namespace ElectricalSim.UI
             texture.Apply();
             fallbackIcon = Sprite.Create(texture, new Rect(0f, 0f, 64f, 64f), new Vector2(0.5f, 0.5f), 64f);
             return fallbackIcon;
+        }
+
+        private Sprite GetCollapseHandleSprite()
+        {
+            if (collapseHandleSprite != null)
+            {
+                return collapseHandleSprite;
+            }
+
+            var texture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            var clear = new Color(0f, 0f, 0f, 0f);
+            var fill = Color.white;
+            var center = new Vector2(31.5f, 31.5f);
+            for (var y = 0; y < 64; y++)
+            {
+                for (var x = 0; x < 64; x++)
+                {
+                    var distance = Vector2.Distance(new Vector2(x, y), center);
+                    texture.SetPixel(x, y, distance <= 30f ? fill : clear);
+                }
+            }
+
+            texture.Apply();
+            collapseHandleSprite = Sprite.Create(texture, new Rect(0f, 0f, 64f, 64f), new Vector2(0.5f, 0.5f), 64f);
+            return collapseHandleSprite;
         }
 
         private static Color GetCategoryIconColor(ComponentCategory category)
