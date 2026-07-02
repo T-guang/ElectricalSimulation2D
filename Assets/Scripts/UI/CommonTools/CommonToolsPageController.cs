@@ -299,7 +299,7 @@ namespace ElectricalSim.UI.CommonTools
             for (var i = 0; i < formulas.Count; i++)
             {
                 var captured = formulas[i];
-                var button = CreateListButton(listPanel, captured.Title, i);
+                var button = CreateListButton(listPanel, captured.Title);
                 button.onClick.AddListener(() => ShowFormula(captured));
             }
 
@@ -318,7 +318,7 @@ namespace ElectricalSim.UI.CommonTools
             for (var i = 0; i < articles.Count; i++)
             {
                 var captured = articles[i];
-                var button = CreateListButton(listPanel, captured.Title, i);
+                var button = CreateListButton(listPanel, captured.Title);
                 button.onClick.AddListener(() => ShowArticle(captured));
             }
 
@@ -330,10 +330,44 @@ namespace ElectricalSim.UI.CommonTools
             var panel = CreatePanel(name, parent, new Color(0.97f, 0.98f, 1f));
             SetRect(panel, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, -24f), new Vector2(250f, -48f));
             AddSoftOutline(panel);
+            
             var titleText = CreateText("Title", panel, title, 20, FontStyle.Bold, TextDark);
             titleText.alignment = TextAnchor.MiddleLeft;
             SetRect(titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(18f, -12f), new Vector2(-36f, 36f));
-            return panel;
+
+            var viewport = CreatePanel(name + "Viewport", panel, new Color(1f, 1f, 1f, 0.01f));
+            SetRect(viewport, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(0f, -54f));
+            viewport.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+
+            var content = CreateRect(name + "Content", viewport);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = new Vector2(0f, 0f);
+
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 8f;
+            layout.padding = new RectOffset(14, 14, 14, 14);
+
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scroll = panel.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport;
+            scroll.content = content;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 30f;
+
+            return content;
         }
 
         private RectTransform BuildDetailPanel(RectTransform parent, string name, float left)
@@ -380,12 +414,17 @@ namespace ElectricalSim.UI.CommonTools
             return content;
         }
 
-        private Button CreateListButton(RectTransform parent, string title, int index)
+        private Button CreateListButton(RectTransform parent, string title)
         {
-            var button = CreateButton("ListItem_" + index, parent, title, Color.white, TextDark, 15);
-            SetRect(button.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(14f, -64f - index * 44f), new Vector2(-28f, 36f));
+            var button = CreateButton("ListItem", parent, title, Color.white, TextDark, 15);
+            var layoutElement = button.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minHeight = 36f;
+            layoutElement.preferredHeight = 36f;
+
             var label = button.GetComponentInChildren<Text>();
-            label.alignment = TextAnchor.MiddleLeft;
+            label.alignment = TextAnchor.MiddleCenter;
+            // Let the Text fill the button naturally
+            SetRect(label.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             return button;
         }
 
