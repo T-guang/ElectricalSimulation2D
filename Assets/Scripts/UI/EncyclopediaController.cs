@@ -181,7 +181,7 @@ namespace ElectricalSim.UI
             }
 
             var scrollRoot = CreatePanel("CardScrollView", listViewRoot, new Color(1f, 1f, 1f, 0.01f));
-            StretchTo(scrollRoot, 250f, 104f, 32f, 24f);
+            StretchTo(scrollRoot, 290f, 104f, 32f, 24f);
 
             var viewport = CreatePanel("Viewport", scrollRoot, new Color(1f, 1f, 1f, 0.01f));
             StretchTo(viewport, 0f, 0f, 0f, 0f);
@@ -189,8 +189,8 @@ namespace ElectricalSim.UI
             mask.showMaskGraphic = false;
 
             cardContent = CreateRect("CardGridContent", viewport);
-            cardContent.anchorMin = new Vector2(0f, 1f);
-            cardContent.anchorMax = new Vector2(1f, 1f);
+            cardContent.anchorMin = new Vector2(0.5f, 1f);
+            cardContent.anchorMax = new Vector2(0.5f, 1f);
             cardContent.pivot = new Vector2(0.5f, 1f);
             cardContent.anchoredPosition = Vector2.zero;
             cardContent.sizeDelta = Vector2.zero;
@@ -206,7 +206,7 @@ namespace ElectricalSim.UI
             cardGridLayout.constraintCount = 3;
 
             var fitter = cardContent.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             cardScrollRect = scrollRoot.gameObject.AddComponent<ScrollRect>();
@@ -219,7 +219,7 @@ namespace ElectricalSim.UI
 
             emptyText = CreateText("EmptyText", listViewRoot, "未找到相关元器件", 18, FontStyle.Normal, new Color(0.40f, 0.46f, 0.55f));
             emptyText.alignment = TextAnchor.MiddleCenter;
-            StretchTo(emptyText.rectTransform, 250f, 104f, 32f, 24f);
+            StretchTo(emptyText.rectTransform, 290f, 104f, 32f, 24f);
             emptyText.gameObject.SetActive(false);
         }
 
@@ -304,7 +304,7 @@ namespace ElectricalSim.UI
             }
 
             var columns = Mathf.Max(1, Mathf.FloorToInt((viewportWidth + CardGapX) / (CardWidth + CardGapX)));
-            cardGridLayout.constraintCount = Mathf.Clamp(columns, 1, 3);
+            cardGridLayout.constraintCount = columns;
 
             for (var i = 0; i < filtered.Count; i++)
             {
