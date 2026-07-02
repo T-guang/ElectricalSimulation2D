@@ -474,10 +474,9 @@ namespace ElectricalSim.UI
             title.verticalOverflow = VerticalWrapMode.Overflow;
             title.gameObject.AddComponent<LayoutElement>().preferredHeight = 38f;
 
-            AddDetailLine(infoPanel, "分类：" + entry.Category);
+                        AddDetailLine(infoPanel, "分类：" + entry.Category);
             AddDetailLine(infoPanel, "适用电路：" + entry.CircuitType);
-            AddDetailLine(infoPanel, "额定电压：" + Fallback(entry.RatedVoltage));
-            AddDetailLine(infoPanel, "额定电流：" + Fallback(entry.RatedCurrent));
+            AddDetailLine(infoPanel, "核心参数：" + BuildBasicSummary(entry));
             AddDetailLine(infoPanel, "端子：" + BuildTerminalSummary(entry.Definition, entry.Terminals), 52f);
         }
 
