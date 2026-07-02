@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using ElectricalSim.UI.CommonTools;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -37,6 +38,11 @@ namespace ElectricalSim.UI
                 null,
                 emptyPageRoot,
                 emptyPageTitle);
+
+            if (toolsRoot != null && toolsRoot.GetComponent<CommonToolsPageController>() == null)
+            {
+                toolsRoot.AddComponent<CommonToolsPageController>();
+            }
 
             for (var i = 0; i < tabButtons.Count; i++)
             {

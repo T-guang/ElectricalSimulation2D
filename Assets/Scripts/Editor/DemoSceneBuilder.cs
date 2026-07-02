@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using ElectricalSim.Core;
 using ElectricalSim.UI;
+using ElectricalSim.UI.CommonTools;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -1353,59 +1354,9 @@ namespace ElectricalSim.EditorTools
 
         private static void BuildToolsPage(RectTransform parent)
         {
-            var title = CreateText("ToolsTitle", parent, "常用工具", 32, TextAnchor.MiddleLeft);
-            title.fontStyle = FontStyle.Bold;
-            SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -30f), new Vector2(260f, 54f));
-
-            var subtitle = CreateText("ToolsSubtitle", parent, "常用电工电子资料入口，后续可逐步补充可查询、可计算、可练习的内容。", 18, TextAnchor.MiddleLeft);
-            subtitle.color = new Color(0.35f, 0.42f, 0.52f);
-            SetRect(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(300f, -34f), new Vector2(-80f, 48f));
-
-            var toolNames = new[]
+            if (parent.GetComponent<CommonToolsPageController>() == null)
             {
-                "电器符号",
-                "电路公式",
-                "电路资料",
-                "四色环电阻",
-                "五色环电阻"
-            };
-
-            var toolNotes = new[]
-            {
-                "常见图形符号查询",
-                "欧姆定律、功率等公式",
-                "常用接线与安全资料",
-                "四色环阻值识别",
-                "五色环阻值识别"
-            };
-
-            var startX = 34f;
-            var startY = -128f;
-            var cardWidth = 300f;
-            var cardHeight = 132f;
-            var gapX = 26f;
-            var gapY = 24f;
-
-            for (var i = 0; i < toolNames.Length; i++)
-            {
-                var row = i / 3;
-                var col = i % 3;
-                var card = CreatePanel("ToolCard_" + i, parent, Color.white, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(startX + col * (cardWidth + gapX), startY - row * (cardHeight + gapY)), new Vector2(cardWidth, cardHeight));
-                card.gameObject.AddComponent<Button>();
-
-                var name = CreateText("Name", card, toolNames[i], 23, TextAnchor.MiddleLeft);
-                name.fontStyle = FontStyle.Bold;
-                name.color = new Color(0.05f, 0.08f, 0.14f);
-                SetRect(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(24f, -22f), new Vector2(-48f, 42f));
-
-                var note = CreateText("Note", card, toolNotes[i], 16, TextAnchor.UpperLeft);
-                note.color = new Color(0.35f, 0.42f, 0.52f);
-                note.horizontalOverflow = HorizontalWrapMode.Wrap;
-                SetRect(note.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(24f, 18f), new Vector2(-48f, -76f));
-
-                var status = CreateText("Status", card, "内容待补充", 15, TextAnchor.MiddleRight);
-                status.color = new Color(0.12f, 0.45f, 1f);
-                SetRect(status.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(24f, 18f), new Vector2(-48f, 30f));
+                parent.gameObject.AddComponent<CommonToolsPageController>();
             }
         }
 
