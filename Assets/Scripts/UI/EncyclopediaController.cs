@@ -608,14 +608,13 @@ namespace ElectricalSim.UI
             return parts.Count > 0 ? string.Join(" / ", parts) : "参数：待补充";
         }
 
-        private static string BuildDetailBasicInfo(ComponentEncyclopediaEntry entry)
+                private static string BuildDetailBasicInfo(ComponentEncyclopediaEntry entry)
         {
             return "名称：" + entry.DisplayName +
                    "\n分类：" + entry.Category +
                    "\n适用电路：" + entry.CircuitType +
-                   "\n额定电压：" + Fallback(entry.RatedVoltage) +
-                   "\n额定电流：" + Fallback(entry.RatedCurrent) +
-                   "\n端子：" + BuildTerminalSummary(entry.Definition, entry.Terminals);
+                   "\n核心参数：" + BuildBasicSummary(entry) +
+                   "\n引脚端子：" + BuildTerminalSummary(entry.Definition, entry.Terminals);
         }
 
         private static string BuildTerminalSummary(ComponentDefinition definition, string[] fallbackTerminals)
