@@ -20,13 +20,14 @@ namespace ElectricalSim.UI.CommonTools
         private readonly List<Button> bandButtons = new List<Button>();
         private readonly List<Text> bandLabels = new List<Text>();
         private readonly List<Button> colorButtons = new List<Button>();
-        private readonly List<Outline> bandOutlines = new List<Outline>();
+        private readonly List<RectTransform> bandIndicators = new List<RectTransform>();
 
         private RectTransform contentRoot;
         private RectTransform resistorPanel;
         private RectTransform formulaPanel;
         private RectTransform articlePanel;
         private RectTransform resistorPreview;
+        private RectTransform resistorBandLayer;
         private Text resistorResultText;
         private Text bandSummaryText;
         private RectTransform formulaDetailContent;
@@ -196,19 +197,40 @@ namespace ElectricalSim.UI.CommonTools
                 BuildFallbackResistorBody();
             }
 
+            resistorBandLayer = CreateRect("BandLayer", resistorPreview);
+            SetRect(resistorBandLayer, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 182f));
+
             for (var i = 0; i < 5; i++)
             {
-                var band = CreatePanel("Band" + (i + 1), resistorPreview, Color.black);
+                var band = CreatePanel("Band" + (i + 1), resistorBandLayer, Color.black);
+                band.GetComponent<Image>().raycastTarget = false;
                 SetResistorBandRect(band, i);
                 var darkOutline = band.gameObject.AddComponent<Outline>();
-                darkOutline.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.55f);
+                darkOutline.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.42f);
                 darkOutline.effectDistance = new Vector2(1f, -1f);
 
-                var selectedOutline = band.gameObject.AddComponent<Outline>();
-                selectedOutline.effectColor = new Color(0.15f, 0.39f, 0.92f, 0f);
-                selectedOutline.effectDistance = new Vector2(4f, -4f);
-                bandOutlines.Add(selectedOutline);
+                AddBandSurfaceDetails(band);
+
+                var indicator = CreatePanel("SelectedMarker" + (i + 1), resistorBandLayer, new Color(0.15f, 0.39f, 0.92f, 0f));
+                indicator.GetComponent<Image>().raycastTarget = false;
+                SetBandIndicatorRect(indicator, i);
+                bandIndicators.Add(indicator);
             }
+        }
+
+        private void AddBandSurfaceDetails(RectTransform band)
+        {
+            var leftShadow = CreatePanel("LeftShadow", band, new Color(0f, 0f, 0f, 0.20f));
+            StretchTo(leftShadow, 0f, 0f, 10f, 0f);
+            leftShadow.GetComponent<Image>().raycastTarget = false;
+
+            var rightShadow = CreatePanel("RightShadow", band, new Color(0f, 0f, 0f, 0.16f));
+            StretchTo(rightShadow, 10f, 0f, 0f, 0f);
+            rightShadow.GetComponent<Image>().raycastTarget = false;
+
+            var centerHighlight = CreatePanel("CenterHighlight", band, new Color(1f, 1f, 1f, 0.18f));
+            SetRect(centerHighlight, new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(4f, 0f));
+            centerHighlight.GetComponent<Image>().raycastTarget = false;
         }
 
         private void BuildFallbackResistorBody()
@@ -233,7 +255,13 @@ namespace ElectricalSim.UI.CommonTools
         private void SetResistorBandRect(RectTransform band, int index)
         {
             var positions = fiveBandMode ? FiveBandPositions : FourBandPositions;
-            SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(positions[index], -2f), new Vector2(22f, 122f));
+            SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(positions[index], -2f), new Vector2(14f, 82f));
+        }
+
+        private void SetBandIndicatorRect(RectTransform indicator, int index)
+        {
+            var positions = fiveBandMode ? FiveBandPositions : FourBandPositions;
+            SetRect(indicator, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(positions[index], -50f), new Vector2(18f, 3f));
         }
 
         private void CreateLead(string name, Vector2 position, Vector2 size)
@@ -512,7 +540,7 @@ namespace ElectricalSim.UI.CommonTools
             var visibleBands = fiveBandMode ? 5 : 4;
             for (var i = 0; i < 5; i++)
             {
-                var band = resistorPreview.Find("Band" + (i + 1));
+                var band = resistorBandLayer != null ? resistorBandLayer.Find("Band" + (i + 1)) : null;
                 if (band != null)
                 {
                     band.gameObject.SetActive(i < visibleBands);
@@ -520,10 +548,12 @@ namespace ElectricalSim.UI.CommonTools
                     band.GetComponent<Image>().color = resistorColors[bandColorIndices[i]].Color;
                 }
 
-                if (i < bandOutlines.Count)
+                if (i < bandIndicators.Count)
                 {
-                    bandOutlines[i].effectColor = selectedBandIndex == i && i < visibleBands
-                        ? new Color(0.15f, 0.39f, 0.92f, 0.85f)
+                    bandIndicators[i].gameObject.SetActive(i < visibleBands);
+                    SetBandIndicatorRect(bandIndicators[i], i);
+                    bandIndicators[i].GetComponent<Image>().color = selectedBandIndex == i && i < visibleBands
+                        ? new Color(0.15f, 0.39f, 0.92f, 0.78f)
                         : new Color(0.15f, 0.39f, 0.92f, 0f);
                 }
 
@@ -794,7 +824,8 @@ namespace ElectricalSim.UI.CommonTools
             bandButtons.Clear();
             bandLabels.Clear();
             colorButtons.Clear();
-            bandOutlines.Clear();
+            bandIndicators.Clear();
+            resistorBandLayer = null;
         }
 
         private static void ClearChildren(RectTransform root)
