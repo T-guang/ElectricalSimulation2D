@@ -10,10 +10,10 @@ namespace ElectricalSim.UI
     {
         private const string CategoryAll = "全部";
         private const float SidebarWidth = 220f;
-        private const float CardWidth = 360f;
-        private const float CardHeight = 160f;
-        private const float CardGapX = 18f;
-        private const float CardGapY = 18f;
+        private const float CardWidth = 300f;
+        private const float CardHeight = 140f;
+        private const float CardGapX = 14f;
+        private const float CardGapY = 14f;
 
         [SerializeField] private List<Button> categoryButtons = new List<Button>();
         [SerializeField] private List<Text> categoryLabels = new List<Text>();
@@ -203,7 +203,7 @@ namespace ElectricalSim.UI
             cardGridLayout.startCorner = GridLayoutGroup.Corner.UpperLeft;
             cardGridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
             cardGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            cardGridLayout.constraintCount = 2;
+            cardGridLayout.constraintCount = 3;
 
             var fitter = cardContent.gameObject.AddComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -330,38 +330,67 @@ namespace ElectricalSim.UI
             cardLayout.preferredWidth = CardWidth;
             cardLayout.preferredHeight = CardHeight;
             var button = card.gameObject.AddComponent<Button>();
+            button.targetGraphic = card.GetComponent<Image>();
             var outline = card.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(0.88f, 0.91f, 0.95f, 1f);
             outline.effectDistance = new Vector2(1f, -1f);
             button.onClick.AddListener(() => ShowDetail(entry));
 
-            var image = CreatePanel("ImageArea", card, new Color(0.97f, 0.98f, 1f, 1f));
-            SetRect(image, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(16f, -16f), new Vector2(104f, 124f));
-            var imageComponent = image.GetComponent<Image>();
+            var thumbnailArea = CreatePanel("ThumbnailArea", card, new Color(0.97f, 0.98f, 1f, 1f));
+            SetRect(thumbnailArea, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(104f, -24f));
+            var mask = thumbnailArea.gameObject.AddComponent<Mask>();
+            mask.showMaskGraphic = true;
+
+            var image = CreateRect("ThumbnailImage", thumbnailArea);
+            var imageComponent = image.gameObject.AddComponent<Image>();
             var sprite = ResolveIcon(entry.Definition);
             imageComponent.sprite = sprite != null ? sprite : GetFallbackSprite();
             imageComponent.color = sprite != null ? Color.white : new Color(0.86f, 0.90f, 0.96f, 1f);
             imageComponent.preserveAspect = true;
             imageComponent.raycastTarget = false;
+            
+            SetRect(image, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(86f, 108f));
 
-            var name = CreateText("Name", card, entry.DisplayName, 18, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
+            var infoArea = CreateRect("InfoArea", card);
+            SetRect(infoArea, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(0f, 0f));
+            infoArea.offsetMin = new Vector2(124f, 12f);
+            infoArea.offsetMax = new Vector2(-12f, -14f);
+
+            var infoLayout = infoArea.gameObject.AddComponent<VerticalLayoutGroup>();
+            infoLayout.childAlignment = TextAnchor.UpperLeft;
+            infoLayout.childControlWidth = true;
+            infoLayout.childControlHeight = true;
+            infoLayout.childForceExpandWidth = true;
+            infoLayout.childForceExpandHeight = false;
+            infoLayout.spacing = 5f;
+
+            var name = CreateText("NameText", infoArea, entry.DisplayName, 16, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
             name.alignment = TextAnchor.UpperLeft;
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
-            SetRect(name.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(136f, -18f), new Vector2(-18f, 48f));
+            name.verticalOverflow = VerticalWrapMode.Truncate;
+            var nameLayout = name.gameObject.AddComponent<LayoutElement>();
+            nameLayout.preferredHeight = 42f;
 
-            var meta = CreateText("Meta", card, entry.Category + " / " + entry.CircuitType, 13, FontStyle.Normal, new Color(0.35f, 0.42f, 0.52f));
-            meta.alignment = TextAnchor.UpperLeft;
-            SetRect(meta.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(136f, -72f), new Vector2(-18f, 36f));
+            var category = CreateText("CategoryText", infoArea, entry.Category, 12, FontStyle.Normal, new Color(0.35f, 0.42f, 0.52f));
+            category.alignment = TextAnchor.MiddleLeft;
+            category.horizontalOverflow = HorizontalWrapMode.Wrap;
+            category.verticalOverflow = VerticalWrapMode.Truncate;
+            var catLayout = category.gameObject.AddComponent<LayoutElement>();
+            catLayout.preferredHeight = 16f;
 
-            var rating = CreateText("Rating", card, BuildBasicSummary(entry), 13, FontStyle.Normal, new Color(0.08f, 0.32f, 0.60f));
-            rating.alignment = TextAnchor.UpperLeft;
-            rating.horizontalOverflow = HorizontalWrapMode.Wrap;
-            SetRect(rating.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(16f, 46f), new Vector2(-16f, 46f));
+            var param = CreateText("ParamText", infoArea, BuildBasicSummary(entry), 12, FontStyle.Normal, new Color(0.08f, 0.32f, 0.60f));
+            param.alignment = TextAnchor.MiddleLeft;
+            param.horizontalOverflow = HorizontalWrapMode.Wrap;
+            param.verticalOverflow = VerticalWrapMode.Truncate;
+            var paramLayout = param.gameObject.AddComponent<LayoutElement>();
+            paramLayout.preferredHeight = 16f;
 
-            var terminals = CreateText("Terminals", card, "端子：" + BuildTerminalSummary(entry.Definition, entry.Terminals), 13, FontStyle.Normal, new Color(0.18f, 0.24f, 0.32f));
+            var terminals = CreateText("TerminalText", infoArea, BuildTerminalSummary(entry.Definition, entry.Terminals), 12, FontStyle.Normal, new Color(0.18f, 0.24f, 0.32f));
             terminals.alignment = TextAnchor.UpperLeft;
             terminals.horizontalOverflow = HorizontalWrapMode.Wrap;
-            SetRect(terminals.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(16f, 14f), new Vector2(-16f, 30f));
+            terminals.verticalOverflow = VerticalWrapMode.Truncate;
+            var termLayout = terminals.gameObject.AddComponent<LayoutElement>();
+            termLayout.preferredHeight = 32f;
 
             return card;
         }
@@ -597,7 +626,16 @@ namespace ElectricalSim.UI
                 parts.AddRange(fallbackTerminals);
             }
 
-            return parts.Count > 0 ? string.Join("、", parts) : "暂无端子";
+            if (parts.Count == 0)
+                return "端子：暂无端子";
+
+            if (parts.Count <= 6)
+                return "端子：" + string.Join("、", parts);
+
+            var firstSix = new List<string>();
+            for (var i = 0; i < 6; i++) firstSix.Add(parts[i]);
+            
+            return "端子：共 " + parts.Count + " 个，" + string.Join("、", firstSix) + " 等";
         }
 
         private static string Fallback(string value)
