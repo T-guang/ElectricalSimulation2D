@@ -20,6 +20,7 @@ namespace ElectricalSim.UI.CommonTools
         private readonly List<Button> bandButtons = new List<Button>();
         private readonly List<Text> bandLabels = new List<Text>();
         private readonly List<Button> colorButtons = new List<Button>();
+        private readonly List<Outline> bandOutlines = new List<Outline>();
 
         private RectTransform contentRoot;
         private RectTransform resistorPanel;
@@ -27,14 +28,9 @@ namespace ElectricalSim.UI.CommonTools
         private RectTransform articlePanel;
         private RectTransform resistorPreview;
         private Text resistorResultText;
-        private Text formulaTitleText;
-        private Text formulaExpressionText;
-        private Text formulaVariablesText;
-        private Text formulaUseCaseText;
-        private Text formulaExampleText;
-        private Text formulaNoteText;
-        private Text articleTitleText;
-        private Text articleContentText;
+        private Text bandSummaryText;
+        private RectTransform formulaDetailContent;
+        private RectTransform articleDetailContent;
 
         private List<ResistorColorEntry> resistorColors;
         private List<CommonFormulaEntry> formulas;
@@ -164,32 +160,48 @@ namespace ElectricalSim.UI.CommonTools
             fiveButton.onClick.AddListener(() => SetBandMode(true));
 
             resistorPreview = CreatePanel("ResistorPreview", resistorPanel, new Color(0.97f, 0.98f, 1f));
-            SetRect(resistorPreview, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(28f, -86f), new Vector2(-28f, 156f));
+            SetRect(resistorPreview, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(28f, -76f), new Vector2(-28f, 180f));
             AddSoftOutline(resistorPreview);
 
             BuildResistorPreview();
 
             resistorResultText = CreateText("ResultText", resistorPanel, string.Empty, 24, FontStyle.Bold, PrimaryBlue);
             resistorResultText.alignment = TextAnchor.MiddleCenter;
-            SetRect(resistorResultText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(28f, -260f), new Vector2(-28f, 42f));
+            resistorResultText.verticalOverflow = VerticalWrapMode.Overflow;
+            SetRect(resistorResultText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(28f, -268f), new Vector2(-28f, 86f));
 
             BuildBandSelector();
+            BuildExampleButtons();
             BuildColorSelector();
             RefreshResistorTool();
         }
 
         private void BuildResistorPreview()
         {
-            var body = CreatePanel("ResistorBody", resistorPreview, new Color(0.87f, 0.74f, 0.50f));
-            SetRect(body, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, 68f));
+            CreateLead("LeadLeft", new Vector2(-380f, 0f), new Vector2(230f, 8f));
+            CreateLead("LeadRight", new Vector2(380f, 0f), new Vector2(230f, 8f));
 
-            CreateLead("LeadLeft", new Vector2(-370f, 0f), new Vector2(210f, 8f));
-            CreateLead("LeadRight", new Vector2(370f, 0f), new Vector2(210f, 8f));
+            var body = CreatePanel("ResistorBody", resistorPreview, new Color(0.86f, 0.72f, 0.48f));
+            SetRect(body, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(540f, 86f));
+            AddSoftOutline(body);
+
+            var leftCap = CreatePanel("CapLeft", resistorPreview, new Color(0.78f, 0.62f, 0.38f));
+            SetRect(leftCap, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-272f, 0f), new Vector2(46f, 104f));
+
+            var rightCap = CreatePanel("CapRight", resistorPreview, new Color(0.78f, 0.62f, 0.38f));
+            SetRect(rightCap, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(272f, 0f), new Vector2(46f, 104f));
+
+            var highlight = CreatePanel("BodyHighlight", resistorPreview, new Color(1f, 0.92f, 0.70f, 0.72f));
+            SetRect(highlight, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 22f), new Vector2(470f, 16f));
 
             for (var i = 0; i < 5; i++)
             {
                 var band = CreatePanel("Band" + (i + 1), resistorPreview, Color.black);
-                SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-150f + i * 75f, 0f), new Vector2(28f, 86f));
+                SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-165f + i * 78f, 0f), new Vector2(24f, 104f));
+                var outline = band.gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0.15f, 0.39f, 0.92f, 0f);
+                outline.effectDistance = new Vector2(3f, -3f);
+                bandOutlines.Add(outline);
             }
         }
 
@@ -203,13 +215,13 @@ namespace ElectricalSim.UI.CommonTools
         {
             var bandTitle = CreateText("BandSelectorTitle", resistorPanel, "选择要编辑的色环", 17, FontStyle.Bold, TextDark);
             bandTitle.alignment = TextAnchor.MiddleLeft;
-            SetRect(bandTitle.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -326f), new Vector2(220f, 34f));
+            SetRect(bandTitle.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -362f), new Vector2(220f, 34f));
 
             for (var i = 0; i < 5; i++)
             {
                 var captured = i;
                 var button = CreateButton("BandSelector_" + i, resistorPanel, "第" + (i + 1) + "环", new Color(0.94f, 0.97f, 1f), TextDark, 15);
-                SetRect(button.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f + i * 92f, -366f), new Vector2(82f, 34f));
+                SetRect(button.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f + i * 96f, -398f), new Vector2(86f, 36f));
                 button.onClick.AddListener(() =>
                 {
                     selectedBandIndex = captured;
@@ -218,21 +230,57 @@ namespace ElectricalSim.UI.CommonTools
                 bandButtons.Add(button);
                 bandLabels.Add(button.GetComponentInChildren<Text>());
             }
+
+            bandSummaryText = CreateText("BandSummary", resistorPanel, string.Empty, 15, FontStyle.Normal, TextMuted);
+            bandSummaryText.alignment = TextAnchor.MiddleLeft;
+            bandSummaryText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            SetRect(bandSummaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(34f, -438f), new Vector2(-68f, 34f));
+        }
+
+        private void BuildExampleButtons()
+        {
+            var title = CreateText("ExampleTitle", resistorPanel, "常用示例", 17, FontStyle.Bold, TextDark);
+            title.alignment = TextAnchor.MiddleLeft;
+            SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -478f), new Vector2(120f, 32f));
+
+            AddExampleButton("10 Ω", 0, 1, 0, 0);
+            AddExampleButton("100 Ω", 1, 1, 0, 1);
+            AddExampleButton("220 Ω", 2, 2, 2, 1);
+            AddExampleButton("1 kΩ", 3, 1, 0, 2);
+            AddExampleButton("4.7 kΩ", 4, 4, 7, 2);
+            AddExampleButton("10 kΩ", 5, 1, 0, 3);
+            AddExampleButton("100 kΩ", 6, 1, 0, 4);
+            AddExampleButton("1 MΩ", 7, 1, 0, 5);
+        }
+
+        private void AddExampleButton(string label, int index, int band1, int band2, int multiplier)
+        {
+            var button = CreateButton("Example_" + index, resistorPanel, label, new Color(0.96f, 0.98f, 1f), TextDark, 14);
+            SetRect(button.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f + index * 82f, -514f), new Vector2(74f, 30f));
+            button.onClick.AddListener(() =>
+            {
+                fiveBandMode = false;
+                selectedBandIndex = 0;
+                bandColorIndices[0] = band1;
+                bandColorIndices[1] = band2;
+                bandColorIndices[2] = multiplier;
+                bandColorIndices[3] = 10;
+                bandColorIndices[4] = 10;
+                RefreshResistorTool();
+            });
         }
 
         private void BuildColorSelector()
         {
             var title = CreateText("ColorSelectorTitle", resistorPanel, "颜色", 17, FontStyle.Bold, TextDark);
             title.alignment = TextAnchor.MiddleLeft;
-            SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -430f), new Vector2(120f, 34f));
+            SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -558f), new Vector2(120f, 34f));
 
             for (var i = 0; i < resistorColors.Count; i++)
             {
                 var entry = resistorColors[i];
-                var row = i / 6;
-                var col = i % 6;
                 var button = CreateButton("Color_" + entry.Name, resistorPanel, entry.Name, entry.Color, GetReadableTextColor(entry.Color), 15);
-                SetRect(button.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f + col * 92f, -472f - row * 48f), new Vector2(78f, 34f));
+                SetRect(button.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(104f, 42f));
                 var captured = i;
                 button.onClick.AddListener(() => SetSelectedBandColor(captured));
                 colorButtons.Add(button);
@@ -246,7 +294,7 @@ namespace ElectricalSim.UI.CommonTools
 
             var listPanel = BuildListPanel(formulaPanel, "FormulaList", "公式列表");
             var detailPanel = BuildDetailPanel(formulaPanel, "FormulaDetail", 300f);
-            var detailContent = BuildScrollableContent(detailPanel, "FormulaDetailContent", 760f);
+            formulaDetailContent = BuildScrollableContent(detailPanel, "FormulaDetailContent", 760f);
 
             for (var i = 0; i < formulas.Count; i++)
             {
@@ -255,12 +303,6 @@ namespace ElectricalSim.UI.CommonTools
                 button.onClick.AddListener(() => ShowFormula(captured));
             }
 
-            formulaTitleText = CreateDetailText(detailContent, "FormulaTitle", 26, FontStyle.Bold, TextDark, -24f, 48f);
-            formulaExpressionText = CreateDetailText(detailContent, "FormulaExpression", 28, FontStyle.Bold, PrimaryBlue, -86f, 54f);
-            formulaVariablesText = CreateDetailText(detailContent, "FormulaVariables", 16, FontStyle.Normal, TextDark, -158f, 90f);
-            formulaUseCaseText = CreateDetailText(detailContent, "FormulaUseCase", 16, FontStyle.Normal, TextDark, -260f, 86f);
-            formulaExampleText = CreateDetailText(detailContent, "FormulaExample", 16, FontStyle.Normal, TextDark, -360f, 86f);
-            formulaNoteText = CreateDetailText(detailContent, "FormulaNote", 16, FontStyle.Normal, TextMuted, -460f, 86f);
             ShowFormula(formulas.Count > 0 ? formulas[0] : null);
         }
 
@@ -271,7 +313,7 @@ namespace ElectricalSim.UI.CommonTools
 
             var listPanel = BuildListPanel(articlePanel, "ArticleList", "资料目录");
             var detailPanel = BuildDetailPanel(articlePanel, "ArticleDetail", 300f);
-            var detailContent = BuildScrollableContent(detailPanel, "ArticleDetailContent", 900f);
+            articleDetailContent = BuildScrollableContent(detailPanel, "ArticleDetailContent", 900f);
 
             for (var i = 0; i < articles.Count; i++)
             {
@@ -280,9 +322,6 @@ namespace ElectricalSim.UI.CommonTools
                 button.onClick.AddListener(() => ShowArticle(captured));
             }
 
-            articleTitleText = CreateDetailText(detailContent, "ArticleTitle", 26, FontStyle.Bold, TextDark, -24f, 52f);
-            articleContentText = CreateDetailText(detailContent, "ArticleContent", 17, FontStyle.Normal, TextDark, -94f, 740f);
-            articleContentText.verticalOverflow = VerticalWrapMode.Overflow;
             ShowArticle(articles.Count > 0 ? articles[0] : null);
         }
 
@@ -317,6 +356,19 @@ namespace ElectricalSim.UI.CommonTools
             content.pivot = new Vector2(0.5f, 1f);
             content.anchoredPosition = Vector2.zero;
             content.sizeDelta = new Vector2(0f, contentHeight);
+
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 14f;
+            layout.padding = new RectOffset(18, 18, 18, 24);
+
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var scroll = parent.gameObject.AddComponent<ScrollRect>();
             scroll.viewport = viewport;
@@ -397,6 +449,13 @@ namespace ElectricalSim.UI.CommonTools
                     band.GetComponent<Image>().color = resistorColors[bandColorIndices[i]].Color;
                 }
 
+                if (i < bandOutlines.Count)
+                {
+                    bandOutlines[i].effectColor = selectedBandIndex == i && i < visibleBands
+                        ? new Color(0.15f, 0.39f, 0.92f, 0.85f)
+                        : new Color(0.15f, 0.39f, 0.92f, 0f);
+                }
+
                 if (i < bandButtons.Count)
                 {
                     bandButtons[i].gameObject.SetActive(i < visibleBands);
@@ -404,12 +463,32 @@ namespace ElectricalSim.UI.CommonTools
                     bandButtons[i].GetComponent<Image>().color = active ? new Color(0.89f, 0.94f, 1f) : new Color(0.96f, 0.98f, 1f);
                     bandLabels[i].color = active ? PrimaryBlue : TextDark;
                     bandLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+                    bandLabels[i].text = "第" + (i + 1) + "环\n" + GetBandRoleName(i);
                 }
             }
 
+            var visibleColorIndex = 0;
             for (var i = 0; i < colorButtons.Count; i++)
             {
-                colorButtons[i].interactable = IsColorAllowedForBand(i, selectedBandIndex);
+                var allowed = IsColorAllowedForBand(i, selectedBandIndex);
+                var button = colorButtons[i];
+                button.gameObject.SetActive(allowed);
+                button.interactable = allowed;
+                if (allowed)
+                {
+                    var row = visibleColorIndex / 6;
+                    var col = visibleColorIndex % 6;
+                    SetRect(button.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f + col * 104f, -594f - row * 46f), new Vector2(94f, 38f));
+                    var label = button.GetComponentInChildren<Text>();
+                    label.text = GetColorButtonLabel(resistorColors[i], selectedBandIndex);
+                    label.fontSize = 13;
+                    visibleColorIndex++;
+                }
+            }
+
+            if (bandSummaryText != null)
+            {
+                bandSummaryText.text = GetBandSummary();
             }
 
             resistorResultText.text = CalculateResistanceText();
@@ -455,7 +534,10 @@ namespace ElectricalSim.UI.CommonTools
                 tolerance = resistorColors[bandColorIndices[3]].Tolerance;
             }
 
-            return FormatResistance(significant * multiplier) + " " + tolerance;
+            var ohms = significant * multiplier;
+            return "阻值：" + FormatResistance(ohms) + " " + tolerance + "\n" +
+                   "计算：" + FormatNumber(significant) + " × " + FormatMultiplier(multiplier) + " = " + FormatRawOhms(ohms) + "\n" +
+                   "色环：" + GetBandColorNames();
         }
 
         private static string FormatResistance(double value)
@@ -473,9 +555,76 @@ namespace ElectricalSim.UI.CommonTools
             return FormatNumber(value) + " Ω";
         }
 
+        private static string FormatRawOhms(double value)
+        {
+            return FormatNumber(value) + " Ω";
+        }
+
+        private static string FormatMultiplier(double value)
+        {
+            return value >= 1d ? FormatNumber(value) : value.ToString("0.##", CultureInfo.InvariantCulture);
+        }
+
         private static string FormatNumber(double value)
         {
             return value.ToString(value >= 10d || Math.Abs(value - Math.Round(value)) < 0.0001d ? "0.##" : "0.###", CultureInfo.InvariantCulture);
+        }
+
+        private string GetBandRoleName(int bandIndex)
+        {
+            var multiplierBand = fiveBandMode ? 3 : 2;
+            var toleranceBand = fiveBandMode ? 4 : 3;
+            if (bandIndex == toleranceBand)
+            {
+                return "误差";
+            }
+
+            if (bandIndex == multiplierBand)
+            {
+                return "倍率";
+            }
+
+            return "数字";
+        }
+
+        private string GetColorButtonLabel(ResistorColorEntry color, int bandIndex)
+        {
+            var role = GetBandRoleName(bandIndex);
+            if (role == "误差")
+            {
+                return color.Name + "\n" + color.Tolerance;
+            }
+
+            if (role == "倍率")
+            {
+                return color.Name + "\n×" + FormatMultiplier(color.Multiplier.Value);
+            }
+
+            return color.Name + "\n数字 " + color.Digit.Value;
+        }
+
+        private string GetBandSummary()
+        {
+            var visibleBands = fiveBandMode ? 5 : 4;
+            var parts = new List<string>();
+            for (var i = 0; i < visibleBands; i++)
+            {
+                parts.Add("第" + (i + 1) + "环：" + resistorColors[bandColorIndices[i]].Name + "（" + GetBandRoleName(i) + "）");
+            }
+
+            return string.Join("    ", parts.ToArray());
+        }
+
+        private string GetBandColorNames()
+        {
+            var visibleBands = fiveBandMode ? 5 : 4;
+            var names = new List<string>();
+            for (var i = 0; i < visibleBands; i++)
+            {
+                names.Add(resistorColors[bandColorIndices[i]].Name);
+            }
+
+            return string.Join("、", names.ToArray());
         }
 
         private void ShowFormula(CommonFormulaEntry entry)
@@ -485,12 +634,16 @@ namespace ElectricalSim.UI.CommonTools
                 return;
             }
 
-            formulaTitleText.text = entry.Title;
-            formulaExpressionText.text = entry.Expression;
-            formulaVariablesText.text = "变量说明\n" + entry.Variables;
-            formulaUseCaseText.text = "适用场景\n" + entry.UseCase;
-            formulaExampleText.text = "示例\n" + entry.Example;
-            formulaNoteText.text = "注意\n" + entry.Note;
+            ClearChildren(formulaDetailContent);
+            CreateInfoCard(formulaDetailContent, entry.Title, "分类：" + entry.Category, false, 22);
+            CreateInfoCard(formulaDetailContent, "核心公式", JoinLines(entry.Expressions), true, 20);
+            CreateInfoCard(formulaDetailContent, "常见变形", JoinLines(entry.Variants), true, 18);
+            CreateInfoCard(formulaDetailContent, "变量说明", entry.Variables, false, 16);
+            CreateInfoCard(formulaDetailContent, "单位说明", entry.UnitDescription, false, 16);
+            CreateInfoCard(formulaDetailContent, "适用场景", entry.UseCase, false, 16);
+            CreateInfoCard(formulaDetailContent, "计算示例", entry.Example, false, 16);
+            CreateInfoCard(formulaDetailContent, "常见错误", entry.CommonMistakes, false, 16);
+            CreateInfoCard(formulaDetailContent, "注意事项", entry.Note, false, 16);
         }
 
         private void ShowArticle(CommonArticleEntry entry)
@@ -500,8 +653,62 @@ namespace ElectricalSim.UI.CommonTools
                 return;
             }
 
-            articleTitleText.text = entry.Title + "  ·  " + entry.Category;
-            articleContentText.text = entry.Content;
+            ClearChildren(articleDetailContent);
+            CreateInfoCard(articleDetailContent, entry.Title, "分类：" + entry.Category + "\n学习目标：" + entry.LearningGoal, false, 22);
+            for (var i = 0; i < entry.Sections.Count; i++)
+            {
+                CreateInfoCard(articleDetailContent, entry.Sections[i].Heading, entry.Sections[i].Body, false, 16);
+            }
+
+            CreateInfoCard(articleDetailContent, "关键概念", entry.KeyPoints, false, 16);
+            CreateInfoCard(articleDetailContent, "常见误区", entry.CommonMistakes, false, 16);
+            CreateInfoCard(articleDetailContent, "与本系统的关系", entry.RelationToSystem, false, 16);
+        }
+
+        private RectTransform CreateInfoCard(RectTransform parent, string title, string body, bool formulaStyle, int titleSize)
+        {
+            var card = CreatePanel("InfoCard_" + title, parent, Color.white);
+            AddSoftOutline(card);
+
+            var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 8f;
+            layout.padding = new RectOffset(20, 20, 14, 16);
+
+            var fitter = card.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var layoutElement = card.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minHeight = formulaStyle ? 92f : 110f;
+
+            var titleText = CreateText("Title", card, title, titleSize, FontStyle.Bold, TextDark);
+            titleText.alignment = TextAnchor.UpperLeft;
+            titleText.verticalOverflow = VerticalWrapMode.Overflow;
+            titleText.gameObject.AddComponent<LayoutElement>().preferredHeight = titleSize + 10f;
+
+            var bodyText = CreateText("Body", card, string.IsNullOrWhiteSpace(body) ? "该部分内容正在完善中。" : body, formulaStyle ? 19 : 15, formulaStyle ? FontStyle.Bold : FontStyle.Normal, formulaStyle ? PrimaryBlue : TextDark);
+            bodyText.alignment = TextAnchor.UpperLeft;
+            bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            bodyText.verticalOverflow = VerticalWrapMode.Overflow;
+            var bodyElement = bodyText.gameObject.AddComponent<LayoutElement>();
+            bodyElement.minHeight = formulaStyle ? 44f : 56f;
+
+            return card;
+        }
+
+        private static string JoinLines(List<string> values)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return string.Join("\n", values.ToArray());
         }
 
         private void ClearChildren()
@@ -516,6 +723,20 @@ namespace ElectricalSim.UI.CommonTools
             bandButtons.Clear();
             bandLabels.Clear();
             colorButtons.Clear();
+            bandOutlines.Clear();
+        }
+
+        private static void ClearChildren(RectTransform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            for (var i = root.childCount - 1; i >= 0; i--)
+            {
+                Destroy(root.GetChild(i).gameObject);
+            }
         }
 
         private static Color GetReadableTextColor(Color background)
