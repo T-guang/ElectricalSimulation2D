@@ -106,19 +106,34 @@ namespace ElectricalSim.UI.CommonTools
             title.alignment = TextAnchor.MiddleLeft;
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(20f, -18f), new Vector2(-40f, 40f));
 
-            AddToolTab(sidebar, ToolTab.Resistor, "电阻色环识别", 0);
-            AddToolTab(sidebar, ToolTab.Formula, "电路公式", 1);
-            AddToolTab(sidebar, ToolTab.Article, "基础资料", 2);
+            var categoryList = CreateRect("CategoryList", sidebar);
+            SetRect(categoryList, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), new Vector2(0f, -60f));
+
+            var layout = categoryList.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 8f;
+            layout.padding = new RectOffset(14, 14, 16, 16);
+
+            AddToolTab(categoryList, ToolTab.Resistor, "电阻色环识别");
+            AddToolTab(categoryList, ToolTab.Formula, "电路公式");
+            AddToolTab(categoryList, ToolTab.Article, "基础资料");
         }
 
-        private void AddToolTab(Transform parent, ToolTab tab, string label, int index)
+        private void AddToolTab(Transform parent, ToolTab tab, string label)
         {
             var buttonRect = CreatePanel("ToolTab_" + tab, parent, new Color(0.96f, 0.98f, 1f));
-            SetRect(buttonRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(14f, -76f - index * 56f), new Vector2(-28f, 44f));
+            var layoutElement = buttonRect.gameObject.AddComponent<LayoutElement>();
+            layoutElement.minHeight = 44f;
+            layoutElement.preferredHeight = 44f;
+
             var button = buttonRect.gameObject.AddComponent<Button>();
             var text = CreateText("Text", buttonRect, label, 17, FontStyle.Normal, new Color(0.18f, 0.24f, 0.32f));
-            text.alignment = TextAnchor.MiddleLeft;
-            SetRect(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(-24f, 0f));
+            text.alignment = TextAnchor.MiddleCenter;
+            SetRect(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             button.onClick.AddListener(() => SelectTool(tab));
             tabButtons.Add(button);
             tabLabels.Add(text);
