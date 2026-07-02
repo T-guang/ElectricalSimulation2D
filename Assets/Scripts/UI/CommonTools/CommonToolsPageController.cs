@@ -182,20 +182,7 @@ namespace ElectricalSim.UI.CommonTools
 
         private void BuildResistorPreview()
         {
-            var baseSprite = Resources.Load<Sprite>(ResistorBaseSpritePath);
-            if (baseSprite != null)
-            {
-                var baseImageRect = CreatePanel("BaseImage", resistorPreview, Color.white);
-                var baseImage = baseImageRect.GetComponent<Image>();
-                baseImage.sprite = baseSprite;
-                baseImage.preserveAspect = true;
-                baseImage.raycastTarget = false;
-                SetRect(baseImageRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 182f));
-            }
-            else
-            {
-                BuildFallbackResistorBody();
-            }
+            BuildFallbackResistorBody();
 
             resistorBandLayer = CreateRect("BandLayer", resistorPreview);
             SetRect(resistorBandLayer, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 182f));
