@@ -882,7 +882,7 @@ namespace ElectricalSim.UI
             return new Dictionary<string, ComponentEncyclopediaEntry>(StringComparer.OrdinalIgnoreCase)
             {
                 {
-                    "Contactor_KM",
+                    "Contactor",
                     new ComponentEncyclopediaEntry
                     {
                         DisplayName = "交流接触器",
@@ -899,7 +899,7 @@ namespace ElectricalSim.UI
                     }
                 },
                 {
-                    "ThermalRelay_FR",
+                    "ThermalRelay",
                     new ComponentEncyclopediaEntry
                     {
                         DisplayName = "热继电器 (FR)",
@@ -1035,7 +1035,7 @@ namespace ElectricalSim.UI
                     }
                 },
                 {
-                    "KnifeSwitch_QS",
+                    "KnifeSwitch",
                     new ComponentEncyclopediaEntry
                     {
                         DisplayName = "刀开关 (QS)",
@@ -1086,7 +1086,7 @@ namespace ElectricalSim.UI
                     }
                 },
                 {
-                    "Motor_",
+                    "Motor_ThreePhase",
                     new ComponentEncyclopediaEntry
                     {
                         DisplayName = "三相异步电动机",
@@ -1099,6 +1099,23 @@ namespace ElectricalSim.UI
                         CommonMistakes = "缺相运行导致电机烧毁；电机外壳未接地；星三角接线中绕组头尾接错导致内部短路。",
                         SimulationRule = "系统会实时检测加在电机端子上的三相电压。只有检测到完整的三相电势差且相序合法时，电机才会旋转，并显示转向动画。",
                         SafetyTips = "必须确保电机外壳牢固连接 PE 地线。实际操作中，大功率电机启动电流极大，需要降压启动。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "Motor_StarDelta",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "星三角电动机",
+                        Category = "用电设备",
+                        CircuitType = "工业电路",
+                        Purpose = "专用于星三角降压启动电路的电机，通过启动时星形连接、运行后三角连接来大幅降低启动电流。",
+                        TerminalDescription = "U1、V1、W1 为绕组首端，U2、V2、W2 为绕组尾端。六个端子全部引出。",
+                        WorkingState = "星形阶段通常将 U2、V2、W2 短接；三角阶段按 U1-W2、V1-U2、W1-V2 形成三角连接运行。",
+                        WiringUsage = "星三角启动电路中，主接触器、星形接触器和三角接触器配合时间继电器自动完成连接切换。",
+                        CommonMistakes = "不要同时形成星形和三角连接。不要接错 U1/V1/W1 与 U2/V2/W2 的对应关系，否则导致内部短路。",
+                        SimulationRule = "本系统会识别星形、三角和星三角冲突状态，冲突或缺相时电机不会输出正常运行估算。",
+                        SafetyTips = "实际星三角接线必须确认电机铭牌支持三角运行电压（如 380V-△），否则容易烧毁绕组。",
                         ContentCompleted = true
                     }
                 },
@@ -1150,6 +1167,125 @@ namespace ElectricalSim.UI
                         CommonMistakes = "随意用铜丝铁丝代替熔体，导致短路时无法熔断，引发火灾。",
                         SimulationRule = "作为常规阻抗极小的导通元件。若发生严重短路，熔断器可作为切断点之一。",
                         SafetyTips = "更换熔断器熔体时必须先切断前端电源！绝不能带电插拔或更换。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "Tool_Multimeter",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "万用表",
+                        Category = "电源仪表",
+                        CircuitType = "维修测量",
+                        Purpose = "用于测量电路中的电压、电流、电阻及导通状态等电气参数，是电工最基础的排故工具。",
+                        TerminalDescription = "通常包含红表笔端子和黑表笔端子。",
+                        WorkingState = "选择不同的测量档位（如交流电压档）后，表笔接触测量点，屏幕显示测量数值。",
+                        WiringUsage = "电压测量并联在被测元件两端；电流测量串联在回路中。",
+                        CommonMistakes = "用电流档或电阻档去测量带电电压，导致万用表内部烧毁；不明确被测电压大小选错量程。",
+                        SimulationRule = "本系统中主要作为教学展示和接线体验，不具备完整的动态测量功能。",
+                        SafetyTips = "测量未知高压时，应选择最高量程；操作时手不可触碰表笔金属部分。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "Single_Phase_Meter",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "单相电能表",
+                        Category = "电源仪表",
+                        CircuitType = "家庭电路",
+                        Purpose = "用于计量单相用电回路所消耗的电能（度数），广泛用于家庭用电计量。",
+                        TerminalDescription = "一般有四个接线端子：1进火线、2出火线、3进零线、4出零线。",
+                        WorkingState = "正确接入电源和负载后，表盘或液晶屏记录累计耗电量。",
+                        WiringUsage = "通常安装在家庭总电源进线处，所有家用电器的耗电均经过此表。",
+                        CommonMistakes = "进出线接反；火线零线位置接错导致短路或不走字。",
+                        SimulationRule = "本系统中主要用于模拟家庭电路的标准接线实训，暂不支持电量数值累加计算。",
+                        SafetyTips = "电能表接线端子带电，安装或检修必须拉开上级电源开关。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "TerminalBlock_",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "端子排",
+                        Category = "端子与模块",
+                        CircuitType = "通用",
+                        Purpose = "用于整理和转接线路，方便多个导线之间的规范连接，使控制柜内接线清晰整齐。",
+                        TerminalDescription = "端子排按位导通，每一位上下或左右对应端子互通，不同位之间默认不互通。",
+                        WorkingState = "端子排本身不产生电源，也不改变电压，只提供纯物理导线连接和转接功能。",
+                        WiringUsage = "常用于把电源、按钮、接触器线圈和外部设备接线整理到统一位置过渡连接。",
+                        CommonMistakes = "不要误以为端子排所有端子都互相导通。不同位端子不能随意当作同一节点使用。",
+                        SimulationRule = "本系统中，端子排按对应位进行电气连通，例如 1A 与 1B 导通，2A 与 2B 导通，但 1A 与 2A 不默认导通。",
+                        SafetyTips = "实际接线中端子排应压接牢固，并保持端子编号清晰以防错接。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "Lamp_",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "灯泡",
+                        Category = "用电设备",
+                        CircuitType = "家庭电路",
+                        Purpose = "用于将电能转换为光能，是家庭照明和简单电路中最直观的负载器件。",
+                        TerminalDescription = "通常提供 L（火线进线）和 N（零线出线）两个螺纹或卡口端子。",
+                        WorkingState = "接入火线和零线形成完整闭合回路后点亮，发光发热。",
+                        WiringUsage = "火线通常应经过单控开关或双控开关后接入灯泡的中心触点，零线直接接入螺纹套管。",
+                        CommonMistakes = "将零线接开关而火线直通灯泡，导致开关断开后灯泡仍带有高压电，极度危险。",
+                        SimulationRule = "本系统中只要两端存在符合额定要求的电压差，灯泡即刻发光显示高亮状态。",
+                        SafetyTips = "更换灯泡时应首先确认开关处于断开状态，切忌用湿手接触灯泡及灯座金属部分。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "Fan_",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "电风扇",
+                        Category = "用电设备",
+                        CircuitType = "家庭电路",
+                        Purpose = "将电能转换为机械风能的单相用电设备，用于模拟家庭电路中的感性负载。",
+                        TerminalDescription = "提供 L（火线端）和 N（零线端），有时带 PE 端子。",
+                        WorkingState = "接入有效 220V 单相电源回路后内部单相电机运转驱动扇叶旋转。",
+                        WiringUsage = "常见接线为火线经墙壁开关控制后接入电风扇 L 端，N 端直接接零线。",
+                        CommonMistakes = "接线时短路火线与零线；遗漏 PE 保护接地线的连接。",
+                        SimulationRule = "接入标准 220V 电源并形成闭合回路后，系统渲染扇叶旋转动画。",
+                        SafetyTips = "电风扇带有旋转部件，接线测试时应保持安全距离；金属外壳风扇必须接地。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "Single_Control_Switch",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "单开单控开关",
+                        Category = "开关按钮",
+                        CircuitType = "家庭电路",
+                        Purpose = "用于控制一盏灯或一路单相负载的简单开关，按下即保持状态，最为常见。",
+                        TerminalDescription = "通常提供 L（进线端）和 L1（出线端）两个端子。",
+                        WorkingState = "闭合时 L-L1 导通，负载得电；断开时 L-L1 不导通，负载失电。",
+                        WiringUsage = "必须串联在火线 (L) 回路中，不允许接在零线上。",
+                        CommonMistakes = "把火线和零线分别接在开关的两个端子上，一按开关直接引起爆燃短路。",
+                        SimulationRule = "点击开关面板切换并保持导通/断开状态，状态改变立即重算拓扑回路。",
+                        SafetyTips = "火线必须先进开关，保证断开开关后负载端不带电，保障人员检修安全。",
+                        ContentCompleted = true
+                    }
+                },
+                {
+                    "Two_Way_Switch",
+                    new ComponentEncyclopediaEntry
+                    {
+                        DisplayName = "单开双控开关",
+                        Category = "开关按钮",
+                        CircuitType = "家庭电路",
+                        Purpose = "用于在两个不同位置（如楼上和楼下、床头和门口）独立控制同一盏灯的亮灭。",
+                        TerminalDescription = "提供 L（公共端）、L1（第一常开/常闭端）和 L2（第二常开/常闭端）三个端子。",
+                        WorkingState = "拨动开关时，公共端 L 会在与 L1 导通和与 L2 导通两种状态之间切换。",
+                        WiringUsage = "两个双控开关的 L1 和 L2 分别通过两根控制线直连；电源火线进第一个开关的 L，第二个开关的 L 接负载灯泡。",
+                        CommonMistakes = "错把火线接到了 L1 或 L2 端；或者双控线与火线零线混接，导致只能单控甚至短路。",
+                        SimulationRule = "点击面板切换 L 与 L1 或 L2 的连接关系，支持完整的异地双控逻辑解算。",
+                        SafetyTips = "双控接线线路较多，布线前务必明确公共端和控制线，切忌混淆零火线。",
                         ContentCompleted = true
                     }
                 }
