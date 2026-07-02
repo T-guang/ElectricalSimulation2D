@@ -46,6 +46,9 @@ namespace ElectricalSim.UI.CommonTools
         private static readonly Color PrimaryBlue = new Color(0.15f, 0.39f, 0.92f);
         private static readonly Color TextDark = new Color(0.07f, 0.11f, 0.18f);
         private static readonly Color TextMuted = new Color(0.35f, 0.42f, 0.52f);
+        private const string ResistorBaseSpritePath = "CommonTools/Resistor/色环电阻";
+        private static readonly float[] FourBandPositions = { -145f, -70f, 5f, 150f, 0f };
+        private static readonly float[] FiveBandPositions = { -165f, -100f, -35f, 70f, 160f };
 
         private void OnEnable()
         {
@@ -178,6 +181,38 @@ namespace ElectricalSim.UI.CommonTools
 
         private void BuildResistorPreview()
         {
+            var baseSprite = Resources.Load<Sprite>(ResistorBaseSpritePath);
+            if (baseSprite != null)
+            {
+                var baseImageRect = CreatePanel("BaseImage", resistorPreview, Color.white);
+                var baseImage = baseImageRect.GetComponent<Image>();
+                baseImage.sprite = baseSprite;
+                baseImage.preserveAspect = true;
+                baseImage.raycastTarget = false;
+                SetRect(baseImageRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 182f));
+            }
+            else
+            {
+                BuildFallbackResistorBody();
+            }
+
+            for (var i = 0; i < 5; i++)
+            {
+                var band = CreatePanel("Band" + (i + 1), resistorPreview, Color.black);
+                SetResistorBandRect(band, i);
+                var darkOutline = band.gameObject.AddComponent<Outline>();
+                darkOutline.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.55f);
+                darkOutline.effectDistance = new Vector2(1f, -1f);
+
+                var selectedOutline = band.gameObject.AddComponent<Outline>();
+                selectedOutline.effectColor = new Color(0.15f, 0.39f, 0.92f, 0f);
+                selectedOutline.effectDistance = new Vector2(4f, -4f);
+                bandOutlines.Add(selectedOutline);
+            }
+        }
+
+        private void BuildFallbackResistorBody()
+        {
             CreateLead("LeadLeft", new Vector2(-380f, 0f), new Vector2(230f, 8f));
             CreateLead("LeadRight", new Vector2(380f, 0f), new Vector2(230f, 8f));
 
@@ -193,16 +228,12 @@ namespace ElectricalSim.UI.CommonTools
 
             var highlight = CreatePanel("BodyHighlight", resistorPreview, new Color(1f, 0.92f, 0.70f, 0.72f));
             SetRect(highlight, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 22f), new Vector2(470f, 16f));
+        }
 
-            for (var i = 0; i < 5; i++)
-            {
-                var band = CreatePanel("Band" + (i + 1), resistorPreview, Color.black);
-                SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-165f + i * 78f, 0f), new Vector2(24f, 104f));
-                var outline = band.gameObject.AddComponent<Outline>();
-                outline.effectColor = new Color(0.15f, 0.39f, 0.92f, 0f);
-                outline.effectDistance = new Vector2(3f, -3f);
-                bandOutlines.Add(outline);
-            }
+        private void SetResistorBandRect(RectTransform band, int index)
+        {
+            var positions = fiveBandMode ? FiveBandPositions : FourBandPositions;
+            SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(positions[index], -2f), new Vector2(22f, 122f));
         }
 
         private void CreateLead(string name, Vector2 position, Vector2 size)
@@ -485,6 +516,7 @@ namespace ElectricalSim.UI.CommonTools
                 if (band != null)
                 {
                     band.gameObject.SetActive(i < visibleBands);
+                    SetResistorBandRect((RectTransform)band, i);
                     band.GetComponent<Image>().color = resistorColors[bandColorIndices[i]].Color;
                 }
 
