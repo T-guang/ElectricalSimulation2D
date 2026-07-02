@@ -10,10 +10,10 @@ namespace ElectricalSim.UI
     {
         private const string CategoryAll = "全部";
         private const float SidebarWidth = 220f;
-        private const float CardWidth = 300f;
-        private const float CardHeight = 140f;
-        private const float CardGapX = 14f;
-        private const float CardGapY = 14f;
+        private const float CardWidth = 370f;
+        private const float CardHeight = 160f;
+        private const float CardGapX = 18f;
+        private const float CardGapY = 18f;
 
         [SerializeField] private List<Button> categoryButtons = new List<Button>();
         [SerializeField] private List<Text> categoryLabels = new List<Text>();
@@ -181,7 +181,7 @@ namespace ElectricalSim.UI
             }
 
             var scrollRoot = CreatePanel("CardScrollView", listViewRoot, new Color(1f, 1f, 1f, 0.01f));
-            StretchTo(scrollRoot, 276f, 104f, 36f, 154f);
+            StretchTo(scrollRoot, 250f, 104f, 32f, 24f);
 
             var viewport = CreatePanel("Viewport", scrollRoot, new Color(1f, 1f, 1f, 0.01f));
             StretchTo(viewport, 0f, 0f, 0f, 0f);
@@ -219,7 +219,7 @@ namespace ElectricalSim.UI
 
             emptyText = CreateText("EmptyText", listViewRoot, "未找到相关元器件", 18, FontStyle.Normal, new Color(0.40f, 0.46f, 0.55f));
             emptyText.alignment = TextAnchor.MiddleCenter;
-            StretchTo(emptyText.rectTransform, 276f, 104f, 36f, 154f);
+            StretchTo(emptyText.rectTransform, 250f, 104f, 32f, 24f);
             emptyText.gameObject.SetActive(false);
         }
 
@@ -337,7 +337,7 @@ namespace ElectricalSim.UI
             button.onClick.AddListener(() => ShowDetail(entry));
 
             var thumbnailArea = CreatePanel("ThumbnailArea", card, new Color(0.97f, 0.98f, 1f, 1f));
-            SetRect(thumbnailArea, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(12f, 0f), new Vector2(104f, -24f));
+            SetRect(thumbnailArea, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(125f, -28f));
             var mask = thumbnailArea.gameObject.AddComponent<Mask>();
             mask.showMaskGraphic = true;
 
@@ -349,12 +349,12 @@ namespace ElectricalSim.UI
             imageComponent.preserveAspect = true;
             imageComponent.raycastTarget = false;
             
-            SetRect(image, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(86f, 108f));
+            SetRect(image, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(105f, 125f));
 
             var infoArea = CreateRect("InfoArea", card);
             SetRect(infoArea, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(0f, 0f));
-            infoArea.offsetMin = new Vector2(124f, 12f);
-            infoArea.offsetMax = new Vector2(-12f, -14f);
+            infoArea.offsetMin = new Vector2(150f, 16f);
+            infoArea.offsetMax = new Vector2(-16f, -18f);
 
             var infoLayout = infoArea.gameObject.AddComponent<VerticalLayoutGroup>();
             infoLayout.childAlignment = TextAnchor.UpperLeft;
@@ -362,7 +362,7 @@ namespace ElectricalSim.UI
             infoLayout.childControlHeight = true;
             infoLayout.childForceExpandWidth = true;
             infoLayout.childForceExpandHeight = false;
-            infoLayout.spacing = 5f;
+            infoLayout.spacing = 6f;
 
             var name = CreateText("NameText", infoArea, entry.DisplayName, 16, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
             name.alignment = TextAnchor.UpperLeft;
