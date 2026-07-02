@@ -10,10 +10,10 @@ namespace ElectricalSim.UI
     {
         private const string CategoryAll = "全部";
         private const float SidebarWidth = 220f;
-        private const float CardWidth = 318f;
-        private const float CardHeight = 218f;
-        private const float CardGapX = 22f;
-        private const float CardGapY = 22f;
+        private const float CardWidth = 360f;
+        private const float CardHeight = 160f;
+        private const float CardGapX = 18f;
+        private const float CardGapY = 18f;
 
         [SerializeField] private List<Button> categoryButtons = new List<Button>();
         [SerializeField] private List<Text> categoryLabels = new List<Text>();
@@ -39,6 +39,9 @@ namespace ElectricalSim.UI
         private RectTransform detailViewRoot;
         private RectTransform cardContent;
         private RectTransform detailContent;
+        private ScrollRect cardScrollRect;
+        private GridLayoutGroup cardGridLayout;
+        private ScrollRect detailScrollRect;
         private InputField searchInput;
         private Text emptyText;
         private Text detailHintText;
@@ -146,7 +149,7 @@ namespace ElectricalSim.UI
         private void CreateListView()
         {
             listViewRoot = CreateRect("ListViewRoot", transform);
-            SetRect(listViewRoot, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), new Vector2(0f, 0f));
+            SetRect(listViewRoot, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
 
             var sidebar = CreatePanel("CategorySidebar", listViewRoot, Color.white);
             SetRect(sidebar, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, -92f), new Vector2(SidebarWidth, -136f));
@@ -177,8 +180,11 @@ namespace ElectricalSim.UI
                 categoryLabels.Add(label);
             }
 
-            var viewport = CreatePanel("CardScrollView", listViewRoot, new Color(1f, 1f, 1f, 0.01f));
-            SetRect(viewport, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(276f, -104f), new Vector2(-36f, -154f));
+            var scrollRoot = CreatePanel("CardScrollView", listViewRoot, new Color(1f, 1f, 1f, 0.01f));
+            StretchTo(scrollRoot, 276f, 104f, 36f, 154f);
+
+            var viewport = CreatePanel("Viewport", scrollRoot, new Color(1f, 1f, 1f, 0.01f));
+            StretchTo(viewport, 0f, 0f, 0f, 0f);
             var mask = viewport.gameObject.AddComponent<Mask>();
             mask.showMaskGraphic = false;
 
@@ -187,19 +193,33 @@ namespace ElectricalSim.UI
             cardContent.anchorMax = new Vector2(1f, 1f);
             cardContent.pivot = new Vector2(0.5f, 1f);
             cardContent.anchoredPosition = Vector2.zero;
-            cardContent.sizeDelta = new Vector2(0f, 1200f);
+            cardContent.sizeDelta = Vector2.zero;
 
-            var scroll = listViewRoot.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = cardContent;
-            scroll.horizontal = false;
-            scroll.vertical = true;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 28f;
+            cardGridLayout = cardContent.gameObject.AddComponent<GridLayoutGroup>();
+            cardGridLayout.cellSize = new Vector2(CardWidth, CardHeight);
+            cardGridLayout.spacing = new Vector2(CardGapX, CardGapY);
+            cardGridLayout.padding = new RectOffset(0, 0, 0, 24);
+            cardGridLayout.childAlignment = TextAnchor.UpperLeft;
+            cardGridLayout.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            cardGridLayout.startAxis = GridLayoutGroup.Axis.Horizontal;
+            cardGridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            cardGridLayout.constraintCount = 2;
+
+            var fitter = cardContent.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            cardScrollRect = scrollRoot.gameObject.AddComponent<ScrollRect>();
+            cardScrollRect.viewport = viewport;
+            cardScrollRect.content = cardContent;
+            cardScrollRect.horizontal = false;
+            cardScrollRect.vertical = true;
+            cardScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            cardScrollRect.scrollSensitivity = 28f;
 
             emptyText = CreateText("EmptyText", listViewRoot, "未找到相关元器件", 18, FontStyle.Normal, new Color(0.40f, 0.46f, 0.55f));
             emptyText.alignment = TextAnchor.MiddleCenter;
-            SetRect(emptyText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(276f, -80f), new Vector2(-36f, -120f));
+            StretchTo(emptyText.rectTransform, 276f, 104f, 36f, 154f);
             emptyText.gameObject.SetActive(false);
         }
 
@@ -217,8 +237,11 @@ namespace ElectricalSim.UI
             detailHintText.alignment = TextAnchor.MiddleLeft;
             SetRect(detailHintText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(172f, -92f), new Vector2(-40f, 38f));
 
-            var viewport = CreatePanel("DetailScrollView", detailViewRoot, new Color(1f, 1f, 1f, 0.01f));
-            SetRect(viewport, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(34f, -144f), new Vector2(-34f, -38f));
+            var scrollRoot = CreatePanel("DetailScrollView", detailViewRoot, new Color(1f, 1f, 1f, 0.01f));
+            StretchTo(scrollRoot, 34f, 144f, 34f, 38f);
+
+            var viewport = CreatePanel("Viewport", scrollRoot, new Color(1f, 1f, 1f, 0.01f));
+            StretchTo(viewport, 0f, 0f, 0f, 0f);
             var mask = viewport.gameObject.AddComponent<Mask>();
             mask.showMaskGraphic = false;
 
@@ -227,15 +250,28 @@ namespace ElectricalSim.UI
             detailContent.anchorMax = new Vector2(1f, 1f);
             detailContent.pivot = new Vector2(0.5f, 1f);
             detailContent.anchoredPosition = Vector2.zero;
-            detailContent.sizeDelta = new Vector2(0f, 1300f);
+            detailContent.sizeDelta = Vector2.zero;
 
-            var scroll = detailViewRoot.gameObject.AddComponent<ScrollRect>();
-            scroll.viewport = viewport;
-            scroll.content = detailContent;
-            scroll.horizontal = false;
-            scroll.vertical = true;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 30f;
+            var layout = detailContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 14f;
+            layout.padding = new RectOffset(16, 16, 16, 24);
+
+            var fitter = detailContent.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            detailScrollRect = scrollRoot.gameObject.AddComponent<ScrollRect>();
+            detailScrollRect.viewport = viewport;
+            detailScrollRect.content = detailContent;
+            detailScrollRect.horizontal = false;
+            detailScrollRect.vertical = true;
+            detailScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            detailScrollRect.scrollSensitivity = 30f;
         }
 
         private void RefreshCards()
@@ -259,20 +295,30 @@ namespace ElectricalSim.UI
                 filtered.Add(entry);
             }
 
-            var width = (cardContent.parent as RectTransform)?.rect.width ?? 1080f;
-            var columns = Mathf.Max(1, Mathf.FloorToInt((width + CardGapX) / (CardWidth + CardGapX)));
+            var viewportWidth = cardScrollRect != null && cardScrollRect.viewport != null
+                ? cardScrollRect.viewport.rect.width
+                : 0f;
+            if (viewportWidth <= 1f)
+            {
+                viewportWidth = Mathf.Max(CardWidth, Screen.width - SidebarWidth - 140f);
+            }
+
+            var columns = Mathf.Max(1, Mathf.FloorToInt((viewportWidth + CardGapX) / (CardWidth + CardGapX)));
+            cardGridLayout.constraintCount = Mathf.Clamp(columns, 1, 3);
+
             for (var i = 0; i < filtered.Count; i++)
             {
-                var row = i / columns;
-                var col = i % columns;
                 var card = CreateCard(filtered[i]);
-                card.anchoredPosition = new Vector2(12f + col * (CardWidth + CardGapX), -8f - row * (CardHeight + CardGapY));
                 cardRects.Add(card);
             }
 
-            var rows = Mathf.CeilToInt(filtered.Count / (float)Mathf.Max(1, columns));
-            cardContent.sizeDelta = new Vector2(0f, Mathf.Max(700f, 24f + rows * (CardHeight + CardGapY)));
+            LayoutRebuilder.ForceRebuildLayoutImmediate(cardContent);
             cardContent.anchoredPosition = Vector2.zero;
+            if (cardScrollRect != null)
+            {
+                cardScrollRect.verticalNormalizedPosition = 1f;
+            }
+
             emptyText.gameObject.SetActive(filtered.Count == 0);
         }
 
@@ -280,6 +326,9 @@ namespace ElectricalSim.UI
         {
             var card = CreatePanel("ComponentCard_" + entry.DefinitionName, cardContent, Color.white);
             card.sizeDelta = new Vector2(CardWidth, CardHeight);
+            var cardLayout = card.gameObject.AddComponent<LayoutElement>();
+            cardLayout.preferredWidth = CardWidth;
+            cardLayout.preferredHeight = CardHeight;
             var button = card.gameObject.AddComponent<Button>();
             var outline = card.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(0.88f, 0.91f, 0.95f, 1f);
@@ -333,17 +382,21 @@ namespace ElectricalSim.UI
                 Destroy(detailContent.GetChild(i).gameObject);
             }
 
-            var y = -4f;
-            CreateDetailHeader(entry, ref y);
-            CreateSection("元件用途", entry.Purpose, ref y);
-            CreateSection("端子说明", entry.TerminalDescription, ref y);
-            CreateSection("工作状态", entry.WorkingState, ref y);
-            CreateSection("常见接线方式", entry.WiringUsage, ref y);
-            CreateSection("常见错误", entry.CommonMistakes, ref y);
-            CreateSection("本系统中的仿真规则", entry.SimulationRule, ref y);
-            CreateSection("安全提示", entry.SafetyTips, ref y);
-            detailContent.sizeDelta = new Vector2(0f, Mathf.Max(880f, Mathf.Abs(y) + 48f));
+            CreateDetailHeader(entry);
+            CreateSection("元件用途", entry.Purpose);
+            CreateSection("端子说明", entry.TerminalDescription);
+            CreateSection("工作状态", entry.WorkingState);
+            CreateSection("常见接线方式", entry.WiringUsage);
+            CreateSection("常见错误", entry.CommonMistakes);
+            CreateSection("本系统中的仿真规则", entry.SimulationRule);
+            CreateSection("安全提示", entry.SafetyTips);
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(detailContent);
             detailContent.anchoredPosition = Vector2.zero;
+            if (detailScrollRect != null)
+            {
+                detailScrollRect.verticalNormalizedPosition = 1f;
+            }
         }
 
         private void ShowListView()
@@ -353,14 +406,29 @@ namespace ElectricalSim.UI
             RefreshCards();
         }
 
-        private void CreateDetailHeader(ComponentEncyclopediaEntry entry, ref float y)
+        private void CreateDetailHeader(ComponentEncyclopediaEntry entry)
         {
             var header = CreatePanel("HeaderCard", detailContent, Color.white);
-            SetRect(header, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(0f, 258f));
             AddSoftOutline(header);
+            var headerLayoutElement = header.gameObject.AddComponent<LayoutElement>();
+            headerLayoutElement.preferredHeight = 258f;
+            headerLayoutElement.minHeight = 238f;
 
-            var imageArea = CreatePanel("LargeImage", header, new Color(0.97f, 0.98f, 1f, 1f));
-            SetRect(imageArea, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(210f, 210f));
+            var headerLayout = header.gameObject.AddComponent<HorizontalLayoutGroup>();
+            headerLayout.padding = new RectOffset(24, 24, 20, 20);
+            headerLayout.spacing = 28f;
+            headerLayout.childAlignment = TextAnchor.MiddleLeft;
+            headerLayout.childControlWidth = true;
+            headerLayout.childControlHeight = true;
+            headerLayout.childForceExpandWidth = false;
+            headerLayout.childForceExpandHeight = false;
+
+            var imageArea = CreatePanel("ImagePanel", header, new Color(0.97f, 0.98f, 1f, 1f));
+            var imageLayout = imageArea.gameObject.AddComponent<LayoutElement>();
+            imageLayout.preferredWidth = 210f;
+            imageLayout.preferredHeight = 210f;
+            imageLayout.minWidth = 180f;
+            imageLayout.minHeight = 180f;
             var image = imageArea.GetComponent<Image>();
             var sprite = ResolveIcon(entry.Definition);
             image.sprite = sprite != null ? sprite : GetFallbackSprite();
@@ -368,47 +436,85 @@ namespace ElectricalSim.UI
             image.preserveAspect = true;
             image.raycastTarget = false;
 
-            var title = CreateText("Title", header, entry.DisplayName, 28, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
+            var infoPanel = CreateRect("BasicInfoPanel", header);
+            var infoLayoutElement = infoPanel.gameObject.AddComponent<LayoutElement>();
+            infoLayoutElement.flexibleWidth = 1f;
+            infoLayoutElement.preferredHeight = 210f;
+            var infoLayout = infoPanel.gameObject.AddComponent<VerticalLayoutGroup>();
+            infoLayout.childAlignment = TextAnchor.UpperLeft;
+            infoLayout.childControlWidth = true;
+            infoLayout.childControlHeight = true;
+            infoLayout.childForceExpandWidth = true;
+            infoLayout.childForceExpandHeight = false;
+            infoLayout.spacing = 6f;
+
+            var title = CreateText("NameText", infoPanel, entry.DisplayName, 24, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
             title.alignment = TextAnchor.MiddleLeft;
-            SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(260f, -22f), new Vector2(-28f, 48f));
+            title.verticalOverflow = VerticalWrapMode.Overflow;
+            title.gameObject.AddComponent<LayoutElement>().preferredHeight = 38f;
 
-            var subtitle = CreateText("Subtitle", header, entry.Category + " / " + entry.CircuitType, 16, FontStyle.Normal, new Color(0.35f, 0.42f, 0.52f));
-            subtitle.alignment = TextAnchor.MiddleLeft;
-            SetRect(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(260f, -70f), new Vector2(-28f, 34f));
-
-            var info = CreateText("BasicInfo", header, BuildDetailBasicInfo(entry), 15, FontStyle.Normal, new Color(0.15f, 0.20f, 0.29f));
-            info.alignment = TextAnchor.UpperLeft;
-            info.horizontalOverflow = HorizontalWrapMode.Wrap;
-            info.verticalOverflow = VerticalWrapMode.Overflow;
-            SetRect(info.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f), new Vector2(260f, 24f), new Vector2(-28f, -112f));
-
-            y -= 278f;
+            AddDetailLine(infoPanel, "分类：" + entry.Category);
+            AddDetailLine(infoPanel, "适用电路：" + entry.CircuitType);
+            AddDetailLine(infoPanel, "额定电压：" + Fallback(entry.RatedVoltage));
+            AddDetailLine(infoPanel, "额定电流：" + Fallback(entry.RatedCurrent));
+            AddDetailLine(infoPanel, "端子：" + BuildTerminalSummary(entry.Definition, entry.Terminals), 52f);
         }
 
-        private void CreateSection(string title, string body, ref float y)
+        private void AddDetailLine(Transform parent, string text, float preferredHeight = 24f)
+        {
+            var line = CreateText("InfoLine", parent, text, 15, FontStyle.Normal, new Color(0.15f, 0.20f, 0.29f));
+            line.alignment = TextAnchor.UpperLeft;
+            line.verticalOverflow = VerticalWrapMode.Overflow;
+            line.horizontalOverflow = HorizontalWrapMode.Wrap;
+            line.gameObject.AddComponent<LayoutElement>().preferredHeight = preferredHeight;
+        }
+
+        private void CreateSection(string title, string body)
         {
             body = string.IsNullOrWhiteSpace(body) ? "该部分内容待补充。" : body;
-            var height = Mathf.Clamp(76f + Mathf.CeilToInt(body.Length / 36f) * 22f, 118f, 232f);
             var card = CreatePanel("Section_" + title, detailContent, Color.white);
-            SetRect(card, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, y), new Vector2(0f, height));
             AddSoftOutline(card);
+
+            var cardLayoutElement = card.gameObject.AddComponent<LayoutElement>();
+            cardLayoutElement.minHeight = 112f;
+            cardLayoutElement.preferredHeight = Mathf.Clamp(96f + Mathf.CeilToInt(body.Length / 34f) * 22f, 128f, 260f);
+
+            var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(20, 20, 14, 16);
+            layout.spacing = 8f;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
             var titleText = CreateText("Title", card, title, 18, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
             titleText.alignment = TextAnchor.MiddleLeft;
-            SetRect(titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(18f, -12f), new Vector2(-36f, 34f));
+            titleText.gameObject.AddComponent<LayoutElement>().preferredHeight = 28f;
 
             var bodyText = CreateText("Body", card, body, 15, FontStyle.Normal, new Color(0.20f, 0.26f, 0.35f));
             bodyText.alignment = TextAnchor.UpperLeft;
             bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
             bodyText.verticalOverflow = VerticalWrapMode.Overflow;
-            SetRect(bodyText.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(18f, 16f), new Vector2(-18f, -52f));
-
-            y -= height + 18f;
+            bodyText.gameObject.AddComponent<LayoutElement>().preferredHeight = Mathf.Clamp(44f + Mathf.CeilToInt(body.Length / 34f) * 22f, 56f, 190f);
         }
 
         private bool MatchesCategory(ComponentEncyclopediaEntry entry)
         {
-            return selectedCategory == CategoryAll || entry.Category == selectedCategory;
+            if (entry == null)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(selectedCategory) ||
+                string.Equals(selectedCategory, CategoryAll, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(selectedCategory, "All", StringComparison.OrdinalIgnoreCase) ||
+                selectedCategory == "全部")
+            {
+                return true;
+            }
+
+            return string.Equals(entry.Category, selectedCategory, StringComparison.OrdinalIgnoreCase);
         }
 
         private bool MatchesSearch(ComponentEncyclopediaEntry entry)
@@ -656,6 +762,15 @@ namespace ElectricalSim.UI
             rect.pivot = pivot;
             rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = sizeDelta;
+        }
+
+        private static void StretchTo(RectTransform rect, float left, float top, float right, float bottom)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.offsetMin = new Vector2(left, bottom);
+            rect.offsetMax = new Vector2(-right, -top);
         }
 
         private sealed class ComponentEncyclopediaEntry
