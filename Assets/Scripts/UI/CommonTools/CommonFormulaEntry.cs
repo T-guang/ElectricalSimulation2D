@@ -6,8 +6,10 @@ namespace ElectricalSim.UI.CommonTools
     [Serializable]
     public sealed class CommonFormulaEntry
     {
+        public string Id;
         public string Title;
         public string Category;
+        public string ShortDescription;
         public string Expression;
         public List<string> Expressions = new List<string>();
         public List<string> Variants = new List<string>();

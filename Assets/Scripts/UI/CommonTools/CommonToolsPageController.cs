@@ -720,7 +720,7 @@ namespace ElectricalSim.UI.CommonTools
             }
 
             ClearChildren(formulaDetailContent);
-            CreateInfoCard(formulaDetailContent, entry.Title, "分类：" + entry.Category, false, 22);
+            CreateInfoCard(formulaDetailContent, entry.Title, "分类：" + entry.Category + "\n" + entry.ShortDescription, false, 22);
             CreateInfoCard(formulaDetailContent, "核心公式", JoinLines(entry.Expressions), true, 20);
             CreateInfoCard(formulaDetailContent, "常见变形", JoinLines(entry.Variants), true, 18);
             CreateInfoCard(formulaDetailContent, "变量说明", entry.Variables, false, 16);
