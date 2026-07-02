@@ -182,25 +182,44 @@ namespace ElectricalSim.UI.CommonTools
 
         private void BuildResistorPreview()
         {
-            BuildFallbackResistorBody();
+            var baseSprite = Resources.Load<Sprite>(ResistorBaseSpritePath);
+            if (baseSprite != null)
+            {
+                var baseImageRect = CreatePanel("BaseImage", resistorPreview, Color.white);
+                var baseImage = baseImageRect.GetComponent<Image>();
+                baseImage.sprite = baseSprite;
+                baseImage.preserveAspect = true;
+                baseImage.raycastTarget = false;
+                SetRect(baseImageRect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 182f));
+            }
+            else
+            {
+                BuildFallbackResistorBody();
+            }
 
             resistorBandLayer = CreateRect("BandLayer", resistorPreview);
             SetRect(resistorBandLayer, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 182f));
 
-            var bandSprite = Resources.Load<Sprite>(ResistorBandSpritePath);
             for (var i = 0; i < 5; i++)
             {
                 var band = CreatePanel("Band" + (i + 1), resistorBandLayer, Color.black);
                 var bandImage = band.GetComponent<Image>();
-                bandImage.sprite = bandSprite;
-                bandImage.preserveAspect = false;
+                var specificBandSprite = Resources.Load<Sprite>("CommonTools/Resistor/resistor_band_" + (i + 1));
+                bandImage.sprite = specificBandSprite;
+                bandImage.preserveAspect = true;
                 bandImage.raycastTarget = false;
-                SetResistorBandRect(band, i);
-                if (bandSprite == null)
+                // The band masks are the same size as the base body, so we overlay them exactly
+                SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 182f));
+                
+                if (specificBandSprite == null)
                 {
+                    // Fallback if the individual masks are missing
                     var darkOutline = band.gameObject.AddComponent<Outline>();
                     darkOutline.effectColor = new Color(0.02f, 0.04f, 0.08f, 0.42f);
                     darkOutline.effectDistance = new Vector2(1f, -1f);
+                    // Use fallback positions
+                    float fallbackX = (i - 2) * 60f;
+                    SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(fallbackX, -2f), new Vector2(22f, 90f));
                 }
             }
         }
@@ -224,11 +243,7 @@ namespace ElectricalSim.UI.CommonTools
             SetRect(highlight, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 22f), new Vector2(470f, 16f));
         }
 
-        private void SetResistorBandRect(RectTransform band, int index)
-        {
-            var positions = fiveBandMode ? FiveBandPositions : FourBandPositions;
-            SetRect(band, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(positions[index], -2f), new Vector2(22f, 90f));
-        }
+
 
         private void CreateLead(string name, Vector2 position, Vector2 size)
         {
@@ -509,9 +524,21 @@ namespace ElectricalSim.UI.CommonTools
                 var band = resistorBandLayer != null ? resistorBandLayer.Find("Band" + (i + 1)) : null;
                 if (band != null)
                 {
-                    band.gameObject.SetActive(i < visibleBands);
-                    SetResistorBandRect((RectTransform)band, i);
-                    band.GetComponent<Image>().color = resistorColors[bandColorIndices[i]].Color;
+                    // In 5-band mode: all 5 are visible.
+                    // In 4-band mode: visual bands 1, 2, 3, 5 are visible, mapping to logical bands 0, 1, 2, 3.
+                    bool isVisible = fiveBandMode ? true : (i != 3);
+                    band.gameObject.SetActive(isVisible);
+                    
+                    if (isVisible)
+                    {
+                        // Map visual index to logical index
+                        int logicalIndex = i;
+                        if (!fiveBandMode && i == 4)
+                        {
+                            logicalIndex = 3;
+                        }
+                        band.GetComponent<Image>().color = resistorColors[bandColorIndices[logicalIndex]].Color;
+                    }
                 }
 
                 if (i < bandButtons.Count)
