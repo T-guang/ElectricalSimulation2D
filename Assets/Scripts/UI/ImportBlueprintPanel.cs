@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using ElectricalSim.Platform;
 
 namespace ElectricalSim.UI
 {
@@ -173,6 +174,19 @@ namespace ElectricalSim.UI
             panel.gameObject.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.98f);
 
             CreateText("Title", panel, "导入图纸", 22, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(420f, 36f));
+            
+#if UNITY_WEBGL && !UNITY_EDITOR
+            var externalBtnText = "从电脑导入图纸";
+            var externalButton = CreateButton(panel, "ExternalImportButton", externalBtnText, new Vector2(360f, -28f), new Vector2(150f, 36f), new Color(0.9f, 0.93f, 0.96f), new Color(0.05f, 0.45f, 0.85f));
+            externalButton.onClick.AddListener(OnExternalImportClicked);
+#else
+            var externalBtnText = "打开图纸文件夹";
+            var externalButton = CreateButton(panel, "ExternalImportButton", externalBtnText, new Vector2(250f, -28f), new Vector2(150f, 36f), new Color(0.9f, 0.93f, 0.96f), new Color(0.05f, 0.45f, 0.85f));
+            externalButton.onClick.AddListener(OnExternalImportClicked);
+            var refreshButton = CreateButton(panel, "RefreshButton", "刷新列表", new Vector2(410f, -28f), new Vector2(100f, 36f), new Color(0.94f, 0.96f, 0.98f), new Color(0.05f, 0.12f, 0.24f));
+            refreshButton.onClick.AddListener(RefreshList);
+#endif
+
             closeButton = CreateButton(panel, "CloseButton", "关闭", new Vector2(528f, -28f), new Vector2(84f, 36f), new Color(0.94f, 0.96f, 0.98f), new Color(0.05f, 0.12f, 0.24f));
 
             emptyText = CreateText("EmptyText", panel, "暂无已保存图纸。", 16, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 36f));
@@ -227,6 +241,31 @@ namespace ElectricalSim.UI
 
             BuildConfirmDeletePanel(panel);
             Initialize(saveLoadService);
+        }
+
+        private void OnExternalImportClicked()
+        {
+            SetError(string.Empty);
+            NativeFileBrowser.RequestImportBlueprint(
+                json => 
+                {
+                    if (saveLoadService != null)
+                    {
+                        if (saveLoadService.LoadFromJsonString(json, out var error))
+                        {
+                            Hide();
+                        }
+                        else
+                        {
+                            SetError(string.IsNullOrWhiteSpace(error) ? "外部导入失败。" : error);
+                        }
+                    }
+                },
+                errorMsg => 
+                {
+                    SetError(errorMsg);
+                }
+            );
         }
 
         private void BuildConfirmDeletePanel(RectTransform parent)

@@ -91,7 +91,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            LoadFromFile(LegacySavePath);
+            LoadFromFile(LegacySavePath, out _);
         }
 
         public bool LoadFromFile(string filePath)
@@ -117,9 +117,95 @@ namespace ElectricalSim.UI
 
             try
             {
-                var drawing = JsonUtility.FromJson<DrawingDto>(File.ReadAllText(filePath));
+                var jsonContent = File.ReadAllText(filePath);
+                return LoadFromJsonString(jsonContent, out error, filePath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                error = "导入失败：" + exception.Message;
+                workspace.SetStatus(error);
+                return false;
+            }
+        }
+
+        public bool LoadFromJsonString(string jsonContent, out string error, string sourceFilePath = null)
+        {
+            error = null;
+            if (workspace == null)
+            {
+                error = "导入失败：工作区未初始化。";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(jsonContent))
+            {
+                error = "导入失败：图纸内容为空。";
+                workspace.SetStatus(error);
+                return false;
+            }
+
+            DrawingDto drawing = null;
+            try
+            {
+                drawing = JsonUtility.FromJson<DrawingDto>(jsonContent);
+            }
+            catch (Exception)
+            {
+                error = "导入失败：JSON格式错误。";
+                workspace.SetStatus(error);
+                return false;
+            }
+
+            if (drawing == null || drawing.components == null || drawing.wires == null)
+            {
+                error = "导入失败：不是本系统支持的图纸格式。";
+                workspace.SetStatus(error);
+                return false;
+            }
+
+            foreach (var item in drawing.components)
+            {
+                var definition = catalog.Find(d => d.name == item.definitionName);
+                if (definition == null)
+                {
+                    error = $"导入失败：找不到元件类型 '{item.definitionName}'。";
+                    workspace.SetStatus(error);
+                    return false;
+                }
+            }
+
+            foreach (var item in drawing.wires)
+            {
+                var startComp = drawing.components.Find(c => c.instanceId == item.startComponentId);
+                var endComp = drawing.components.Find(c => c.instanceId == item.endComponentId);
+                if (startComp == null || endComp == null) continue;
+
+                var startDef = catalog.Find(d => d.name == startComp.definitionName);
+                var endDef = catalog.Find(d => d.name == endComp.definitionName);
+
+                if (startDef != null && startDef.terminals.Find(t => t.id == item.startTerminalId) == null)
+                {
+                    error = $"导入失败：元件 '{startDef.name}' 缺少端子 '{item.startTerminalId}'。";
+                    workspace.SetStatus(error);
+                    return false;
+                }
+                if (endDef != null && endDef.terminals.Find(t => t.id == item.endTerminalId) == null)
+                {
+                    error = $"导入失败：元件 '{endDef.name}' 缺少端子 '{item.endTerminalId}'。";
+                    workspace.SetStatus(error);
+                    return false;
+                }
+            }
+
+            try
+            {
                 ApplyDrawingDto(drawing);
-                workspace.SetStatus("图纸已加载：" + ResolveDocumentName(drawing, filePath));
+                var docName = ResolveDocumentName(drawing, string.IsNullOrWhiteSpace(sourceFilePath) ? "外部导入图纸.json" : sourceFilePath);
+                
+                workspace.SetStatus($"外部图纸导入成功，可点击检查当前电路进行校验。\n已从外部 JSON 导入图纸：{docName}");
+                
+                // If it was a local file, we can optionally update status with the full path, but generic message is fine.
                 return true;
             }
             catch (Exception exception)
