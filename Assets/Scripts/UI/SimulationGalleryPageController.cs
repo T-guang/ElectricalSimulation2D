@@ -1,0 +1,1019 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using ElectricalSim.Templates;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace ElectricalSim.UI
+{
+    public sealed class SimulationGalleryPageController : MonoBehaviour
+    {
+        private const string CatalogPath = "Blueprints/Templates/template_catalog";
+        private static readonly Color PageBackground = HexColor(0xF3F7FC);
+        private static readonly Color CardBackground = Color.white;
+        private static readonly Color TextPrimary = HexColor(0x111827);
+        private static readonly Color TextSecondary = HexColor(0x475569);
+        private static readonly Color BorderColor = HexColor(0xE5EAF2);
+        private static readonly Color Blue = HexColor(0x2563EB);
+        private static readonly Color PaleBlue = HexColor(0xEFF6FF);
+
+        private readonly List<GalleryEntry> entries = new List<GalleryEntry>();
+        private readonly Dictionary<string, Button> filterButtons = new Dictionary<string, Button>();
+
+        private Font font;
+        private GameObject listRoot;
+        private GameObject detailRoot;
+        private RectTransform gridContent;
+        private ScrollRect gridScrollRect;
+        private InputField searchInput;
+        private Dropdown sortDropdown;
+        private Text emptyHint;
+        private Text statusText;
+        private string activeFilter = "全部";
+
+        private void Awake()
+        {
+            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            EnsureRootRect();
+            BuildPage();
+            LoadEntries();
+            RefreshCards();
+        }
+
+        private void OnEnable()
+        {
+            if (listRoot != null && detailRoot != null)
+            {
+                listRoot.SetActive(true);
+                detailRoot.SetActive(false);
+            }
+        }
+
+        private void EnsureRootRect()
+        {
+            var rect = GetComponent<RectTransform>();
+            if (rect == null)
+            {
+                rect = gameObject.AddComponent<RectTransform>();
+            }
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            var image = GetComponent<Image>();
+            if (image == null)
+            {
+                image = gameObject.AddComponent<Image>();
+            }
+
+            image.color = PageBackground;
+            image.raycastTarget = true;
+        }
+
+        private void BuildPage()
+        {
+            ClearChildren(transform);
+
+            listRoot = CreateObject("GalleryListRoot", transform, typeof(RectTransform));
+            Stretch(listRoot.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
+
+            var header = CreateObject("Header", listRoot.transform, typeof(RectTransform));
+            var headerRect = header.GetComponent<RectTransform>();
+            headerRect.anchorMin = new Vector2(0f, 1f);
+            headerRect.anchorMax = new Vector2(1f, 1f);
+            headerRect.pivot = new Vector2(0.5f, 1f);
+            headerRect.offsetMin = new Vector2(32f, -112f);
+            headerRect.offsetMax = new Vector2(-32f, 0f);
+
+            var title = CreateText("Title", header.transform, "仿真广场", 28, FontStyle.Bold, TextPrimary);
+            title.alignment = TextAnchor.UpperLeft;
+            Stretch(title.rectTransform, 0f, 0f, 0f, -54f);
+
+            var description = CreateText(
+                "Description",
+                header.transform,
+                "精选本地教学案例，点击案例可查看说明并加载到仿真画布。全部案例来自本地模板，断网可用。",
+                15,
+                FontStyle.Normal,
+                TextSecondary);
+            description.alignment = TextAnchor.UpperLeft;
+            description.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Stretch(description.rectTransform, 0f, 0f, 52f, 0f);
+
+            BuildFilterBar(listRoot.transform);
+            BuildSearchAndSort(listRoot.transform);
+            BuildGrid(listRoot.transform);
+            BuildDetailRoot();
+        }
+
+        private void BuildFilterBar(Transform parent)
+        {
+            var bar = CreateObject("FilterBar", parent, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var rect = bar.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.offsetMin = new Vector2(32f, -158f);
+            rect.offsetMax = new Vector2(-460f, -118f);
+
+            var layout = bar.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = 10f;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.MiddleLeft;
+
+            filterButtons.Clear();
+            var filters = new[] { "全部", "推荐", "家庭电路", "工业电路", "电机控制", "正反转", "星三角", "自动往返" };
+            foreach (var filter in filters)
+            {
+                var button = CreatePillButton(bar.transform, filter, 92f, 34f);
+                var captured = filter;
+                button.onClick.AddListener(() =>
+                {
+                    activeFilter = captured;
+                    RefreshCards();
+                });
+                filterButtons[filter] = button;
+            }
+        }
+
+        private void BuildSearchAndSort(Transform parent)
+        {
+            var group = CreateObject("SearchAndSort", parent, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            var rect = group.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.anchoredPosition = new Vector2(-32f, -118f);
+            rect.sizeDelta = new Vector2(410f, 40f);
+
+            var layout = group.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = 10f;
+            layout.childAlignment = TextAnchor.MiddleRight;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            searchInput = CreateInput(group.transform, "搜索案例、知识点或元件", 240f, 36f);
+            searchInput.onValueChanged.AddListener(_ => RefreshCards());
+
+            sortDropdown = CreateDropdown(group.transform, 160f, 36f);
+            sortDropdown.options.Clear();
+            sortDropdown.options.Add(new Dropdown.OptionData("默认排序"));
+            sortDropdown.options.Add(new Dropdown.OptionData("难度从低到高"));
+            sortDropdown.options.Add(new Dropdown.OptionData("难度从高到低"));
+            sortDropdown.options.Add(new Dropdown.OptionData("名称排序"));
+            sortDropdown.options.Add(new Dropdown.OptionData("推荐优先"));
+            sortDropdown.value = 0;
+            sortDropdown.RefreshShownValue();
+            sortDropdown.onValueChanged.AddListener(_ => RefreshCards());
+        }
+
+        private void BuildGrid(Transform parent)
+        {
+            var scroll = CreateObject("CaseGridScrollView", parent, typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+            var scrollRect = scroll.GetComponent<RectTransform>();
+            Stretch(scrollRect, 32f, 32f, 176f, 32f);
+            scroll.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.42f);
+
+            gridScrollRect = scroll.GetComponent<ScrollRect>();
+            gridScrollRect.horizontal = false;
+            gridScrollRect.vertical = true;
+            gridScrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+            var viewport = CreateObject("Viewport", scroll.transform, typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+            var viewportRect = viewport.GetComponent<RectTransform>();
+            Stretch(viewportRect, 0f, 0f, 0f, 0f);
+            viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
+            viewport.GetComponent<Image>().raycastTarget = true;
+
+            var content = CreateObject("CardGridContent", viewport.transform, typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
+            gridContent = content.GetComponent<RectTransform>();
+            gridContent.anchorMin = new Vector2(0f, 1f);
+            gridContent.anchorMax = new Vector2(1f, 1f);
+            gridContent.pivot = new Vector2(0.5f, 1f);
+            gridContent.anchoredPosition = Vector2.zero;
+            gridContent.offsetMin = new Vector2(0f, gridContent.offsetMin.y);
+            gridContent.offsetMax = new Vector2(0f, 0f);
+
+            var grid = content.GetComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(340f, 252f);
+            grid.spacing = new Vector2(18f, 18f);
+            grid.padding = new RectOffset(10, 10, 10, 24);
+            grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+            grid.childAlignment = TextAnchor.UpperLeft;
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 3;
+
+            var fitter = content.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            gridScrollRect.viewport = viewportRect;
+            gridScrollRect.content = gridContent;
+
+            emptyHint = CreateText("EmptyHint", scroll.transform, "未找到相关本地案例。", 18, FontStyle.Bold, TextSecondary);
+            emptyHint.alignment = TextAnchor.MiddleCenter;
+            Stretch(emptyHint.rectTransform, 0f, 0f, 0f, 0f);
+            emptyHint.gameObject.SetActive(false);
+
+            statusText = CreateText("StatusText", parent, string.Empty, 13, FontStyle.Normal, TextSecondary);
+            statusText.alignment = TextAnchor.MiddleLeft;
+            var statusRect = statusText.rectTransform;
+            statusRect.anchorMin = new Vector2(0f, 0f);
+            statusRect.anchorMax = new Vector2(1f, 0f);
+            statusRect.pivot = new Vector2(0.5f, 0f);
+            statusRect.offsetMin = new Vector2(42f, 8f);
+            statusRect.offsetMax = new Vector2(-42f, 30f);
+        }
+
+        private void BuildDetailRoot()
+        {
+            detailRoot = CreateObject("GalleryDetailRoot", transform, typeof(RectTransform));
+            Stretch(detailRoot.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
+            detailRoot.SetActive(false);
+        }
+
+        private void LoadEntries()
+        {
+            entries.Clear();
+            if (!CircuitTemplateCatalogLoader.TryLoad(CatalogPath, out var catalog, out var error))
+            {
+                SetStatus(string.IsNullOrWhiteSpace(error) ? "本地案例目录读取失败。" : error);
+                return;
+            }
+
+            foreach (var item in catalog.templates.OrderBy(i => i.sortOrder))
+            {
+                if (item == null || string.IsNullOrWhiteSpace(item.resourcePath))
+                {
+                    continue;
+                }
+
+                entries.Add(CreateEntry(item));
+            }
+
+            SetStatus("已加载本地案例：" + entries.Count + " 个");
+        }
+
+        private GalleryEntry CreateEntry(CircuitTemplateCatalogItemDto item)
+        {
+            var title = string.IsNullOrWhiteSpace(item.templateName) ? item.templateId : item.templateName;
+            var tags = BuildTags(item, title);
+            return new GalleryEntry
+            {
+                CatalogItem = item,
+                Id = item.templateId,
+                Title = title,
+                Category = string.IsNullOrWhiteSpace(item.category) ? "本地案例" : item.category,
+                Difficulty = string.IsNullOrWhiteSpace(item.difficulty) ? "初级" : item.difficulty,
+                Description = BuildDescription(item, title, tags),
+                LearningGoal = BuildLearningGoal(title, tags),
+                MainComponents = BuildMainComponents(title, tags),
+                KeyPoints = BuildKeyPoints(title, tags),
+                CommonMistakes = BuildCommonMistakes(title, tags),
+                SourceLabel = "系统内置案例",
+                TemplateId = item.templateId,
+                ThumbnailPath = item.thumbnailPath,
+                Tags = tags,
+                Recommended = IsRecommended(title, tags)
+            };
+        }
+
+        private void RefreshCards()
+        {
+            if (gridContent == null)
+            {
+                return;
+            }
+
+            ClearChildren(gridContent);
+            RefreshFilterButtons();
+
+            var filtered = entries
+                .Where(MatchFilter)
+                .Where(MatchSearch)
+                .ToList();
+            ApplySort(filtered);
+
+            foreach (var entry in filtered)
+            {
+                CreateCard(entry);
+            }
+
+            emptyHint.gameObject.SetActive(filtered.Count == 0);
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(gridContent);
+            if (gridScrollRect != null)
+            {
+                gridScrollRect.verticalNormalizedPosition = 1f;
+            }
+        }
+
+        private void RefreshFilterButtons()
+        {
+            foreach (var pair in filterButtons)
+            {
+                var active = pair.Key == activeFilter;
+                var image = pair.Value.GetComponent<Image>();
+                if (image != null)
+                {
+                    image.color = active ? Blue : HexColor(0xF1F5F9);
+                }
+
+                var label = pair.Value.GetComponentInChildren<Text>();
+                if (label != null)
+                {
+                    label.color = active ? Color.white : HexColor(0x334155);
+                    label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+                }
+            }
+        }
+
+        private bool MatchFilter(GalleryEntry entry)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(activeFilter) || activeFilter == "全部")
+            {
+                return true;
+            }
+
+            if (activeFilter == "推荐")
+            {
+                return entry.Recommended;
+            }
+
+            if (entry.Category == activeFilter)
+            {
+                return true;
+            }
+
+            return entry.Tags.Any(tag => tag.IndexOf(activeFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                || entry.Title.IndexOf(activeFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private bool MatchSearch(GalleryEntry entry)
+        {
+            var keyword = searchInput != null ? searchInput.text : string.Empty;
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return true;
+            }
+
+            keyword = keyword.Trim();
+            return Contains(entry.Title, keyword)
+                || Contains(entry.Category, keyword)
+                || Contains(entry.Difficulty, keyword)
+                || Contains(entry.Description, keyword)
+                || Contains(entry.MainComponents, keyword)
+                || Contains(entry.KeyPoints, keyword)
+                || entry.Tags.Any(tag => Contains(tag, keyword));
+        }
+
+        private void ApplySort(List<GalleryEntry> list)
+        {
+            if (sortDropdown == null || list == null)
+            {
+                return;
+            }
+
+            switch (sortDropdown.value)
+            {
+                case 1:
+                    list.Sort((a, b) => DifficultyRank(a.Difficulty).CompareTo(DifficultyRank(b.Difficulty)));
+                    break;
+                case 2:
+                    list.Sort((a, b) => DifficultyRank(b.Difficulty).CompareTo(DifficultyRank(a.Difficulty)));
+                    break;
+                case 3:
+                    list.Sort((a, b) => string.Compare(a.Title, b.Title, StringComparison.CurrentCulture));
+                    break;
+                case 4:
+                    list.Sort((a, b) => b.Recommended.CompareTo(a.Recommended));
+                    break;
+                default:
+                    list.Sort((a, b) => a.CatalogItem.sortOrder.CompareTo(b.CatalogItem.sortOrder));
+                    break;
+            }
+        }
+
+        private void CreateCard(GalleryEntry entry)
+        {
+            var card = CreateObject("CaseCard_" + entry.Id, gridContent, typeof(RectTransform), typeof(Image), typeof(Button));
+            var image = card.GetComponent<Image>();
+            image.color = CardBackground;
+            image.raycastTarget = true;
+
+            var button = card.GetComponent<Button>();
+            button.onClick.AddListener(() => ShowDetail(entry));
+
+            var thumbPanel = CreateObject("Thumbnail", card.transform, typeof(RectTransform), typeof(Image));
+            var thumbRect = thumbPanel.GetComponent<RectTransform>();
+            thumbRect.anchorMin = new Vector2(0f, 1f);
+            thumbRect.anchorMax = new Vector2(1f, 1f);
+            thumbRect.pivot = new Vector2(0.5f, 1f);
+            thumbRect.offsetMin = new Vector2(14f, -104f);
+            thumbRect.offsetMax = new Vector2(-14f, -14f);
+            thumbPanel.GetComponent<Image>().color = HexColor(0xF3F8FE);
+
+            var thumbnailSprite = LoadThumbnail(entry.ThumbnailPath);
+            if (thumbnailSprite != null)
+            {
+                var thumbnail = CreateObject("Image", thumbPanel.transform, typeof(RectTransform), typeof(Image));
+                Stretch(thumbnail.GetComponent<RectTransform>(), 12f, 12f, 8f, 8f);
+                var thumbnailImage = thumbnail.GetComponent<Image>();
+                thumbnailImage.sprite = thumbnailSprite;
+                thumbnailImage.preserveAspect = true;
+                thumbnailImage.color = Color.white;
+                thumbnailImage.raycastTarget = false;
+            }
+            else
+            {
+                var placeholder = CreateText("Placeholder", thumbPanel.transform, "案例缩略图待补充", 15, FontStyle.Bold, TextSecondary);
+                placeholder.alignment = TextAnchor.MiddleCenter;
+                Stretch(placeholder.rectTransform, 0f, 0f, 0f, 0f);
+            }
+
+            var title = CreateText("Title", card.transform, entry.Title, 17, FontStyle.Bold, TextPrimary);
+            title.alignment = TextAnchor.UpperLeft;
+            title.horizontalOverflow = HorizontalWrapMode.Wrap;
+            title.rectTransform.anchorMin = new Vector2(0f, 1f);
+            title.rectTransform.anchorMax = new Vector2(1f, 1f);
+            title.rectTransform.offsetMin = new Vector2(16f, -154f);
+            title.rectTransform.offsetMax = new Vector2(-16f, -110f);
+
+            var meta = CreateText("Meta", card.transform, entry.Category + " / " + entry.Difficulty + " / " + entry.SourceLabel, 12, FontStyle.Normal, TextSecondary);
+            meta.alignment = TextAnchor.UpperLeft;
+            meta.rectTransform.anchorMin = new Vector2(0f, 1f);
+            meta.rectTransform.anchorMax = new Vector2(1f, 1f);
+            meta.rectTransform.offsetMin = new Vector2(16f, -178f);
+            meta.rectTransform.offsetMax = new Vector2(-16f, -154f);
+
+            var tags = CreateText("Tags", card.transform, string.Join("  ", entry.Tags.Take(4).ToArray()), 12, FontStyle.Normal, Blue);
+            tags.alignment = TextAnchor.UpperLeft;
+            tags.horizontalOverflow = HorizontalWrapMode.Wrap;
+            tags.rectTransform.anchorMin = new Vector2(0f, 1f);
+            tags.rectTransform.anchorMax = new Vector2(1f, 1f);
+            tags.rectTransform.offsetMin = new Vector2(16f, -208f);
+            tags.rectTransform.offsetMax = new Vector2(-16f, -178f);
+
+            var detailButton = CreateButton(card.transform, "查看详情", HexColor(0xEAF0F7), HexColor(0x334155));
+            var detailRect = detailButton.GetComponent<RectTransform>();
+            detailRect.anchorMin = new Vector2(0f, 0f);
+            detailRect.anchorMax = new Vector2(0f, 0f);
+            detailRect.pivot = new Vector2(0f, 0f);
+            detailRect.anchoredPosition = new Vector2(16f, 14f);
+            detailRect.sizeDelta = new Vector2(118f, 34f);
+            detailButton.onClick.AddListener(() => ShowDetail(entry));
+
+            var loadButton = CreateButton(card.transform, "加载案例", Blue, Color.white);
+            var loadRect = loadButton.GetComponent<RectTransform>();
+            loadRect.anchorMin = new Vector2(1f, 0f);
+            loadRect.anchorMax = new Vector2(1f, 0f);
+            loadRect.pivot = new Vector2(1f, 0f);
+            loadRect.anchoredPosition = new Vector2(-16f, 14f);
+            loadRect.sizeDelta = new Vector2(118f, 34f);
+            loadButton.onClick.AddListener(() => LoadEntry(entry));
+        }
+
+        private void ShowDetail(GalleryEntry entry)
+        {
+            listRoot.SetActive(false);
+            detailRoot.SetActive(true);
+            ClearChildren(detailRoot.transform);
+
+            var topBar = CreateObject("DetailTopBar", detailRoot.transform, typeof(RectTransform));
+            var topRect = topBar.GetComponent<RectTransform>();
+            topRect.anchorMin = new Vector2(0f, 1f);
+            topRect.anchorMax = new Vector2(1f, 1f);
+            topRect.pivot = new Vector2(0.5f, 1f);
+            topRect.offsetMin = new Vector2(32f, -76f);
+            topRect.offsetMax = new Vector2(-32f, 0f);
+
+            var backButton = CreateButton(topBar.transform, "返回广场", HexColor(0xEAF0F7), HexColor(0x334155));
+            var backRect = backButton.GetComponent<RectTransform>();
+            backRect.anchorMin = new Vector2(0f, 0.5f);
+            backRect.anchorMax = new Vector2(0f, 0.5f);
+            backRect.pivot = new Vector2(0f, 0.5f);
+            backRect.anchoredPosition = new Vector2(0f, -6f);
+            backRect.sizeDelta = new Vector2(118f, 36f);
+            backButton.onClick.AddListener(() =>
+            {
+                detailRoot.SetActive(false);
+                listRoot.SetActive(true);
+            });
+
+            var title = CreateText("Title", topBar.transform, entry.Title, 24, FontStyle.Bold, TextPrimary);
+            title.alignment = TextAnchor.MiddleLeft;
+            title.rectTransform.anchorMin = new Vector2(0f, 0f);
+            title.rectTransform.anchorMax = new Vector2(1f, 1f);
+            title.rectTransform.offsetMin = new Vector2(140f, 0f);
+            title.rectTransform.offsetMax = new Vector2(-180f, 0f);
+
+            var loadButton = CreateButton(topBar.transform, "加载到画布", Blue, Color.white);
+            var loadRect = loadButton.GetComponent<RectTransform>();
+            loadRect.anchorMin = new Vector2(1f, 0.5f);
+            loadRect.anchorMax = new Vector2(1f, 0.5f);
+            loadRect.pivot = new Vector2(1f, 0.5f);
+            loadRect.anchoredPosition = new Vector2(0f, -6f);
+            loadRect.sizeDelta = new Vector2(140f, 38f);
+            loadButton.onClick.AddListener(() => LoadEntry(entry));
+
+            var scroll = CreateObject("DetailScrollView", detailRoot.transform, typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+            Stretch(scroll.GetComponent<RectTransform>(), 32f, 32f, 86f, 32f);
+            scroll.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.42f);
+            var scrollRect = scroll.GetComponent<ScrollRect>();
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+            var viewport = CreateObject("Viewport", scroll.transform, typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+            Stretch(viewport.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
+            viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
+
+            var content = CreateObject("DetailContent", viewport.transform, typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            var contentRect = content.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.offsetMin = new Vector2(0f, contentRect.offsetMin.y);
+            contentRect.offsetMax = new Vector2(0f, 0f);
+            var layout = content.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(16, 16, 16, 24);
+            layout.spacing = 14f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.UpperCenter;
+            var fitter = content.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scrollRect.viewport = viewport.GetComponent<RectTransform>();
+            scrollRect.content = contentRect;
+
+            CreateHeaderCard(content.transform, entry);
+            CreateSection(content.transform, "案例说明", entry.Description);
+            CreateSection(content.transform, "学习目标", entry.LearningGoal);
+            CreateSection(content.transform, "主要元件", entry.MainComponents);
+            CreateSection(content.transform, "知识点", entry.KeyPoints);
+            CreateSection(content.transform, "常见错误提醒", entry.CommonMistakes);
+
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+            scrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        private void CreateHeaderCard(Transform parent, GalleryEntry entry)
+        {
+            var card = CreateSectionCard(parent);
+            var layout = card.GetComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(20, 20, 18, 18);
+            layout.spacing = 24f;
+            layout.childControlWidth = false;
+            layout.childForceExpandWidth = false;
+
+            var imagePanel = CreateObject("ImagePanel", card.transform, typeof(RectTransform), typeof(Image));
+            var imageRect = imagePanel.GetComponent<RectTransform>();
+            imageRect.sizeDelta = new Vector2(240f, 150f);
+            imagePanel.GetComponent<Image>().color = HexColor(0xF3F8FE);
+            var sprite = LoadThumbnail(entry.ThumbnailPath);
+            if (sprite != null)
+            {
+                var image = CreateObject("Image", imagePanel.transform, typeof(RectTransform), typeof(Image));
+                Stretch(image.GetComponent<RectTransform>(), 12f, 12f, 10f, 10f);
+                var uiImage = image.GetComponent<Image>();
+                uiImage.sprite = sprite;
+                uiImage.preserveAspect = true;
+                uiImage.color = Color.white;
+            }
+            else
+            {
+                var placeholder = CreateText("Placeholder", imagePanel.transform, "案例缩略图待补充", 15, FontStyle.Bold, TextSecondary);
+                placeholder.alignment = TextAnchor.MiddleCenter;
+                Stretch(placeholder.rectTransform, 0f, 0f, 0f, 0f);
+            }
+
+            var infoPanel = CreateObject("InfoPanel", card.transform, typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            infoPanel.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            var infoLayout = infoPanel.GetComponent<VerticalLayoutGroup>();
+            infoLayout.spacing = 6f;
+            infoLayout.childControlWidth = true;
+            infoLayout.childControlHeight = true;
+            infoLayout.childForceExpandWidth = true;
+            infoLayout.childForceExpandHeight = false;
+
+            CreateFlowText(infoPanel.transform, entry.Title, 24, FontStyle.Bold, TextPrimary);
+            CreateFlowText(infoPanel.transform, "类型：" + entry.Category, 14, FontStyle.Normal, TextSecondary);
+            CreateFlowText(infoPanel.transform, "难度：" + entry.Difficulty, 14, FontStyle.Normal, TextSecondary);
+            CreateFlowText(infoPanel.transform, "来源：" + entry.SourceLabel, 14, FontStyle.Normal, TextSecondary);
+            CreateFlowText(infoPanel.transform, "标签：" + string.Join("、", entry.Tags.ToArray()), 14, FontStyle.Normal, Blue);
+        }
+
+        private void CreateSection(Transform parent, string title, string body)
+        {
+            var card = CreateObject("SectionCard", parent, typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement));
+            card.GetComponent<Image>().color = CardBackground;
+            var vertical = card.GetComponent<VerticalLayoutGroup>();
+            vertical.padding = new RectOffset(20, 20, 16, 18);
+            vertical.spacing = 8f;
+            vertical.childControlWidth = true;
+            vertical.childControlHeight = true;
+            vertical.childForceExpandWidth = true;
+            vertical.childForceExpandHeight = false;
+            var fitter = card.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            card.GetComponent<LayoutElement>().minHeight = 82f;
+
+            CreateFlowText(card.transform, title, 17, FontStyle.Bold, TextPrimary);
+            CreateFlowText(card.transform, string.IsNullOrWhiteSpace(body) ? "该部分内容待补充。" : body, 14, FontStyle.Normal, TextSecondary);
+        }
+
+        private GameObject CreateSectionCard(Transform parent)
+        {
+            var card = CreateObject("SectionCard", parent, typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement));
+            card.GetComponent<Image>().color = CardBackground;
+            var layout = card.GetComponent<HorizontalLayoutGroup>();
+            layout.childControlHeight = true;
+            layout.childForceExpandHeight = false;
+            var fitter = card.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            card.GetComponent<LayoutElement>().minHeight = 82f;
+            return card;
+        }
+
+        private void LoadEntry(GalleryEntry entry)
+        {
+            var loader = FindObjectOfType<TemplateLoadController>();
+            if (loader == null)
+            {
+                SetStatus("模板加载控制器未就绪，无法加载案例。");
+                return;
+            }
+
+            loader.RequestLoadTemplateFromGallery(entry.CatalogItem, () =>
+            {
+                var navigation = FindObjectOfType<TopNavigationController>();
+                if (navigation != null)
+                {
+                    navigation.SelectTab(0);
+                }
+            });
+        }
+
+        private static string[] BuildTags(CircuitTemplateCatalogItemDto item, string title)
+        {
+            var tags = new List<string>();
+            AddTag(tags, item.category);
+            if (Contains(title, "照明")) AddTag(tags, "照明");
+            if (Contains(title, "双控")) AddTag(tags, "双控");
+            if (Contains(title, "电能表")) AddTag(tags, "电能表");
+            if (Contains(title, "风扇")) AddTag(tags, "风扇");
+            if (Contains(title, "空开") || Contains(title, "空气开关")) AddTag(tags, "空气开关");
+            if (Contains(title, "点动")) AddTag(tags, "点动");
+            if (Contains(title, "连续")) AddTag(tags, "连续运行");
+            if (Contains(title, "热继")) AddTag(tags, "热继保护");
+            if (Contains(title, "正反转")) AddTag(tags, "正反转");
+            if (Contains(title, "互锁")) AddTag(tags, "互锁");
+            if (Contains(title, "自动往返")) AddTag(tags, "自动往返");
+            if (Contains(title, "时间继电器") || Contains(title, "顺序")) AddTag(tags, "时间继电器");
+            if (Contains(title, "星三角")) AddTag(tags, "星三角");
+            if (item.category == "工业电路") AddTag(tags, "电机控制");
+            return tags.Count == 0 ? new[] { "本地案例" } : tags.ToArray();
+        }
+
+        private static string BuildDescription(CircuitTemplateCatalogItemDto item, string title, string[] tags)
+        {
+            if (!string.IsNullOrWhiteSpace(item.description))
+            {
+                return item.description;
+            }
+
+            if (tags.Contains("星三角")) return "通过时间继电器实现电机由星形启动切换到三角运行，适合学习降压启动的基本过程。";
+            if (tags.Contains("自动往返")) return "通过行程开关和正反转接触器实现运动机构自动往返，适合学习限位换向与自锁保持。";
+            if (tags.Contains("正反转")) return "通过两个接触器切换电机相序，学习正转、反转以及互锁保护。";
+            if (tags.Contains("照明")) return "典型家庭照明接线案例，适合练习火线、零线、开关和负载之间的连接关系。";
+            return title + " 是系统内置本地教学案例，可用于查看标准接线并进行仿真练习。";
+        }
+
+        private static string BuildLearningGoal(string title, string[] tags)
+        {
+            if (tags.Contains("家庭电路"))
+            {
+                return "理解家庭电路中电源、开关、保护元件和负载的连接关系，练习按图完成照明或并联负载接线。";
+            }
+
+            if (tags.Contains("星三角"))
+            {
+                return "掌握星形启动、延时切换和三角运行的控制顺序，理解星形接触器与三角接触器不能同时吸合。";
+            }
+
+            if (tags.Contains("自动往返"))
+            {
+                return "掌握行程开关常闭触点切断当前方向、常开触点启动反向回路的自动换向逻辑。";
+            }
+
+            if (tags.Contains("正反转"))
+            {
+                return "掌握三相电机正反转主回路换相方法，理解按钮互锁、接触器互锁和双重联锁的作用。";
+            }
+
+            return "掌握该控制电路的主要元件、控制回路路径和运行过程，并能在仿真画布中进行验证。";
+        }
+
+        private static string BuildMainComponents(string title, string[] tags)
+        {
+            if (tags.Contains("星三角")) return "三相电源、空气开关、交流接触器 KM、时间继电器 KT、热继电器 FR、星三角电机。";
+            if (tags.Contains("自动往返")) return "三相电源、正反转接触器、行程开关 SQ、启动/停止按钮、三相异步电机。";
+            if (tags.Contains("正反转")) return "三相电源、两个交流接触器、按钮、互锁触点、三相异步电机。";
+            if (tags.Contains("家庭电路")) return "220V 电源、空气开关、开关、灯泡、电风扇或单相电能表。";
+            return "电源、控制元件、执行元件、负载和必要的保护元件。";
+        }
+
+        private static string BuildKeyPoints(string title, string[] tags)
+        {
+            if (tags.Contains("星三角")) return "延时切换、星形接触器和三角接触器互锁、主回路六端子连接。";
+            if (tags.Contains("自动往返")) return "SQ 11/12 常闭限位切断当前方向，SQ 23/24 常开触点给出反向启动信号。";
+            if (tags.Contains("正反转")) return "换相、互锁、自锁、停止回路以及正反转不能同时吸合。";
+            if (tags.Contains("照明")) return "火线进开关、零线进负载、保护元件串入电源入口，负载需要形成完整回路。";
+            return "电源路径、控制回路、保护触点和负载状态。";
+        }
+
+        private static string BuildCommonMistakes(string title, string[] tags)
+        {
+            if (tags.Contains("星三角")) return "不要让星形和三角接触器同时吸合；不要忽略时间继电器延时触点；不要混淆电机 U1/V1/W1 与 U2/V2/W2。";
+            if (tags.Contains("自动往返")) return "不要把 SQ 的 11/12 当作启动源；不要让两个方向接触器同时吸合；离开限位后应依靠对向接触器自锁保持。";
+            if (tags.Contains("正反转")) return "不要取消互锁；不要让两个接触器同时得电；主回路换相和控制回路互锁都需要核对。";
+            if (tags.Contains("家庭电路")) return "不要把 PE 当作工作零线；不要让 L 与 N 直接短接；开关通常应控制火线。";
+            return "加载案例后建议先查看主回路和控制回路，再运行仿真并使用检查助手核对。";
+        }
+
+        private static bool IsRecommended(string title, string[] tags)
+        {
+            return tags.Contains("照明")
+                || tags.Contains("连续运行")
+                || tags.Contains("正反转")
+                || tags.Contains("自动往返")
+                || tags.Contains("星三角")
+                || tags.Contains("时间继电器");
+        }
+
+        private static void AddTag(List<string> tags, string tag)
+        {
+            if (!string.IsNullOrWhiteSpace(tag) && !tags.Contains(tag))
+            {
+                tags.Add(tag);
+            }
+        }
+
+        private Sprite LoadThumbnail(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            return Resources.Load<Sprite>(path);
+        }
+
+        private void SetStatus(string message)
+        {
+            if (statusText != null)
+            {
+                statusText.text = message ?? string.Empty;
+            }
+        }
+
+        private static int DifficultyRank(string difficulty)
+        {
+            if (string.IsNullOrWhiteSpace(difficulty)) return 0;
+            if (difficulty.Contains("中高级")) return 2;
+            if (difficulty.Contains("高")) return 3;
+            if (difficulty.Contains("中")) return 1;
+            return 0;
+        }
+
+        private static bool Contains(string source, string keyword)
+        {
+            return !string.IsNullOrWhiteSpace(source)
+                && !string.IsNullOrWhiteSpace(keyword)
+                && source.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static Color HexColor(int rgb)
+        {
+            return new Color(
+                ((rgb >> 16) & 0xFF) / 255f,
+                ((rgb >> 8) & 0xFF) / 255f,
+                (rgb & 0xFF) / 255f,
+                1f);
+        }
+
+        private GameObject CreateObject(string name, Transform parent, params Type[] components)
+        {
+            var go = new GameObject(name, components);
+            go.transform.SetParent(parent, false);
+            return go;
+        }
+
+        private Text CreateText(string name, Transform parent, string text, int size, FontStyle style, Color color)
+        {
+            var go = CreateObject(name, parent, typeof(RectTransform), typeof(Text));
+            var label = go.GetComponent<Text>();
+            label.text = text;
+            label.font = font;
+            label.fontSize = size;
+            label.fontStyle = style;
+            label.color = color;
+            label.raycastTarget = false;
+            label.horizontalOverflow = HorizontalWrapMode.Wrap;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
+            return label;
+        }
+
+        private Text CreateFlowText(Transform parent, string text, int size, FontStyle style, Color color)
+        {
+            var label = CreateText("Text", parent, text, size, style, color);
+            return label;
+        }
+
+        private Button CreatePillButton(Transform parent, string text, float width, float height)
+        {
+            var button = CreateButton(parent, text, HexColor(0xF1F5F9), HexColor(0x334155));
+            var rect = button.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(width, height);
+            return button;
+        }
+
+        private Button CreateButton(Transform parent, string text, Color background, Color textColor)
+        {
+            var go = CreateObject("Button", parent, typeof(RectTransform), typeof(Image), typeof(Button));
+            var image = go.GetComponent<Image>();
+            image.color = background;
+            image.raycastTarget = true;
+
+            var label = CreateText("Text", go.transform, text, 14, FontStyle.Normal, textColor);
+            label.alignment = TextAnchor.MiddleCenter;
+            Stretch(label.rectTransform, 0f, 0f, 0f, 0f);
+            return go.GetComponent<Button>();
+        }
+
+        private InputField CreateInput(Transform parent, string placeholder, float width, float height)
+        {
+            var go = CreateObject("SearchInput", parent, typeof(RectTransform), typeof(Image), typeof(InputField));
+            go.GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
+            go.GetComponent<Image>().color = Color.white;
+
+            var text = CreateText("Text", go.transform, string.Empty, 14, FontStyle.Normal, TextPrimary);
+            Stretch(text.rectTransform, 12f, 10f, 4f, 4f);
+            text.alignment = TextAnchor.MiddleLeft;
+
+            var hint = CreateText("Placeholder", go.transform, placeholder, 14, FontStyle.Normal, HexColor(0x94A3B8));
+            Stretch(hint.rectTransform, 12f, 10f, 4f, 4f);
+            hint.alignment = TextAnchor.MiddleLeft;
+
+            var input = go.GetComponent<InputField>();
+            input.textComponent = text;
+            input.placeholder = hint;
+            input.targetGraphic = go.GetComponent<Image>();
+            return input;
+        }
+
+        private Dropdown CreateDropdown(Transform parent, float width, float height)
+        {
+            var go = CreateObject("SortDropdown", parent, typeof(RectTransform), typeof(Image), typeof(Dropdown));
+            go.GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
+            go.GetComponent<Image>().color = Color.white;
+
+            var label = CreateText("Label", go.transform, string.Empty, 14, FontStyle.Normal, TextPrimary);
+            Stretch(label.rectTransform, 12f, 28f, 0f, 0f);
+            label.alignment = TextAnchor.MiddleLeft;
+
+            var arrow = CreateText("Arrow", go.transform, "▼", 12, FontStyle.Normal, TextSecondary);
+            arrow.alignment = TextAnchor.MiddleCenter;
+            arrow.rectTransform.anchorMin = new Vector2(1f, 0f);
+            arrow.rectTransform.anchorMax = new Vector2(1f, 1f);
+            arrow.rectTransform.pivot = new Vector2(1f, 0.5f);
+            arrow.rectTransform.offsetMin = new Vector2(-28f, 0f);
+            arrow.rectTransform.offsetMax = new Vector2(0f, 0f);
+
+            var dropdown = go.GetComponent<Dropdown>();
+            dropdown.captionText = label;
+            dropdown.targetGraphic = go.GetComponent<Image>();
+            CreateDropdownTemplate(go.transform, dropdown);
+            return dropdown;
+        }
+
+        private void CreateDropdownTemplate(Transform parent, Dropdown dropdown)
+        {
+            var template = CreateObject("Template", parent, typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+            var templateRect = template.GetComponent<RectTransform>();
+            templateRect.anchorMin = new Vector2(0f, 0f);
+            templateRect.anchorMax = new Vector2(1f, 0f);
+            templateRect.pivot = new Vector2(0.5f, 1f);
+            templateRect.anchoredPosition = new Vector2(0f, -2f);
+            templateRect.sizeDelta = new Vector2(0f, 180f);
+            template.GetComponent<Image>().color = Color.white;
+
+            var viewport = CreateObject("Viewport", template.transform, typeof(RectTransform), typeof(Image), typeof(Mask));
+            Stretch(viewport.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
+            var viewportImage = viewport.GetComponent<Image>();
+            viewportImage.color = Color.white;
+            viewportImage.raycastTarget = true;
+            viewport.GetComponent<Mask>().showMaskGraphic = false;
+
+            var content = CreateObject("Content", viewport.transform, typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            var contentRect = content.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.offsetMin = new Vector2(0f, contentRect.offsetMin.y);
+            contentRect.offsetMax = Vector2.zero;
+            var layout = content.GetComponent<VerticalLayoutGroup>();
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.spacing = 0f;
+            var fitter = content.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var item = CreateObject("Item", content.transform, typeof(RectTransform), typeof(Toggle));
+            item.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 32f);
+            var toggle = item.GetComponent<Toggle>();
+
+            var itemBackground = CreateObject("Item Background", item.transform, typeof(RectTransform), typeof(Image));
+            Stretch(itemBackground.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
+            itemBackground.GetComponent<Image>().color = HexColor(0xF8FAFC);
+
+            var checkmark = CreateText("Item Checkmark", item.transform, "✓", 13, FontStyle.Bold, Blue);
+            checkmark.alignment = TextAnchor.MiddleCenter;
+            checkmark.rectTransform.anchorMin = new Vector2(0f, 0f);
+            checkmark.rectTransform.anchorMax = new Vector2(0f, 1f);
+            checkmark.rectTransform.pivot = new Vector2(0f, 0.5f);
+            checkmark.rectTransform.offsetMin = new Vector2(8f, 0f);
+            checkmark.rectTransform.offsetMax = new Vector2(28f, 0f);
+
+            var itemLabel = CreateText("Item Label", item.transform, "Option", 13, FontStyle.Normal, TextPrimary);
+            itemLabel.alignment = TextAnchor.MiddleLeft;
+            Stretch(itemLabel.rectTransform, 32f, 8f, 0f, 0f);
+
+            toggle.targetGraphic = itemBackground.GetComponent<Image>();
+            toggle.graphic = checkmark;
+
+            var templateScrollRect = template.GetComponent<ScrollRect>();
+            templateScrollRect.horizontal = false;
+            templateScrollRect.vertical = true;
+            templateScrollRect.viewport = viewport.GetComponent<RectTransform>();
+            templateScrollRect.content = contentRect;
+
+            template.SetActive(false);
+            dropdown.template = templateRect;
+            dropdown.itemText = itemLabel;
+        }
+
+        private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(left, bottom);
+            rect.offsetMax = new Vector2(-right, -top);
+        }
+
+        private static void ClearChildren(Transform parent)
+        {
+            for (var i = parent.childCount - 1; i >= 0; i--)
+            {
+                Destroy(parent.GetChild(i).gameObject);
+            }
+        }
+
+        private sealed class GalleryEntry
+        {
+            public CircuitTemplateCatalogItemDto CatalogItem;
+            public string Id;
+            public string Title;
+            public string Category;
+            public string Difficulty;
+            public string Description;
+            public string LearningGoal;
+            public string MainComponents;
+            public string KeyPoints;
+            public string CommonMistakes;
+            public string SourceLabel;
+            public string TemplateId;
+            public string ThumbnailPath;
+            public string[] Tags;
+            public bool Recommended;
+        }
+    }
+}

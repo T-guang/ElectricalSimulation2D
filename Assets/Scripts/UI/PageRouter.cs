@@ -31,11 +31,11 @@ namespace ElectricalSim.UI
         {
             simulationRoot = simulation;
             blueprintRoot = blueprint;
-            squareRoot = square;
             encyclopediaRoot = encyclopedia;
             toolsRoot = tools;
             emptyPageRoot = emptyPage;
             emptyPageTitle = emptyTitle;
+            squareRoot = square != null ? square : EnsureSimulationGalleryRoot();
             profileRoot = profile != null ? profile : EnsureLocalProfileRoot();
         }
 
@@ -86,6 +86,56 @@ namespace ElectricalSim.UI
             go.SetActive(false);
             profileRoot = go;
             return profileRoot;
+        }
+
+        private GameObject EnsureSimulationGalleryRoot()
+        {
+            if (squareRoot != null)
+            {
+                return squareRoot;
+            }
+
+            var parent = emptyPageRoot != null ? emptyPageRoot.transform.parent : transform.parent;
+            if (parent == null)
+            {
+                return null;
+            }
+
+            var existing = parent.Find("SimulationGalleryPage");
+            if (existing != null)
+            {
+                squareRoot = existing.gameObject;
+                if (squareRoot.GetComponent<SimulationGalleryPageController>() == null)
+                {
+                    squareRoot.AddComponent<SimulationGalleryPageController>();
+                }
+
+                return squareRoot;
+            }
+
+            var go = new GameObject("SimulationGalleryPage", typeof(RectTransform), typeof(Image), typeof(SimulationGalleryPageController));
+            go.transform.SetParent(parent, false);
+            var rect = go.GetComponent<RectTransform>();
+            var sourceRect = emptyPageRoot != null ? emptyPageRoot.GetComponent<RectTransform>() : null;
+            if (sourceRect != null)
+            {
+                rect.anchorMin = sourceRect.anchorMin;
+                rect.anchorMax = sourceRect.anchorMax;
+                rect.pivot = sourceRect.pivot;
+                rect.anchoredPosition = sourceRect.anchoredPosition;
+                rect.sizeDelta = sourceRect.sizeDelta;
+            }
+            else
+            {
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+            }
+
+            go.SetActive(false);
+            squareRoot = go;
+            return squareRoot;
         }
 
         private void Awake()

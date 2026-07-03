@@ -81,13 +81,23 @@ namespace ElectricalSim.UI
 
         public void RequestLoadTemplateFromGallery(ElectricalSim.Templates.CircuitTemplateCatalogItemDto item)
         {
+            RequestLoadTemplateFromGallery(item, null);
+        }
+
+        public void RequestLoadTemplateFromGallery(ElectricalSim.Templates.CircuitTemplateCatalogItemDto item, System.Action onLoaded)
+        {
             if (item != null)
             {
-                LoadTemplate(item);
+                LoadTemplate(item, onLoaded);
             }
         }
 
         private void LoadTemplate(ElectricalSim.Templates.CircuitTemplateCatalogItemDto item)
+        {
+            LoadTemplate(item, null);
+        }
+
+        private void LoadTemplate(ElectricalSim.Templates.CircuitTemplateCatalogItemDto item, System.Action onLoaded)
         {
             if (workspace == null || item == null)
             {
@@ -96,41 +106,51 @@ namespace ElectricalSim.UI
 
             if (HasWorkspaceContent())
             {
-                ShowLoadConfirm(item, () => LoadTemplateNow(item));
+                ShowLoadConfirm(item, () =>
+                {
+                    if (LoadTemplateNow(item))
+                    {
+                        onLoaded?.Invoke();
+                    }
+                });
                 return;
             }
 
-            LoadTemplateNow(item);
+            if (LoadTemplateNow(item))
+            {
+                onLoaded?.Invoke();
+            }
         }
 
-        private void LoadTemplateNow(CircuitTemplateCatalogItemDto item)
+        private bool LoadTemplateNow(CircuitTemplateCatalogItemDto item)
         {
             if (workspace == null || item == null)
             {
-                return;
+                return false;
             }
 
             if (string.IsNullOrWhiteSpace(item.resourcePath))
             {
                 workspace.SetStatus("模板路径为空：" + item.templateId);
-                return;
+                return false;
             }
 
             if (!CircuitTemplateLoader.TryLoad(item.resourcePath, out var template, out var error))
             {
                 workspace.SetStatus(string.IsNullOrWhiteSpace(error) ? "模板读取失败：" + item.templateId : error);
-                return;
+                return false;
             }
 
             var catalog = saveLoadService != null ? saveLoadService.Catalog : null;
             if (!CircuitTemplateSpawnService.Spawn(template, workspace, catalog, out var message))
             {
                 workspace.SetStatus(string.IsNullOrWhiteSpace(message) ? "模板生成失败：" + item.templateId : message);
-                return;
+                return false;
             }
 
             TemplateEditSession.RecordTemplate(item.templateId, template.templateName, item.resourcePath);
             workspace.SetStatus("已加载标准图纸：" + template.templateName);
+            return true;
         }
 
         private bool HasWorkspaceContent()
