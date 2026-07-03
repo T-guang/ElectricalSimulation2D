@@ -391,7 +391,7 @@ namespace ElectricalSim.UI
             {
                 var start = workspace.FindComponent(item.startComponentId)?.GetTerminal(item.startTerminalId);
                 var end = workspace.FindComponent(item.endComponentId)?.GetTerminal(item.endTerminalId);
-                var color = workspace != null ? workspace.CurrentWireColor : new Color(0.95f, 0.15f, 0.12f);
+                var color = workspace != null ? workspace.ResolveAutoWireColor(start, end) : new Color(0.95f, 0.15f, 0.12f);
                 TryParseWireColor(item.color, out color, color);
                 var style = WireStyle.Orthogonal;
                 Enum.TryParse(item.style, out style);

@@ -33,7 +33,7 @@ namespace ElectricalSim.Core
         public bool IsSimulationRunning { get; private set; }
         public CircuitComponent SelectedComponent => selectedComponent;
         public bool HasSelectedWire => selectedWire != null;
-        public Color ActiveWirePaletteColor => selectedWire != null ? selectedWire.WireColor : CurrentWireColor;
+        public Color ActiveWirePaletteColor => selectedWire != null ? selectedWire.WireColor : Color.clear;
 
         private readonly List<CircuitComponent> components = new List<CircuitComponent>();
         private readonly List<MeasurementPanel> measurementPanels = new List<MeasurementPanel>();
@@ -264,7 +264,7 @@ namespace ElectricalSim.Core
             }
 
             RecordHistoryCheckpoint();
-            wireManager.CreateWire(pendingTerminal, terminal, CurrentWireColor, CurrentWireStyle);
+            wireManager.CreateWire(pendingTerminal, terminal, ResolveWireColor(pendingTerminal, terminal), CurrentWireStyle);
             pendingTerminal.SetSelected(false);
             pendingTerminal = null;
             HidePreviewLine();
@@ -470,8 +470,7 @@ namespace ElectricalSim.Core
 
             if (selectedWire == null)
             {
-                CurrentWireColor = color;
-                SetStatus("已设置新导线默认颜色：" + FormatWireColorName(color) + "。");
+                SetStatus("请先选中一条导线再修改颜色。新建导线会继续自动识别线色。");
                 return;
             }
 
@@ -1090,7 +1089,7 @@ namespace ElectricalSim.Core
 
         private void EnsurePreviewSegments(int count)
         {
-            var previewColor = CurrentWireColor;
+            var previewColor = pendingTerminal != null ? pendingTerminal.TerminalColor : CurrentWireColor;
 
             while (previewSegments.Count < count)
             {
@@ -1107,6 +1106,11 @@ namespace ElectricalSim.Core
                 previewSegments[i].gameObject.SetActive(i < count);
                 previewSegments[i].color = new Color(previewColor.r, previewColor.g, previewColor.b, 0.55f);
             }
+        }
+
+        public Color ResolveAutoWireColor(TerminalView start, TerminalView end)
+        {
+            return ResolveWireColor(start, end);
         }
 
         private Color ResolveWireColor(TerminalView start, TerminalView end)
