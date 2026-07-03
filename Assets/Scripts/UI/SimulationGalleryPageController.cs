@@ -203,14 +203,13 @@ namespace ElectricalSim.UI
             gridContent.offsetMax = new Vector2(0f, 0f);
 
             var grid = content.GetComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(340f, 252f);
-            grid.spacing = new Vector2(18f, 18f);
-            grid.padding = new RectOffset(10, 10, 10, 24);
+            grid.cellSize = new Vector2(330f, 280f);
+            grid.spacing = new Vector2(24f, 24f);
+            grid.padding = new RectOffset(24, 24, 20, 24);
             grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
             grid.startAxis = GridLayoutGroup.Axis.Horizontal;
-            grid.childAlignment = TextAnchor.UpperLeft;
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 3;
+            grid.childAlignment = TextAnchor.UpperCenter;
+            grid.constraint = GridLayoutGroup.Constraint.Flexible;
 
             var fitter = content.GetComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -219,7 +218,7 @@ namespace ElectricalSim.UI
             gridScrollRect.viewport = viewportRect;
             gridScrollRect.content = gridContent;
 
-            emptyHint = CreateText("EmptyHint", scroll.transform, "未找到相关本地案例。", 18, FontStyle.Bold, TextSecondary);
+            emptyHint = CreateText("EmptyHint", scroll.transform, "未找到匹配案例\n\n请尝试更换关键词，或切换到“全部”分类查看本地案例。", 16, FontStyle.Normal, TextSecondary);
             emptyHint.alignment = TextAnchor.MiddleCenter;
             Stretch(emptyHint.rectTransform, 0f, 0f, 0f, 0f);
             emptyHint.gameObject.SetActive(false);
@@ -227,11 +226,11 @@ namespace ElectricalSim.UI
             statusText = CreateText("StatusText", parent, string.Empty, 13, FontStyle.Normal, TextSecondary);
             statusText.alignment = TextAnchor.MiddleLeft;
             var statusRect = statusText.rectTransform;
-            statusRect.anchorMin = new Vector2(0f, 0f);
-            statusRect.anchorMax = new Vector2(1f, 0f);
-            statusRect.pivot = new Vector2(0.5f, 0f);
-            statusRect.offsetMin = new Vector2(42f, 8f);
-            statusRect.offsetMax = new Vector2(-42f, 30f);
+            statusRect.anchorMin = new Vector2(0f, 1f);
+            statusRect.anchorMax = new Vector2(1f, 1f);
+            statusRect.pivot = new Vector2(0.5f, 1f);
+            statusRect.offsetMin = new Vector2(32f, -178f);
+            statusRect.offsetMax = new Vector2(-32f, -156f);
         }
 
         private void BuildDetailRoot()
@@ -260,7 +259,7 @@ namespace ElectricalSim.UI
                 entries.Add(CreateEntry(item));
             }
 
-            SetStatus("已加载本地案例：" + entries.Count + " 个");
+            SetStatus("共 " + entries.Count + " 个本地案例");
         }
 
         private GalleryEntry CreateEntry(CircuitTemplateCatalogItemDto item)
@@ -418,9 +417,9 @@ namespace ElectricalSim.UI
             thumbRect.anchorMin = new Vector2(0f, 1f);
             thumbRect.anchorMax = new Vector2(1f, 1f);
             thumbRect.pivot = new Vector2(0.5f, 1f);
-            thumbRect.offsetMin = new Vector2(14f, -104f);
+            thumbRect.offsetMin = new Vector2(14f, -140f);
             thumbRect.offsetMax = new Vector2(-14f, -14f);
-            thumbPanel.GetComponent<Image>().color = HexColor(0xF3F8FE);
+            thumbPanel.GetComponent<Image>().color = HexColor(0xF1F5F9);
 
             var thumbnailSprite = LoadThumbnail(entry.ThumbnailPath);
             if (thumbnailSprite != null)
@@ -435,33 +434,42 @@ namespace ElectricalSim.UI
             }
             else
             {
-                var placeholder = CreateText("Placeholder", thumbPanel.transform, "案例缩略图待补充", 15, FontStyle.Bold, TextSecondary);
+                var colorBar = CreateObject("ColorBar", thumbPanel.transform, typeof(RectTransform), typeof(Image));
+                var colorBarRect = colorBar.GetComponent<RectTransform>();
+                colorBarRect.anchorMin = new Vector2(0f, 1f);
+                colorBarRect.anchorMax = new Vector2(1f, 1f);
+                colorBarRect.pivot = new Vector2(0.5f, 1f);
+                colorBarRect.offsetMin = new Vector2(0f, -4f);
+                colorBarRect.offsetMax = new Vector2(0f, 0f);
+                colorBar.GetComponent<Image>().color = entry.Category == "家庭电路" ? HexColor(0x60A5FA) : (entry.Category == "工业电路" ? HexColor(0xFBBF24) : HexColor(0x94A3B8));
+
+                var placeholder = CreateText("Placeholder", thumbPanel.transform, "案例缩略图\n待补充", 14, FontStyle.Normal, HexColor(0x94A3B8));
                 placeholder.alignment = TextAnchor.MiddleCenter;
                 Stretch(placeholder.rectTransform, 0f, 0f, 0f, 0f);
             }
 
-            var title = CreateText("Title", card.transform, entry.Title, 17, FontStyle.Bold, TextPrimary);
+            var title = CreateText("Title", card.transform, entry.Title, 16, FontStyle.Bold, TextPrimary);
             title.alignment = TextAnchor.UpperLeft;
             title.horizontalOverflow = HorizontalWrapMode.Wrap;
             title.rectTransform.anchorMin = new Vector2(0f, 1f);
             title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.offsetMin = new Vector2(16f, -154f);
-            title.rectTransform.offsetMax = new Vector2(-16f, -110f);
+            title.rectTransform.offsetMin = new Vector2(16f, -188f);
+            title.rectTransform.offsetMax = new Vector2(-16f, -150f);
 
             var meta = CreateText("Meta", card.transform, entry.Category + " / " + entry.Difficulty + " / " + entry.SourceLabel, 12, FontStyle.Normal, TextSecondary);
             meta.alignment = TextAnchor.UpperLeft;
             meta.rectTransform.anchorMin = new Vector2(0f, 1f);
             meta.rectTransform.anchorMax = new Vector2(1f, 1f);
-            meta.rectTransform.offsetMin = new Vector2(16f, -178f);
-            meta.rectTransform.offsetMax = new Vector2(-16f, -154f);
+            meta.rectTransform.offsetMin = new Vector2(16f, -206f);
+            meta.rectTransform.offsetMax = new Vector2(-16f, -188f);
 
             var tags = CreateText("Tags", card.transform, string.Join("  ", entry.Tags.Take(4).ToArray()), 12, FontStyle.Normal, Blue);
             tags.alignment = TextAnchor.UpperLeft;
             tags.horizontalOverflow = HorizontalWrapMode.Wrap;
             tags.rectTransform.anchorMin = new Vector2(0f, 1f);
             tags.rectTransform.anchorMax = new Vector2(1f, 1f);
-            tags.rectTransform.offsetMin = new Vector2(16f, -208f);
-            tags.rectTransform.offsetMax = new Vector2(-16f, -178f);
+            tags.rectTransform.offsetMin = new Vector2(16f, -230f);
+            tags.rectTransform.offsetMax = new Vector2(-16f, -208f);
 
             var detailButton = CreateButton(card.transform, "查看详情", HexColor(0xEAF0F7), HexColor(0x334155));
             var detailRect = detailButton.GetComponent<RectTransform>();
@@ -469,7 +477,7 @@ namespace ElectricalSim.UI
             detailRect.anchorMax = new Vector2(0f, 0f);
             detailRect.pivot = new Vector2(0f, 0f);
             detailRect.anchoredPosition = new Vector2(16f, 14f);
-            detailRect.sizeDelta = new Vector2(118f, 34f);
+            detailRect.sizeDelta = new Vector2(142f, 34f);
             detailButton.onClick.AddListener(() => ShowDetail(entry));
 
             var loadButton = CreateButton(card.transform, "加载案例", Blue, Color.white);
@@ -478,7 +486,7 @@ namespace ElectricalSim.UI
             loadRect.anchorMax = new Vector2(1f, 0f);
             loadRect.pivot = new Vector2(1f, 0f);
             loadRect.anchoredPosition = new Vector2(-16f, 14f);
-            loadRect.sizeDelta = new Vector2(118f, 34f);
+            loadRect.sizeDelta = new Vector2(142f, 34f);
             loadButton.onClick.AddListener(() => LoadEntry(entry));
         }
 
