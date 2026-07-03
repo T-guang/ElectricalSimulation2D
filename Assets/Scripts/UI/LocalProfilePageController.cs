@@ -88,7 +88,7 @@ namespace ElectricalSim.UI
             scroll.horizontal = false;
             scroll.vertical = true;
 
-            userInfoText = AddCard("本地用户信息", string.Empty);
+            // Removed userInfoText card
             drawingInfoText = AddCard("本地图纸信息", string.Empty, CreateDrawingButtons);
             AddCard("软件信息", "软件名称：电工数字学生仿真系统\n软件版本：" + VersionText + "\n运行模式：PC 单机版");
             dataInfoText = AddCard("数据管理", string.Empty, CreateDataButtons);
@@ -138,7 +138,6 @@ namespace ElectricalSim.UI
         private void CreateDataButtons(RectTransform parent)
         {
             var row = CreateButtonRow(parent);
-            CreateButton(row, "清理最近用户记录", ClearRecentUser);
             CreateButton(row, "打开本地数据目录", OpenPersistentDataFolder);
         }
 
@@ -172,14 +171,6 @@ namespace ElectricalSim.UI
 
         private void RefreshInfo()
         {
-            var userName = AppSession.IsLoggedIn ? AppSession.CurrentUser : PlayerPrefs.GetString(LoginController.LastUserNameKey, string.Empty);
-            var lastLogin = PlayerPrefs.GetString(LoginController.LastLoginTimeKey, "暂无记录");
-            if (userInfoText != null)
-            {
-                userInfoText.text = "当前用户：" + (string.IsNullOrWhiteSpace(userName) ? "未设置" : userName) +
-                    "\n最近进入时间：" + lastLogin +
-                    "\n当前模式：单机本地模式";
-            }
 
             if (drawingInfoText != null)
             {
@@ -189,8 +180,7 @@ namespace ElectricalSim.UI
 
             if (dataInfoText != null)
             {
-                dataInfoText.text = "本地数据目录：" + Application.persistentDataPath +
-                    "\n清理最近用户记录只会清除登录页姓名/学号，不会删除图纸。";
+                dataInfoText.text = "本地数据目录：" + Application.persistentDataPath;
             }
         }
 
@@ -223,14 +213,7 @@ namespace ElectricalSim.UI
             OpenFolder(Application.persistentDataPath);
         }
 
-        private void ClearRecentUser()
-        {
-            PlayerPrefs.DeleteKey(LoginController.LastUserNameKey);
-            PlayerPrefs.DeleteKey(LoginController.LastLoginTimeKey);
-            PlayerPrefs.Save();
-            AppSession.Logout();
-            RefreshInfo();
-        }
+
 
         private static void EnsureDirectory(string path)
         {

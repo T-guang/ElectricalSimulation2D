@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -54,13 +54,8 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            ClearButtonEvents();
-            ConfigureLocalLoginView();
-            loginButton?.onClick.AddListener(HandleLogin);
-            showRegisterButton?.onClick.AddListener(HandleContinueLastUser);
-            registerBackButton?.onClick.AddListener(ShowLogin);
-            forgotBackButton?.onClick.AddListener(ShowLogin);
-            logoutButton?.onClick.AddListener(Logout);
+            // 直接跳转主界面，不再显示登录页
+            SceneManager.LoadScene(demoSceneName);
         }
 
         private void Start()
