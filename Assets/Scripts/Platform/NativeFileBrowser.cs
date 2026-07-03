@@ -27,7 +27,7 @@ namespace ElectricalSim.Platform
                 }
                 var normalizedPath = Path.GetFullPath(saveDir).Replace('/', '\\');
                 System.Diagnostics.Process.Start("explorer.exe", normalizedPath);
-                onError?.Invoke("请将外部 JSON 图纸复制到打开的文件夹中，然后点击左侧的【外部导入】旁边的刷新或重新打开本面板。");
+                onError?.Invoke("请把外部 JSON 拷入此文件夹，然后点上方【刷新列表】即可载入。");
             }
             catch (Exception e)
             {
