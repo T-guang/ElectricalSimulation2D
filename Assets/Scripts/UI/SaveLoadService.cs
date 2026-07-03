@@ -166,6 +166,13 @@ namespace ElectricalSim.UI
 
             foreach (var item in drawing.components)
             {
+                if (item == null || string.IsNullOrWhiteSpace(item.instanceId) || string.IsNullOrWhiteSpace(item.definitionName))
+                {
+                    error = "导入失败：图纸中存在无效元件。";
+                    workspace.SetStatus(error);
+                    return false;
+                }
+
                 var definition = catalog.Find(d => d.name == item.definitionName);
                 if (definition == null)
                 {
@@ -177,9 +184,25 @@ namespace ElectricalSim.UI
 
             foreach (var item in drawing.wires)
             {
+                if (item == null ||
+                    string.IsNullOrWhiteSpace(item.startComponentId) ||
+                    string.IsNullOrWhiteSpace(item.endComponentId) ||
+                    string.IsNullOrWhiteSpace(item.startTerminalId) ||
+                    string.IsNullOrWhiteSpace(item.endTerminalId))
+                {
+                    error = "导入失败：图纸中存在无效导线。";
+                    workspace.SetStatus(error);
+                    return false;
+                }
+
                 var startComp = drawing.components.Find(c => c.instanceId == item.startComponentId);
                 var endComp = drawing.components.Find(c => c.instanceId == item.endComponentId);
-                if (startComp == null || endComp == null) continue;
+                if (startComp == null || endComp == null)
+                {
+                    error = "导入失败：导线引用了不存在的元件。";
+                    workspace.SetStatus(error);
+                    return false;
+                }
 
                 var startDef = catalog.Find(d => d.name == startComp.definitionName);
                 var endDef = catalog.Find(d => d.name == endComp.definitionName);
