@@ -17,21 +17,19 @@ namespace ElectricalSim.Platform
 #if UNITY_WEBGL && !UNITY_EDITOR
             NativeFileBrowserReceiver.Instance.Prepare(onJsonReceived, onError);
             ImportFileWebGL();
-#elif UNITY_STANDALONE_WIN || UNITY_EDITOR
+#elif UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             try
             {
-                var saveDir = Path.Combine(Application.persistentDataPath, "SavedBlueprints");
-                if (!Directory.Exists(saveDir))
+                string path = WindowsFileDialog.OpenFile("选择外部 JSON 图纸", "JSON 图纸文件 (*.json)|*.json", "json");
+                if (!string.IsNullOrEmpty(path))
                 {
-                    Directory.CreateDirectory(saveDir);
+                    string json = System.IO.File.ReadAllText(path);
+                    onJsonReceived?.Invoke(json);
                 }
-                var normalizedPath = Path.GetFullPath(saveDir).Replace('/', '\\');
-                System.Diagnostics.Process.Start("explorer.exe", normalizedPath);
-                onError?.Invoke("请把外部 JSON 拷入此文件夹，然后点上方【刷新列表】即可载入。");
             }
             catch (Exception e)
             {
-                onError?.Invoke("无法打开文件夹：" + e.Message);
+                onError?.Invoke("无法读取图纸文件：" + e.Message);
             }
 #else
             onError?.Invoke("当前平台暂不支持外部导入。");

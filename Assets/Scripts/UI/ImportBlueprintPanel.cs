@@ -175,17 +175,9 @@ namespace ElectricalSim.UI
 
             CreateText("Title", panel, "导入图纸", 22, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(420f, 36f));
             
-#if UNITY_WEBGL && !UNITY_EDITOR
             var externalBtnText = "从电脑导入图纸";
             var externalButton = CreateButton(panel, "ExternalImportButton", externalBtnText, new Vector2(360f, -28f), new Vector2(150f, 36f), new Color(0.9f, 0.93f, 0.96f), new Color(0.05f, 0.45f, 0.85f));
             externalButton.onClick.AddListener(OnExternalImportClicked);
-#else
-            var externalBtnText = "打开图纸文件夹";
-            var externalButton = CreateButton(panel, "ExternalImportButton", externalBtnText, new Vector2(250f, -28f), new Vector2(150f, 36f), new Color(0.9f, 0.93f, 0.96f), new Color(0.05f, 0.45f, 0.85f));
-            externalButton.onClick.AddListener(OnExternalImportClicked);
-            var refreshButton = CreateButton(panel, "RefreshButton", "刷新列表", new Vector2(410f, -28f), new Vector2(100f, 36f), new Color(0.94f, 0.96f, 0.98f), new Color(0.05f, 0.12f, 0.24f));
-            refreshButton.onClick.AddListener(RefreshList);
-#endif
 
             closeButton = CreateButton(panel, "CloseButton", "关闭", new Vector2(528f, -28f), new Vector2(84f, 36f), new Color(0.94f, 0.96f, 0.98f), new Color(0.05f, 0.12f, 0.24f));
 
