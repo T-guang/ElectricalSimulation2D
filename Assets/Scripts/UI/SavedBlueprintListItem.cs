@@ -97,6 +97,7 @@ namespace ElectricalSim.UI
             buttonObject.GetComponent<Image>().color = background;
 
             var label = CreateText("Text", rect, 14, TextAnchor.MiddleCenter, Vector2.zero, size);
+            label.text = text;
             label.rectTransform.anchorMin = Vector2.zero;
             label.rectTransform.anchorMax = Vector2.one;
             label.rectTransform.offsetMin = Vector2.zero;
