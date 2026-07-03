@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -390,8 +391,8 @@ namespace ElectricalSim.UI
             {
                 var start = workspace.FindComponent(item.startComponentId)?.GetTerminal(item.startTerminalId);
                 var end = workspace.FindComponent(item.endComponentId)?.GetTerminal(item.endTerminalId);
-                var color = Color.white;
-                ColorUtility.TryParseHtmlString("#" + item.color, out color);
+                var color = workspace != null ? workspace.CurrentWireColor : new Color(0.95f, 0.15f, 0.12f);
+                TryParseWireColor(item.color, out color, color);
                 var style = WireStyle.Orthogonal;
                 Enum.TryParse(item.style, out style);
                 var wire = workspace.WireManager.CreateWire(start, end, color, style);
@@ -411,6 +412,164 @@ namespace ElectricalSim.UI
             workspace.WireManager.RefreshAll();
             workspace.MarkTopologyDirty();
             workspace.ClearHistory();
+        }
+
+        private static bool TryParseWireColor(string rawColor, out Color color, Color fallback)
+        {
+            color = fallback;
+            if (string.IsNullOrWhiteSpace(rawColor))
+            {
+                return false;
+            }
+
+            var value = rawColor.Trim().Trim('"');
+            if (ColorUtility.TryParseHtmlString(value, out color))
+            {
+                color.a = 1f;
+                return true;
+            }
+
+            if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(2);
+            }
+
+            if (!value.StartsWith("#", StringComparison.Ordinal) && IsHexColor(value))
+            {
+                if (ColorUtility.TryParseHtmlString("#" + value, out color))
+                {
+                    color.a = 1f;
+                    return true;
+                }
+            }
+
+            if (TryParseNamedWireColor(value, out color))
+            {
+                return true;
+            }
+
+            if (TryParseNumericWireColor(value, out color))
+            {
+                color.a = 1f;
+                return true;
+            }
+
+            color = fallback;
+            return false;
+        }
+
+        private static bool IsHexColor(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                value = value.Substring(2);
+            }
+
+            if (value.Length != 6 && value.Length != 8)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < value.Length; i++)
+            {
+                var c = value[i];
+                var isHex = c >= '0' && c <= '9' ||
+                    c >= 'a' && c <= 'f' ||
+                    c >= 'A' && c <= 'F';
+                if (!isHex)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryParseNamedWireColor(string value, out Color color)
+        {
+            color = Color.white;
+            switch (value.Trim().ToLowerInvariant())
+            {
+                case "red":
+                case "r":
+                case "phase":
+                case "火线":
+                case "红":
+                case "红色":
+                    color = new Color(0.95f, 0.15f, 0.12f);
+                    return true;
+                case "blue":
+                case "b":
+                case "neutral":
+                case "零线":
+                case "蓝":
+                case "蓝色":
+                    color = new Color(0.10f, 0.45f, 0.95f);
+                    return true;
+                case "green":
+                case "g":
+                case "pe":
+                case "earth":
+                case "ground":
+                case "地线":
+                case "绿":
+                case "绿色":
+                    color = new Color(0.08f, 0.65f, 0.25f);
+                    return true;
+                case "yellow":
+                case "y":
+                case "黄":
+                case "黄色":
+                    color = new Color(0.95f, 0.78f, 0.12f);
+                    return true;
+                case "white":
+                case "白":
+                case "白色":
+                    color = Color.white;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool TryParseNumericWireColor(string value, out Color color)
+        {
+            color = Color.white;
+            value = value.Replace("rgba", string.Empty)
+                .Replace("rgb", string.Empty)
+                .Replace("Color", string.Empty)
+                .Replace("RGBA", string.Empty)
+                .Replace("RGB", string.Empty)
+                .Replace("(", string.Empty)
+                .Replace(")", string.Empty);
+
+            var parts = value.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 3)
+            {
+                return false;
+            }
+
+            var values = new float[Mathf.Min(4, parts.Length)];
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (!float.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out values[i]))
+                {
+                    return false;
+                }
+            }
+
+            var scale = values[0] > 1f || values[1] > 1f || values[2] > 1f ? 255f : 1f;
+            color = new Color(
+                Mathf.Clamp01(values[0] / scale),
+                Mathf.Clamp01(values[1] / scale),
+                Mathf.Clamp01(values[2] / scale),
+                values.Length >= 4 ? Mathf.Clamp01(values[3] / (values[3] > 1f ? 255f : 1f)) : 1f);
+            return true;
         }
 
         private void EnsureSaveDirectory()

@@ -99,6 +99,13 @@ namespace ElectricalSim.Core
             RefreshSegmentStyle();
         }
 
+        public void SetWireColor(Color color)
+        {
+            color.a = 1f;
+            WireColor = color;
+            RefreshSegmentStyle();
+        }
+
         public void SetManualRoute(bool horizontal, float axis)
         {
             manualRoute = true;

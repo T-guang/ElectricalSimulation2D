@@ -27,6 +27,11 @@ namespace ElectricalSim.UI
         [SerializeField] private Dropdown wireStyleDropdown;
         [SerializeField] private List<Button> colorButtons = new List<Button>();
 
+        private readonly List<Outline> colorButtonOutlines = new List<Outline>();
+        private Color[] wirePaletteColors;
+        private Color lastActiveWireColor;
+        private bool lastActiveWireSelectionState;
+
         private void Awake()
         {
             EnsureToolbarLayout();
@@ -47,7 +52,7 @@ namespace ElectricalSim.UI
                 wireStyleDropdown.onValueChanged.AddListener(value => workspace.CurrentWireStyle = value == 0 ? WireStyle.Orthogonal : WireStyle.Straight);
             }
 
-            var colors = new[]
+            wirePaletteColors = new[]
             {
                 new Color(0.95f, 0.15f, 0.12f),
                 new Color(0.10f, 0.45f, 0.95f),
@@ -55,14 +60,26 @@ namespace ElectricalSim.UI
                 new Color(0.95f, 0.78f, 0.12f)
             };
 
-            for (var i = 0; i < colorButtons.Count && i < colors.Length; i++)
+            colorButtonOutlines.Clear();
+            for (var i = 0; i < colorButtons.Count && i < wirePaletteColors.Length; i++)
             {
-                var color = colors[i];
-                colorButtons[i].onClick.AddListener(() => workspace.CurrentWireColor = color);
+                var color = wirePaletteColors[i];
+                ConfigureWireColorButton(colorButtons[i], color);
+                colorButtons[i].onClick.AddListener(() =>
+                {
+                    workspace.ApplyWirePaletteColor(color);
+                    RefreshWireColorButtons(true);
+                });
             }
 
             RefreshSimulationButtonLabel();
             RefreshLockButtonLabel();
+            RefreshWireColorButtons(true);
+        }
+
+        private void LateUpdate()
+        {
+            RefreshWireColorButtons(false);
         }
 
         private void BindButton(Button button, UnityEngine.Events.UnityAction action)
@@ -279,6 +296,80 @@ namespace ElectricalSim.UI
                 text.resizeTextMinSize = 10;
                 text.resizeTextMaxSize = 16;
             }
+        }
+
+        private void ConfigureWireColorButton(Button button, Color color)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = color;
+            }
+
+            var colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1f, 1f, 1f, 0.92f);
+            colors.pressedColor = new Color(0.86f, 0.92f, 1f, 1f);
+            colors.selectedColor = Color.white;
+            button.colors = colors;
+
+            var outline = button.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = button.gameObject.AddComponent<Outline>();
+            }
+
+            outline.effectColor = new Color(0f, 0f, 0f, 0.18f);
+            outline.effectDistance = new Vector2(1f, -1f);
+            if (!colorButtonOutlines.Contains(outline))
+            {
+                colorButtonOutlines.Add(outline);
+            }
+        }
+
+        private void RefreshWireColorButtons(bool force)
+        {
+            if (workspace == null || wirePaletteColors == null)
+            {
+                return;
+            }
+
+            var activeColor = workspace.ActiveWirePaletteColor;
+            var hasSelectedWire = workspace.HasSelectedWire;
+            if (!force && hasSelectedWire == lastActiveWireSelectionState && IsSamePaletteColor(activeColor, lastActiveWireColor))
+            {
+                return;
+            }
+
+            lastActiveWireColor = activeColor;
+            lastActiveWireSelectionState = hasSelectedWire;
+
+            for (var i = 0; i < colorButtons.Count && i < wirePaletteColors.Length; i++)
+            {
+                var button = colorButtons[i];
+                if (button == null)
+                {
+                    continue;
+                }
+
+                var outline = button.GetComponent<Outline>();
+                var active = IsSamePaletteColor(activeColor, wirePaletteColors[i]);
+                if (outline != null)
+                {
+                    outline.effectColor = active ? new Color(0.1f, 0.24f, 0.65f, 0.9f) : new Color(0f, 0f, 0f, 0.18f);
+                    outline.effectDistance = active ? new Vector2(3f, -3f) : new Vector2(1f, -1f);
+                }
+            }
+        }
+
+        private static bool IsSamePaletteColor(Color a, Color b)
+        {
+            return Mathf.Abs(a.r - b.r) + Mathf.Abs(a.g - b.g) + Mathf.Abs(a.b - b.b) < 0.35f;
         }
 
         private void EnsureLocalInspectorPanel()

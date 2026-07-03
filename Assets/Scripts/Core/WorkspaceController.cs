@@ -32,6 +32,8 @@ namespace ElectricalSim.Core
         public bool IsInteractionLocked { get; private set; }
         public bool IsSimulationRunning { get; private set; }
         public CircuitComponent SelectedComponent => selectedComponent;
+        public bool HasSelectedWire => selectedWire != null;
+        public Color ActiveWirePaletteColor => selectedWire != null ? selectedWire.WireColor : CurrentWireColor;
 
         private readonly List<CircuitComponent> components = new List<CircuitComponent>();
         private readonly List<MeasurementPanel> measurementPanels = new List<MeasurementPanel>();
@@ -90,6 +92,13 @@ namespace ElectricalSim.Core
             if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.Delete))
             {
                 DeleteSelection();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                CancelPendingWire(null);
+                ClearSelection();
+                SetStatus("已取消当前选择。");
             }
 
             if (pendingTerminal != null)
@@ -255,7 +264,7 @@ namespace ElectricalSim.Core
             }
 
             RecordHistoryCheckpoint();
-            wireManager.CreateWire(pendingTerminal, terminal, ResolveWireColor(pendingTerminal, terminal), CurrentWireStyle);
+            wireManager.CreateWire(pendingTerminal, terminal, CurrentWireColor, CurrentWireStyle);
             pendingTerminal.SetSelected(false);
             pendingTerminal = null;
             HidePreviewLine();
@@ -453,6 +462,35 @@ namespace ElectricalSim.Core
             }
 
             return FormatTerminalEndpoint(wire.StartTerminal) + " -> " + FormatTerminalEndpoint(wire.EndTerminal);
+        }
+
+        public void ApplyWirePaletteColor(Color color)
+        {
+            color = NormalizeWireColor(color);
+
+            if (selectedWire == null)
+            {
+                CurrentWireColor = color;
+                SetStatus("已设置新导线默认颜色：" + FormatWireColorName(color) + "。");
+                return;
+            }
+
+            if (IsInteractionLocked)
+            {
+                SetStatus("画布已锁定，解锁后再修改导线颜色。");
+                return;
+            }
+
+            if (IsNearColor(selectedWire.WireColor, color))
+            {
+                SetStatus("选中导线已经是" + FormatWireColorName(color) + "。");
+                return;
+            }
+
+            var previousColor = selectedWire.WireColor;
+            RecordHistoryCheckpoint();
+            selectedWire.SetWireColor(color);
+            SetStatus("修改导线颜色：" + FormatWireColorName(previousColor) + " -> " + FormatWireColorName(color) + "。");
         }
 
         private static string FormatTerminalEndpoint(TerminalView terminal)
@@ -1052,7 +1090,7 @@ namespace ElectricalSim.Core
 
         private void EnsurePreviewSegments(int count)
         {
-            var previewColor = pendingTerminal != null ? pendingTerminal.TerminalColor : CurrentWireColor;
+            var previewColor = CurrentWireColor;
 
             while (previewSegments.Count < count)
             {
@@ -1162,6 +1200,31 @@ namespace ElectricalSim.Core
             }
 
             return 1;
+        }
+
+        private static string FormatWireColorName(Color color)
+        {
+            if (IsNearColor(color, WireYellow()))
+            {
+                return "黄色";
+            }
+
+            if (IsNearColor(color, WireGreen()))
+            {
+                return "绿色";
+            }
+
+            if (IsNearColor(color, WireBlue()))
+            {
+                return "蓝色";
+            }
+
+            if (IsNearColor(color, WireRed()))
+            {
+                return "红色";
+            }
+
+            return "#" + ColorUtility.ToHtmlStringRGB(color);
         }
 
         private static Color WireRed() => new Color(0.95f, 0.12f, 0.12f);
