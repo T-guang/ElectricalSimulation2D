@@ -84,7 +84,7 @@ namespace ElectricalSim.AI
             BindButton(checkButton, CheckCurrentCircuit);
             BindButton(submitPracticeButton, SubmitPracticeCheck);
             BindButton(exitPracticeButton, ExitPractice);
-            BindButton(clearReportButton, ClearReport);
+            BindButton(clearReportButton, ClearResult);
             ShowEmptyState();
         }
 
@@ -356,22 +356,26 @@ namespace ElectricalSim.AI
         private void ExplainCurrentCircuit()
         {
             ClearReport();
+            var stateResult = AnalyzeCircuitState();
+            ApplyRuntimeDisplayOverrides(stateResult);
+            AddReportBlocks(BuildReportSummary("当前电路解释", "电路解释", stateResult, 0, 0, "以下内容基于当前元件状态和接线拓扑生成。"));
+            AddReportBlocks(BuildCurrentCircuitExplanationReport(stateResult));
 
             if (IndustrialCircuitExplainer.TryExplain(workspace, out var industrialExplanation))
             {
                 industrialExplanation = ApplyCurrentCircuitName(industrialExplanation);
-                AddAssistantMessage(industrialExplanation);
+                AddReportBlocks("【教学说明】\n" + StripReportSections(industrialExplanation));
                 return;
             }
 
             var summary = summaryBuilder != null ? summaryBuilder.BuildDetailedSummary() : string.Empty;
             if (string.IsNullOrWhiteSpace(summary))
             {
-                AddAssistantMessage("【当前电路解释】\n当前画布为空，请先搭建电路或加载标准图纸。");
+                AddReportBlocks("【教学说明】\n当前画布为空，请先搭建电路或加载标准图纸。");
                 return;
             }
 
-            AddAssistantMessage("【当前电路解释】\n" + summary);
+            AddReportBlocks("【教学说明】\n" + summary);
         }
 
         private void CheckCurrentCircuit()
@@ -399,7 +403,14 @@ namespace ElectricalSim.AI
                     var industrialDebugDetails = BuildRuntimeDisplaySummary(industrialStateResult) +
                         "\n\n" + industrialResult.FormatForAssistant() +
                         "\n\n" + industrialStateResult.ToReadableText();
-                    AddAssistantMessage(PrependCheckPanelRuntimeNotices(
+                    AddReportBlocks(BuildReportSummary(
+                        "最新检查报告",
+                        "接线检查",
+                        industrialStateResult,
+                        industrialResult.ErrorCount,
+                        industrialResult.WarningCount,
+                        BuildCheckSummaryConclusion(industrialStateResult, industrialResult.ErrorCount, industrialResult.WarningCount)));
+                    AddReportBlocks(PrependCheckPanelRuntimeNotices(
                         TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails, showDeveloperDebugInfo),
                         industrialStateResult));
                     var industrialSummary = "工业电路检查完成：";
@@ -427,7 +438,14 @@ namespace ElectricalSim.AI
                 var debugDetails = BuildRuntimeDisplaySummary(stateResult) +
                     "\n\n" + CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
                     "\n\n" + stateResult.ToReadableText();
-                AddAssistantMessage(PrependCheckPanelRuntimeNotices(
+                AddReportBlocks(BuildReportSummary(
+                    "最新检查报告",
+                    "接线检查",
+                    stateResult,
+                    displayResult.ErrorCount,
+                    displayResult.WarningCount,
+                    BuildCheckSummaryConclusion(stateResult, displayResult.ErrorCount, displayResult.WarningCount)));
+                AddReportBlocks(PrependCheckPanelRuntimeNotices(
                     TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails, showDeveloperDebugInfo),
                     stateResult));
                 
@@ -488,6 +506,203 @@ namespace ElectricalSim.AI
             }
 
             return string.Empty;
+        }
+
+        private string BuildReportSummary(
+            string title,
+            string reportType,
+            CircuitStateResult stateResult,
+            int errorCount,
+            int warningCount,
+            string conclusion)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("【" + title + "】");
+            builder.AppendLine("报告类型：" + reportType);
+            builder.AppendLine("生成时间：" + DateTime.Now.ToString("HH:mm:ss"));
+            builder.AppendLine("当前状态：" + (workspace != null && workspace.IsSimulationRunning ? "仿真运行中" : "仿真停止"));
+            builder.AppendLine("识别电路：" + ResolveCurrentCircuitDisplayName());
+            if (reportType.Contains("检查"))
+            {
+                builder.AppendLine("检查结论：" + (string.IsNullOrWhiteSpace(conclusion) ? "当前报告已根据画布现状生成。" : conclusion));
+                builder.AppendLine("风险等级：" + ResolveRiskLevel(stateResult, errorCount, warningCount));
+            }
+            else
+            {
+                builder.AppendLine("说明：" + (string.IsNullOrWhiteSpace(conclusion) ? "以下内容基于当前元件状态和接线拓扑生成。" : conclusion));
+            }
+            return builder.ToString().TrimEnd();
+        }
+
+        private string ResolveCurrentCircuitDisplayName()
+        {
+            var name = ResolveCurrentCircuitName();
+            return string.IsNullOrWhiteSpace(name) ? "未识别模板" : name;
+        }
+
+        private static string BuildCheckSummaryConclusion(CircuitStateResult stateResult, int errorCount, int warningCount)
+        {
+            if (stateResult != null && (stateResult.HasShortCircuit || stateResult.HasPowerConflict))
+            {
+                return "当前电路存在短路或电源冲突风险，建议先停止仿真并检查电源与主回路。";
+            }
+
+            if (errorCount > 0)
+            {
+                return "当前电路存在接线风险或逻辑异常，建议先处理“问题与风险”中的错误项。";
+            }
+
+            if (warningCount > 0)
+            {
+                return "当前电路存在需要关注的提醒项，建议按图纸继续核对控制回路和保护回路。";
+            }
+
+            return "当前未发现已支持规则范围内的严重接线错误。";
+        }
+
+        private static string ResolveRiskLevel(CircuitStateResult stateResult, int errorCount, int warningCount)
+        {
+            if (stateResult != null && (stateResult.HasShortCircuit || stateResult.HasPowerConflict))
+            {
+                return "错误";
+            }
+
+            if (errorCount > 0)
+            {
+                return "错误";
+            }
+
+            if (warningCount > 0)
+            {
+                return "提醒";
+            }
+
+            return "正常";
+        }
+
+        private string BuildCurrentCircuitExplanationReport(CircuitStateResult stateResult)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine("【电路组成】");
+            builder.AppendLine(BuildCompositionText(stateResult));
+            builder.AppendLine();
+            builder.AppendLine("【主回路路径】");
+            builder.AppendLine(BuildMainCircuitPathText(stateResult));
+            builder.AppendLine();
+            builder.AppendLine("【控制回路路径】");
+            builder.AppendLine(BuildControlCircuitPathText(stateResult));
+            builder.AppendLine();
+            builder.AppendLine("【元件动作关系】");
+            builder.AppendLine(BuildActionRelationText(stateResult));
+            builder.AppendLine();
+            builder.AppendLine("【当前运行状态】");
+            builder.AppendLine(BuildRuntimeDisplaySummary(stateResult));
+            var parameterSummary = BuildIndustrialParameterEstimationSummary(stateResult);
+            if (!string.IsNullOrWhiteSpace(parameterSummary))
+            {
+                builder.AppendLine();
+                builder.Append(parameterSummary);
+            }
+            return builder.ToString().TrimEnd();
+        }
+
+        private string BuildCompositionText(CircuitStateResult stateResult)
+        {
+            if (workspace == null || workspace.Components == null || workspace.Components.Count == 0)
+            {
+                return "当前画布为空，请先搭建电路或加载标准图纸。";
+            }
+
+            var builder = new StringBuilder();
+            builder.AppendLine("当前画布包含 " + workspace.Components.Count + " 个元件。");
+            builder.AppendLine("主要元件：");
+            var maxItems = Mathf.Min(workspace.Components.Count, 10);
+            for (var i = 0; i < maxItems; i++)
+            {
+                var component = workspace.Components[i];
+                if (component == null || component.Definition == null)
+                {
+                    continue;
+                }
+
+                builder.AppendLine("- " + NormalizeComponentDisplayName(component.Definition.displayName));
+            }
+
+            if (workspace.Components.Count > maxItems)
+            {
+                builder.AppendLine("- 其余 " + (workspace.Components.Count - maxItems) + " 个元件未在摘要中展开。");
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        private string BuildMainCircuitPathText(CircuitStateResult stateResult)
+        {
+            if (HasAnyStateComponent(stateResult, c => c.IsThreePhaseMotor || c.IsStarDeltaMotor))
+            {
+                return "主回路通常由三相电源 L1、L2、L3 经断路器、熔断器、刀开关、接触器主触点或热继电器后接入电机端子。接触器线圈得电吸合后，主触点闭合，电机获得三相电源；接触器释放后，主触点断开，电机停止。";
+            }
+
+            if (HasAnyStateComponent(stateResult, c => c.SummaryGroup == ComponentStateInfo.GroupLoad))
+            {
+                return "主回路由电源、开关或保护元件、负载和回线组成。只有负载两端形成有效电压差，并且回路没有被开关或保护触点断开时，负载才会运行或点亮。";
+            }
+
+            return "当前画布尚未识别到明确的主回路负载。请检查是否已经放置电源、负载以及必要的开关或保护元件。";
+        }
+
+        private string BuildControlCircuitPathText(CircuitStateResult stateResult)
+        {
+            if (HasAnyStateComponent(stateResult, c => c.IsContactor || c.IsTimerRelay))
+            {
+                return "控制回路负责决定线圈是否得电。启动按钮、停止按钮、急停按钮、热继电器保护触点、时间继电器触点和接触器辅助触点会共同影响线圈回路。若接触器 13-14 辅助常开触点正确并联在启动按钮两端，可形成自锁保持。";
+            }
+
+            return "当前未识别到接触器或时间继电器线圈回路。若这是家庭照明或基础负载电路，控制路径通常由开关直接控制负载通断。";
+        }
+
+        private string BuildActionRelationText(CircuitStateResult stateResult)
+        {
+            if (HasAnyStateComponent(stateResult, c => c.IsContactor))
+            {
+                return "线圈得电 → 接触器吸合 → 主触点闭合 → 负载获得电源。停止按钮、急停按钮或保护触点断开 → 线圈失电 → 接触器释放 → 主触点断开。若系统提示可能处于历史自锁保持状态，通常表示接触器曾由启动按钮吸合，并由自身辅助常开触点继续维持线圈回路。";
+            }
+
+            if (HasAnyStateComponent(stateResult, c => c.IsLimitSwitch))
+            {
+                return "行程开关由机械位置触发。未触发时常闭触点导通、常开触点断开；触发后常闭触点断开、常开触点导通，可用于限位或自动换向。";
+            }
+
+            return "当前电路的动作关系主要由开关状态、保护元件状态和负载供电状态决定。请结合当前运行状态逐项观察元件是否按预期导通或断开。";
+        }
+
+        private static bool HasAnyStateComponent(CircuitStateResult stateResult, Func<ComponentStateInfo, bool> predicate)
+        {
+            if (stateResult == null || stateResult.Components == null || predicate == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < stateResult.Components.Count; i++)
+            {
+                var component = stateResult.Components[i];
+                if (component != null && predicate(component))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string StripReportSections(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return string.Empty;
+            }
+
+            return text.Replace("【当前电路解释】", string.Empty).Trim();
         }
 
         private void AppendCircuitStateAnalysis()
@@ -2272,6 +2487,11 @@ namespace ElectricalSim.AI
             }
 
             RebuildReportLayout(true);
+        }
+
+        private void ClearResult()
+        {
+            ShowEmptyState();
         }
 
         public void AddAssistantMessage(string message)
