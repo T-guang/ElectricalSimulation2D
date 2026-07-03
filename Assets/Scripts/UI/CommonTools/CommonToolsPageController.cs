@@ -11,6 +11,7 @@ namespace ElectricalSim.UI.CommonTools
         private enum ToolTab
         {
             Resistor,
+            Calculator,
             Formula,
             Article
         }
@@ -23,6 +24,7 @@ namespace ElectricalSim.UI.CommonTools
 
         private RectTransform contentRoot;
         private RectTransform resistorPanel;
+        private RectTransform calculatorPanel;
         private RectTransform formulaPanel;
         private RectTransform articlePanel;
         private RectTransform resistorPreview;
@@ -80,6 +82,7 @@ namespace ElectricalSim.UI.CommonTools
             BuildSidebar();
             BuildContentRoot();
             BuildResistorPanel();
+            BuildCalculatorPanel();
             BuildFormulaPanel();
             BuildArticlePanel();
             SelectTool(ToolTab.Resistor);
@@ -119,6 +122,7 @@ namespace ElectricalSim.UI.CommonTools
             layout.padding = new RectOffset(14, 14, 16, 16);
 
             AddToolTab(categoryList, ToolTab.Resistor, "电阻色环识别");
+            AddToolTab(categoryList, ToolTab.Calculator, "电工计算器");
             AddToolTab(categoryList, ToolTab.Formula, "电路公式");
             AddToolTab(categoryList, ToolTab.Article, "基础资料");
         }
@@ -481,6 +485,7 @@ namespace ElectricalSim.UI.CommonTools
         private void SelectTool(ToolTab tab)
         {
             resistorPanel.gameObject.SetActive(tab == ToolTab.Resistor);
+            calculatorPanel.gameObject.SetActive(tab == ToolTab.Calculator);
             formulaPanel.gameObject.SetActive(tab == ToolTab.Formula);
             articlePanel.gameObject.SetActive(tab == ToolTab.Article);
 
@@ -794,6 +799,13 @@ namespace ElectricalSim.UI.CommonTools
             }
 
             return string.Join("\n", values.ToArray());
+        }
+
+        private void BuildCalculatorPanel()
+        {
+            calculatorPanel = CreateRect("CalculatorPanel", contentRoot);
+            StretchTo(calculatorPanel, 0f, 0f, 0f, 0f);
+            calculatorPanel.gameObject.AddComponent<ElectricianCalculatorController>();
         }
 
         private void ClearChildren()
