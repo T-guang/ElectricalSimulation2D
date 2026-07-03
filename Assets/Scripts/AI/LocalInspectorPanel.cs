@@ -26,6 +26,7 @@ namespace ElectricalSim.AI
         [SerializeField] private Button clearReportButton;
         [SerializeField] private ScrollRect reportScrollRect;
         [SerializeField] private RectTransform reportContent;
+        [SerializeField] private bool showDeveloperDebugInfo = false;
 
         private CircuitSummaryBuilder summaryBuilder;
         private Sprite collapseHandleSprite;
@@ -141,6 +142,7 @@ namespace ElectricalSim.AI
             reportScrollRect.horizontal = false;
             reportScrollRect.vertical = true;
             reportScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            reportScrollRect.inertia = true;
 
             var viewport = CreateRect("Viewport", reportRoot);
             viewport.anchorMin = Vector2.zero;
@@ -149,18 +151,18 @@ namespace ElectricalSim.AI
             viewport.offsetMax = Vector2.zero;
             var viewportImage = viewport.gameObject.AddComponent<Image>();
             viewportImage.color = Color.white;
-            var mask = viewport.gameObject.AddComponent<Mask>();
-            mask.showMaskGraphic = true;
+            viewport.gameObject.AddComponent<RectMask2D>();
 
             reportContent = CreateRect("Content", viewport);
             reportContent.anchorMin = new Vector2(0f, 1f);
             reportContent.anchorMax = new Vector2(1f, 1f);
             reportContent.pivot = new Vector2(0.5f, 1f);
-            reportContent.offsetMin = new Vector2(8f, 0f);
-            reportContent.offsetMax = new Vector2(-8f, 0f);
+            reportContent.anchoredPosition = Vector2.zero;
+            reportContent.offsetMin = Vector2.zero;
+            reportContent.offsetMax = Vector2.zero;
             var contentLayout = reportContent.gameObject.AddComponent<VerticalLayoutGroup>();
-            contentLayout.padding = new RectOffset(0, 0, 8, 8);
-            contentLayout.spacing = 8f;
+            contentLayout.padding = new RectOffset(10, 10, 10, 10);
+            contentLayout.spacing = 10f;
             contentLayout.childAlignment = TextAnchor.UpperCenter;
             contentLayout.childControlWidth = true;
             contentLayout.childControlHeight = true;
@@ -353,6 +355,8 @@ namespace ElectricalSim.AI
 
         private void ExplainCurrentCircuit()
         {
+            ClearReport();
+
             if (IndustrialCircuitExplainer.TryExplain(workspace, out var industrialExplanation))
             {
                 industrialExplanation = ApplyCurrentCircuitName(industrialExplanation);
@@ -372,6 +376,8 @@ namespace ElectricalSim.AI
 
         private void CheckCurrentCircuit()
         {
+            ClearReport();
+
             if (workspace == null)
             {
                 AddAssistantMessage("电路检查失败：未能读取当前画布。");
@@ -394,7 +400,7 @@ namespace ElectricalSim.AI
                         "\n\n" + industrialResult.FormatForAssistant() +
                         "\n\n" + industrialStateResult.ToReadableText();
                     AddAssistantMessage(PrependCheckPanelRuntimeNotices(
-                        TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails),
+                        TeachingCheckReportFormatter.Format(industrialStateResult, industrialResult, industrialDebugDetails, showDeveloperDebugInfo),
                         industrialStateResult));
                     var industrialSummary = "工业电路检查完成：";
                     if (industrialResult.ErrorCount > 0)
@@ -422,7 +428,7 @@ namespace ElectricalSim.AI
                     "\n\n" + CircuitRuleCheckTeacherFormatter.FormatForTeaching(displayResult) +
                     "\n\n" + stateResult.ToReadableText();
                 AddAssistantMessage(PrependCheckPanelRuntimeNotices(
-                    TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails),
+                    TeachingCheckReportFormatter.Format(stateResult, displayResult, debugDetails, showDeveloperDebugInfo),
                     stateResult));
                 
                 string summary = "电路检查完成：";
@@ -795,7 +801,7 @@ namespace ElectricalSim.AI
                 builder.AppendLine("- 当前没有可叠加显示的运行态元件。");
             }
 
-            builder.AppendLine("- 说明：本段用于展示当前画布运行态；结构分析仍由下方调试详情给出。");
+            builder.AppendLine("- 说明：本段用于展示当前画布的主要运行状态。");
             return builder.ToString().TrimEnd();
         }
 
@@ -889,7 +895,7 @@ namespace ElectricalSim.AI
                 ? NormalizeComponentDisplayName(issue.Component.Definition != null ? issue.Component.Definition.displayName : issue.Component.name)
                 : string.Empty;
             var prefix = string.IsNullOrWhiteSpace(componentName) ? string.Empty : componentName + "：";
-            return prefix + issue.Message + "（" + issue.RuleId + "）";
+            return prefix + issue.Message;
         }
 
         private string PrependParameterEstimationSummary(string report, CircuitStateResult stateResult)
@@ -2260,36 +2266,90 @@ namespace ElectricalSim.AI
 
             for (var i = reportContent.childCount - 1; i >= 0; i--)
             {
-                Destroy(reportContent.GetChild(i).gameObject);
+                var child = reportContent.GetChild(i);
+                child.SetParent(null, false);
+                Destroy(child.gameObject);
             }
+
+            RebuildReportLayout(true);
         }
 
         public void AddAssistantMessage(string message)
         {
-            AddReportBlock(message);
+            AddReportBlocks(message);
         }
 
         private void ShowEmptyState()
         {
             ClearReport();
-            AddReportBlock("【尚未生成检查报告】\n点击“检查当前电路”查看接线问题，或点击“当前电路解释”查看当前电路状态。");
+            AddReportBlocks("【尚未生成检查报告】\n点击“检查当前电路”查看接线问题，或点击“当前电路解释”查看当前电路状态。");
         }
 
-        private void AddReportBlock(string message)
+        private void AddReportBlocks(string message)
         {
             if (reportContent == null)
             {
                 return;
             }
 
-            CreateReportBlock(reportContent, message);
+            var blocks = SplitReportBlocks(message);
+            for (var i = 0; i < blocks.Count; i++)
+            {
+                CreateReportBlock(reportContent, blocks[i]);
+            }
+
+            RebuildReportLayout(true);
+        }
+
+        private void RebuildReportLayout(bool scrollToTop)
+        {
             Canvas.ForceUpdateCanvases();
             LayoutRebuilder.ForceRebuildLayoutImmediate(reportContent);
             Canvas.ForceUpdateCanvases();
             if (reportScrollRect != null)
             {
-                reportScrollRect.verticalNormalizedPosition = 0f;
+                reportScrollRect.verticalNormalizedPosition = scrollToTop ? 1f : 0f;
             }
+        }
+
+        private static List<string> SplitReportBlocks(string message)
+        {
+            var blocks = new List<string>();
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return blocks;
+            }
+
+            var normalized = message.Replace("\r\n", "\n").Replace('\r', '\n');
+            var lines = normalized.Split('\n');
+            var current = new StringBuilder();
+
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                var trimmed = line.Trim();
+                var startsSection = trimmed.Length >= 2 && trimmed[0] == '【' && trimmed[trimmed.Length - 1] == '】';
+
+                if (startsSection && current.Length > 0)
+                {
+                    blocks.Add(current.ToString().Trim());
+                    current.Length = 0;
+                }
+
+                current.AppendLine(line);
+            }
+
+            if (current.Length > 0)
+            {
+                blocks.Add(current.ToString().Trim());
+            }
+
+            if (blocks.Count == 0)
+            {
+                blocks.Add(message.Trim());
+            }
+
+            return blocks;
         }
 
         private static RectTransform CreateReportBlock(Transform parent, string message)
@@ -2470,10 +2530,13 @@ namespace ElectricalSim.AI
             var label = CreateText(name, parent, text, fontSize, alignment);
             label.rectTransform.offsetMin = new Vector2(8f, 0f);
             label.rectTransform.offsetMax = new Vector2(-8f, 0f);
-            var layout = label.gameObject.AddComponent<LayoutElement>();
-            layout.minHeight = preferredHeight;
-            layout.preferredHeight = preferredHeight;
-            layout.flexibleWidth = 1f;
+            if (preferredHeight > 0f)
+            {
+                var layout = label.gameObject.AddComponent<LayoutElement>();
+                layout.minHeight = preferredHeight;
+                layout.preferredHeight = preferredHeight;
+                layout.flexibleWidth = 1f;
+            }
             return label;
         }
 

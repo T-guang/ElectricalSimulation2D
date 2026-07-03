@@ -11,17 +11,19 @@ namespace ElectricalSim.AI
         public static string Format(
             CircuitStateResult stateResult,
             CircuitAnalysisResult industrialResult,
-            string debugDetails)
+            string debugDetails,
+            bool showDeveloperDebugInfo = false)
         {
             // The teaching summary stays on the static topology result. The existing industrial
             // analyzer text is preserved below as developer detail because it may include runtime facts.
-            return Build(stateResult, null, null, debugDetails);
+            return Build(stateResult, null, null, debugDetails, showDeveloperDebugInfo);
         }
 
         public static string Format(
             CircuitStateResult stateResult,
             CircuitCheckResult ruleResult,
-            string debugDetails)
+            string debugDetails,
+            bool showDeveloperDebugInfo = false)
         {
             var errors = new List<string>();
             var warnings = new List<string>();
@@ -47,19 +49,22 @@ namespace ElectricalSim.AI
                 }
             }
 
-            return Build(stateResult, errors, warnings, debugDetails);
+            return Build(stateResult, errors, warnings, debugDetails, showDeveloperDebugInfo);
         }
 
         private static string Build(
             CircuitStateResult stateResult,
             IEnumerable<string> additionalErrors,
             IEnumerable<string> additionalWarnings,
-            string debugDetails)
+            string debugDetails,
+            bool showDeveloperDebugInfo)
         {
             if (stateResult == null)
             {
-                return "【检查结论】\n未能生成当前电路的教学化检查结论。\n\n【调试详情（开发者）】\n" +
-                    (debugDetails ?? string.Empty);
+                var fallback = "【检查结论】\n未能生成当前电路的教学化检查结论。";
+                return showDeveloperDebugInfo
+                    ? fallback + "\n\n【调试详情（开发者）】\n" + (debugDetails ?? string.Empty)
+                    : fallback;
             }
 
             var builder = new StringBuilder();
@@ -78,12 +83,16 @@ namespace ElectricalSim.AI
             builder.AppendLine("【教学说明】");
             AppendTeachingExplanation(builder, stateResult);
 
-            builder.AppendLine();
-            builder.AppendLine("==============================");
-            builder.AppendLine("【调试详情（开发者）】");
-            builder.AppendLine("以下内容用于开发者排查，保留原始规则检查与 V1.x 分阶段分析。");
-            builder.AppendLine();
-            builder.Append(SanitizeTwoWaySwitchLanguage(debugDetails, stateResult));
+            if (showDeveloperDebugInfo)
+            {
+                builder.AppendLine();
+                builder.AppendLine("==============================");
+                builder.AppendLine("【调试详情（开发者）】");
+                builder.AppendLine("以下内容用于开发者排查，保留原始规则检查与 V1.x 分阶段分析。");
+                builder.AppendLine();
+                builder.Append(SanitizeTwoWaySwitchLanguage(debugDetails, stateResult));
+            }
+
             return builder.ToString().TrimEnd();
         }
 
