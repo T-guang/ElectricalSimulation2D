@@ -37,12 +37,12 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            var powerView = workspace.SpawnComponent(power, new Vector2(-700f, 180f), "demo_power");
-            var meterView = workspace.SpawnComponent(meter, new Vector2(-470f, 180f), "demo_meter");
-            var breakerView = workspace.SpawnComponent(breaker, new Vector2(-220f, 180f), "demo_breaker_2p");
-            var switchView = workspace.SpawnComponent(switchOne, new Vector2(60f, 180f), "demo_single_switch");
-            var lampView = workspace.SpawnComponent(lamp, new Vector2(340f, 180f), "demo_lamp");
-            var fanView = workspace.SpawnComponent(fan, new Vector2(340f, -80f), "demo_fan");
+            var powerView = workspace.SpawnComponent(power, new Vector2(-520f, 180f), "demo_power");
+            var meterView = workspace.SpawnComponent(meter, new Vector2(-290f, 180f), "demo_meter");
+            var breakerView = workspace.SpawnComponent(breaker, new Vector2(-40f, 180f), "demo_breaker_2p");
+            var switchView = workspace.SpawnComponent(switchOne, new Vector2(240f, 180f), "demo_single_switch");
+            var lampView = workspace.SpawnComponent(lamp, new Vector2(520f, 180f), "demo_lamp");
+            var fanView = workspace.SpawnComponent(fan, new Vector2(520f, -80f), "demo_fan");
 
             breakerView.SetClosed(true);
             switchView.SetClosed(true);
@@ -60,6 +60,7 @@ namespace ElectricalSim.UI
             workspace.WireManager.RefreshAll();
             workspace.MarkTopologyDirty();
             workspace.ClearHistory();
+            workspace.SetView(0.85f, Vector2.zero);
             workspace.SetStatus("默认家庭照明示例：电能表经过 2P 空开和单开开关控制灯泡/风扇。双击开关或空开可切换通断。");
         }
 

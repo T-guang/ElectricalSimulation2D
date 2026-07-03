@@ -798,6 +798,16 @@ namespace ElectricalSim.Core
             return logRect != null && RectTransformUtility.RectangleContainsScreenPoint(logRect, Input.mousePosition, null);
         }
 
+        public void SetView(float zoom, Vector2 pan)
+        {
+            canvasZoom = Mathf.Clamp(zoom, minCanvasZoom, maxCanvasZoom);
+            if (canvasContent != null)
+            {
+                canvasContent.localScale = Vector3.one * canvasZoom;
+            }
+            SetCanvasPan(pan);
+        }
+
         private void SetCanvasPan(Vector2 targetPosition)
         {
             if (canvasContent == null || workspaceRect == null)
