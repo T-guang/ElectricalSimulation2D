@@ -136,7 +136,7 @@ namespace ElectricalSim.UI
         {
             var row = CreateButtonRow(parent);
             CreateButton(row, "打开数据目录", OpenPersistentDataFolder, true);
-            CreateButton(row, "清理本地缓存", () => { }, false);
+            CreateButton(row, "清理缓存(暂未开放)", () => { Debug.Log("当前版本暂不开放清理缓存功能。该操作不会删除本地图纸。"); }, false);
         }
 
         private RectTransform CreateButtonRow(RectTransform parent)
@@ -231,8 +231,16 @@ namespace ElectricalSim.UI
 
         private static void OpenFolder(string path)
         {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                Debug.LogWarning("目录路径为空，无法打开。");
+                return;
+            }
+
+            path = Path.GetFullPath(path);
+
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-            System.Diagnostics.Process.Start("explorer.exe", path);
+            System.Diagnostics.Process.Start("explorer.exe", $"\"{path}\"");
 #else
             Application.OpenURL("file:///" + path.Replace("\\", "/"));
 #endif
