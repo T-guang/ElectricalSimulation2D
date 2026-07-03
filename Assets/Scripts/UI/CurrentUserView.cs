@@ -26,7 +26,12 @@ namespace ElectricalSim.UI
 
             if (logoutButton != null)
             {
-                logoutButton.gameObject.SetActive(false);
+                logoutButton.gameObject.SetActive(true);
+                var label = logoutButton.GetComponentInChildren<Text>();
+                if (label != null)
+                {
+                    label.text = "切换本地用户";
+                }
             }
 
             logoutButton?.onClick.AddListener(LogoutToLoginScene);
@@ -34,12 +39,27 @@ namespace ElectricalSim.UI
 
         private void Start()
         {
-            Refresh();
+            RefreshLocalUserText();
         }
 
         private void OnDestroy()
         {
             logoutButton?.onClick.RemoveListener(LogoutToLoginScene);
+        }
+
+        private void RefreshLocalUserText()
+        {
+            if (currentUserText == null)
+            {
+                return;
+            }
+
+            var userName = AppSession.IsLoggedIn
+                ? AppSession.CurrentUser
+                : PlayerPrefs.GetString(LoginController.LastUserNameKey, string.Empty);
+            currentUserText.text = string.IsNullOrWhiteSpace(userName)
+                ? "当前状态：单机本地模式"
+                : "当前状态：单机本地模式  当前用户：" + userName;
         }
 
         private void Refresh()

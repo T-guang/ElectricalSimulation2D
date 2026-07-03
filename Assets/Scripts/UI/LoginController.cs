@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -37,12 +34,10 @@ namespace ElectricalSim.UI
         [SerializeField] private string loginSceneName = "LoginScene";
         [SerializeField] private string demoSceneName = "Demo";
 
-        private const string AccountPrefix = "ElectricalSim.Account.";
-        private const string LastAccountKey = "ElectricalSim.LastAccount";
+        public const string LastUserNameKey = "ElectricalSim.Local.LastUserName";
+        public const string LastLoginTimeKey = "ElectricalSim.Local.LastLoginTime";
+        private const string LegacyLastAccountKey = "ElectricalSim.LastAccount";
         private const string LegacySessionKey = "ElectricalSim.SessionUser";
-        private const string DemoAccount = "admin";
-        private const string DemoPassword = "123456";
-        private const string DemoAnswer = "demo";
 
         private bool IsLoginScene => SceneManager.GetActiveScene().name == loginSceneName;
 
@@ -59,13 +54,12 @@ namespace ElectricalSim.UI
                 return;
             }
 
+            ClearButtonEvents();
+            ConfigureLocalLoginView();
             loginButton?.onClick.AddListener(HandleLogin);
-            showRegisterButton?.onClick.AddListener(() => ShowForm(registerPanel, "\u6ce8\u518c\u65b0\u8d26\u53f7\uff0c\u5b89\u5168\u7b54\u6848\u7528\u4e8e\u6f14\u793a\u7248\u627e\u56de\u5bc6\u7801\u3002"));
-            showForgotButton?.onClick.AddListener(() => ShowForm(forgotPanel, "\u8f93\u5165\u8d26\u53f7\u3001\u5b89\u5168\u7b54\u6848\u548c\u65b0\u5bc6\u7801\u5373\u53ef\u91cd\u7f6e\u3002"));
-            registerButton?.onClick.AddListener(HandleRegister);
-            registerBackButton?.onClick.AddListener(() => ShowForm(loginPanel, "\u8bf7\u8f93\u5165\u8d26\u53f7\u5bc6\u7801\u767b\u5f55\u7cfb\u7edf\u3002"));
-            resetPasswordButton?.onClick.AddListener(HandleResetPassword);
-            forgotBackButton?.onClick.AddListener(() => ShowForm(loginPanel, "\u8bf7\u8f93\u5165\u8d26\u53f7\u5bc6\u7801\u767b\u5f55\u7cfb\u7edf\u3002"));
+            showRegisterButton?.onClick.AddListener(HandleContinueLastUser);
+            registerBackButton?.onClick.AddListener(ShowLogin);
+            forgotBackButton?.onClick.AddListener(ShowLogin);
             logoutButton?.onClick.AddListener(Logout);
         }
 
@@ -76,120 +70,44 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            AppSession.Login("local");
-            SceneManager.LoadScene(demoSceneName);
+            ShowLogin();
         }
 
         private void HandleLogin()
         {
-            var account = NormalizeAccount(loginAccountInput);
-            var password = Read(loginPasswordInput);
-            if (string.IsNullOrWhiteSpace(account) || string.IsNullOrWhiteSpace(password))
+            var userName = Read(loginAccountInput).Trim();
+            if (string.IsNullOrWhiteSpace(userName))
             {
-                SetMessage("\u8bf7\u8f93\u5165\u8d26\u53f7\u548c\u5bc6\u7801\u3002", true);
+                SetMessage("请输入姓名或学号。", true);
                 return;
             }
 
-            if (!HasAccount(account))
-            {
-                SetMessage("\u8d26\u53f7\u4e0d\u5b58\u5728\uff0c\u53ef\u4ee5\u5148\u6ce8\u518c\u3002", true);
-                return;
-            }
-
-            if (!HashesMatch(password, GetStored(account, "PasswordHash")))
-            {
-                SetMessage("\u5bc6\u7801\u4e0d\u6b63\u786e\u3002", true);
-                return;
-            }
-
-            PlayerPrefs.SetString(LastAccountKey, account);
-            PlayerPrefs.DeleteKey(LegacySessionKey);
-            PlayerPrefs.Save();
-            AppSession.Login(account);
+            SaveLocalUser(userName);
+            AppSession.Login(userName);
             SceneManager.LoadScene(demoSceneName);
         }
 
-        private void HandleRegister()
+        private void HandleContinueLastUser()
         {
-            var account = NormalizeAccount(registerAccountInput);
-            var password = Read(registerPasswordInput);
-            var confirm = Read(registerConfirmInput);
-            var answer = Read(registerAnswerInput);
-
-            if (string.IsNullOrWhiteSpace(account) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(answer))
+            var userName = PlayerPrefs.GetString(LastUserNameKey, string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(userName))
             {
-                SetMessage("\u8d26\u53f7\u3001\u5bc6\u7801\u548c\u5b89\u5168\u7b54\u6848\u90fd\u9700\u8981\u586b\u5199\u3002", true);
+                SetMessage("没有找到上次本地用户，请输入姓名或学号。", true);
                 return;
             }
 
-            if (account.Length < 3)
-            {
-                SetMessage("\u8d26\u53f7\u81f3\u5c11 3 \u4e2a\u5b57\u7b26\u3002", true);
-                return;
-            }
-
-            if (password.Length < 6)
-            {
-                SetMessage("\u5bc6\u7801\u81f3\u5c11 6 \u4f4d\u3002", true);
-                return;
-            }
-
-            if (password != confirm)
-            {
-                SetMessage("\u4e24\u6b21\u8f93\u5165\u7684\u5bc6\u7801\u4e0d\u4e00\u81f4\u3002", true);
-                return;
-            }
-
-            if (HasAccount(account))
-            {
-                SetMessage("\u8d26\u53f7\u5df2\u5b58\u5728\uff0c\u8bf7\u6362\u4e00\u4e2a\u8d26\u53f7\u3002", true);
-                return;
-            }
-
-            SaveAccount(account, password, answer);
-            PlayerPrefs.SetString(LastAccountKey, account);
-            PlayerPrefs.Save();
-            loginAccountInput.text = account;
-            loginPasswordInput.text = string.Empty;
-            ShowForm(loginPanel, "\u6ce8\u518c\u6210\u529f\uff0c\u8bf7\u8f93\u5165\u5bc6\u7801\u767b\u5f55\u3002");
+            SaveLocalUser(userName);
+            AppSession.Login(userName);
+            SceneManager.LoadScene(demoSceneName);
         }
 
-        private void HandleResetPassword()
+        private static void SaveLocalUser(string userName)
         {
-            var account = NormalizeAccount(forgotAccountInput);
-            var answer = Read(forgotAnswerInput);
-            var newPassword = Read(forgotNewPasswordInput);
-
-            if (string.IsNullOrWhiteSpace(account) || string.IsNullOrWhiteSpace(answer) || string.IsNullOrWhiteSpace(newPassword))
-            {
-                SetMessage("\u8d26\u53f7\u3001\u5b89\u5168\u7b54\u6848\u548c\u65b0\u5bc6\u7801\u90fd\u9700\u8981\u586b\u5199\u3002", true);
-                return;
-            }
-
-            if (!HasAccount(account))
-            {
-                SetMessage("\u8d26\u53f7\u4e0d\u5b58\u5728\u3002", true);
-                return;
-            }
-
-            if (!HashesMatch(answer, GetStored(account, "AnswerHash")))
-            {
-                SetMessage("\u5b89\u5168\u7b54\u6848\u4e0d\u6b63\u786e\u3002", true);
-                return;
-            }
-
-            if (newPassword.Length < 6)
-            {
-                SetMessage("\u65b0\u5bc6\u7801\u81f3\u5c11 6 \u4f4d\u3002", true);
-                return;
-            }
-
-            PlayerPrefs.SetString(Key(account, "PasswordHash"), Hash(newPassword));
-            PlayerPrefs.SetString(LastAccountKey, account);
+            PlayerPrefs.SetString(LastUserNameKey, userName);
+            PlayerPrefs.SetString(LastLoginTimeKey, System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            PlayerPrefs.DeleteKey(LegacyLastAccountKey);
+            PlayerPrefs.DeleteKey(LegacySessionKey);
             PlayerPrefs.Save();
-            loginAccountInput.text = account;
-            loginPasswordInput.text = string.Empty;
-            ShowForm(loginPanel, "\u5bc6\u7801\u5df2\u91cd\u7f6e\uff0c\u8bf7\u4f7f\u7528\u65b0\u5bc6\u7801\u767b\u5f55\u3002");
         }
 
         private void Logout()
@@ -200,6 +118,11 @@ namespace ElectricalSim.UI
 
         private void ShowLogin()
         {
+            if (!IsLoginScene)
+            {
+                return;
+            }
+
             if (loginRoot != null)
             {
                 loginRoot.SetActive(true);
@@ -215,15 +138,11 @@ namespace ElectricalSim.UI
 
             if (loginAccountInput != null)
             {
-                loginAccountInput.text = PlayerPrefs.GetString(LastAccountKey, string.Empty);
+                loginAccountInput.text = PlayerPrefs.GetString(LastUserNameKey, string.Empty);
             }
 
-            if (loginPasswordInput != null)
-            {
-                loginPasswordInput.text = string.Empty;
-            }
-
-            ShowForm(loginPanel, "\u8bf7\u8f93\u5165\u8d26\u53f7\u5bc6\u7801\u767b\u5f55\u7cfb\u7edf\u3002\u6f14\u793a\u8d26\u53f7\uff1aadmin / 123456");
+            ConfigureLocalLoginView();
+            ShowForm(loginPanel, "单机本地模式，输入姓名或学号即可进入系统。");
         }
 
         private void ShowForm(GameObject panel, string message)
@@ -233,17 +152,64 @@ namespace ElectricalSim.UI
                 loginPanel.SetActive(panel == loginPanel);
             }
 
-            if (registerPanel != null)
-            {
-                registerPanel.SetActive(panel == registerPanel);
-            }
-
-            if (forgotPanel != null)
-            {
-                forgotPanel.SetActive(panel == forgotPanel);
-            }
-
+            HideAccountSystemObjects();
             SetMessage(message, false);
+        }
+
+        private void ConfigureLocalLoginView()
+        {
+            HideAccountSystemObjects();
+            SetText("LoginTitle", "电工数字学生仿真系统");
+            SetText("LoginSubtitle", "单机本地模式，输入姓名或学号即可进入系统。");
+            SetPlaceholder(loginAccountInput, "请输入姓名或学号");
+            ConfigureButtonText(loginButton, "进入系统");
+
+            if (showRegisterButton != null)
+            {
+                showRegisterButton.gameObject.SetActive(true);
+                ConfigureButtonText(showRegisterButton, "继续上次用户");
+            }
+
+            if (currentUserText != null)
+            {
+                currentUserText.text = "当前状态：单机本地模式";
+            }
+
+            if (logoutButton != null)
+            {
+                ConfigureButtonText(logoutButton, "切换本地用户");
+            }
+        }
+
+        private void ClearButtonEvents()
+        {
+            loginButton?.onClick.RemoveAllListeners();
+            showRegisterButton?.onClick.RemoveAllListeners();
+            showForgotButton?.onClick.RemoveAllListeners();
+            registerButton?.onClick.RemoveAllListeners();
+            registerBackButton?.onClick.RemoveAllListeners();
+            resetPasswordButton?.onClick.RemoveAllListeners();
+            forgotBackButton?.onClick.RemoveAllListeners();
+            logoutButton?.onClick.RemoveAllListeners();
+        }
+
+        private void HideAccountSystemObjects()
+        {
+            SetActive(registerPanel, false);
+            SetActive(forgotPanel, false);
+            SetActive(loginPasswordInput, false);
+            SetActive(registerAccountInput, false);
+            SetActive(registerPasswordInput, false);
+            SetActive(registerConfirmInput, false);
+            SetActive(registerAnswerInput, false);
+            SetActive(forgotAccountInput, false);
+            SetActive(forgotAnswerInput, false);
+            SetActive(forgotNewPasswordInput, false);
+            SetActive(showForgotButton, false);
+            SetActive(registerButton, false);
+            SetActive(registerBackButton, false);
+            SetActive(resetPasswordButton, false);
+            SetActive(forgotBackButton, false);
         }
 
         private void SetMessage(string message, bool isError)
@@ -257,55 +223,58 @@ namespace ElectricalSim.UI
             messageText.color = isError ? new Color(0.9f, 0.12f, 0.12f) : new Color(0.12f, 0.32f, 0.64f);
         }
 
-        private void EnsureDemoAccount()
+        private static void SetActive(Component component, bool active)
         {
-            if (!HasAccount(DemoAccount))
+            if (component != null)
             {
-                SaveAccount(DemoAccount, DemoPassword, DemoAnswer);
+                component.gameObject.SetActive(active);
             }
         }
 
-        private static void SaveAccount(string account, string password, string answer)
+        private static void SetActive(GameObject target, bool active)
         {
-            PlayerPrefs.SetString(Key(account, "Exists"), "1");
-            PlayerPrefs.SetString(Key(account, "PasswordHash"), Hash(password));
-            PlayerPrefs.SetString(Key(account, "AnswerHash"), Hash(answer));
-            PlayerPrefs.Save();
-        }
-
-        private static bool HasAccount(string account)
-        {
-            return PlayerPrefs.GetString(Key(account, "Exists"), string.Empty) == "1";
-        }
-
-        private static bool HashesMatch(string raw, string storedHash)
-        {
-            return !string.IsNullOrEmpty(storedHash) && Hash(raw) == storedHash;
-        }
-
-        private static string GetStored(string account, string field)
-        {
-            return PlayerPrefs.GetString(Key(account, field), string.Empty);
-        }
-
-        private static string Key(string account, string field)
-        {
-            var bytes = Encoding.UTF8.GetBytes(account.Trim().ToLowerInvariant());
-            return AccountPrefix + Convert.ToBase64String(bytes) + "." + field;
-        }
-
-        private static string Hash(string value)
-        {
-            using (var sha = SHA256.Create())
+            if (target != null)
             {
-                var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(value.Trim()));
-                return Convert.ToBase64String(bytes);
+                target.SetActive(active);
             }
         }
 
-        private static string NormalizeAccount(InputField input)
+        private static void SetText(string objectName, string value)
         {
-            return Read(input).Trim().ToLowerInvariant();
+            var target = GameObject.Find(objectName);
+            var text = target != null ? target.GetComponent<Text>() : null;
+            if (text != null)
+            {
+                text.text = value;
+            }
+        }
+
+        private static void SetPlaceholder(InputField input, string value)
+        {
+            if (input == null)
+            {
+                return;
+            }
+
+            var placeholder = input.placeholder as Text;
+            if (placeholder != null)
+            {
+                placeholder.text = value;
+            }
+        }
+
+        private static void ConfigureButtonText(Button button, string value)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.text = value;
+            }
         }
 
         private static string Read(InputField input)

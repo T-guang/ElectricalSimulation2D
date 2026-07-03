@@ -41,12 +41,16 @@ namespace ElectricalSim.UI
 
             instance = this;
             DontDestroyOnLoad(gameObject);
+            if (string.IsNullOrWhiteSpace(CurrentUser))
+            {
+                CurrentUser = PlayerPrefs.GetString(LoginController.LastUserNameKey, string.Empty);
+            }
         }
 
-        public static void Login(string account)
+        public static void Login(string userName)
         {
             Instance.EnsureAlive();
-            CurrentUser = account;
+            CurrentUser = userName;
         }
 
         public static void Logout()

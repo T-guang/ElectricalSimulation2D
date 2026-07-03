@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+using System;
+using System.IO;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace ElectricalSim.UI
@@ -32,9 +34,58 @@ namespace ElectricalSim.UI
             squareRoot = square;
             encyclopediaRoot = encyclopedia;
             toolsRoot = tools;
-            profileRoot = profile;
             emptyPageRoot = emptyPage;
             emptyPageTitle = emptyTitle;
+            profileRoot = profile != null ? profile : EnsureLocalProfileRoot();
+        }
+
+        private GameObject EnsureLocalProfileRoot()
+        {
+            if (profileRoot != null)
+            {
+                return profileRoot;
+            }
+
+            var parent = emptyPageRoot != null ? emptyPageRoot.transform.parent : transform.parent;
+            if (parent == null)
+            {
+                return null;
+            }
+
+            var existing = parent.Find("LocalProfilePage");
+            if (existing != null)
+            {
+                profileRoot = existing.gameObject;
+                if (profileRoot.GetComponent<LocalProfilePageController>() == null)
+                {
+                    profileRoot.AddComponent<LocalProfilePageController>();
+                }
+
+                return profileRoot;
+            }
+
+            var go = new GameObject("LocalProfilePage", typeof(RectTransform), typeof(Image), typeof(LocalProfilePageController));
+            go.transform.SetParent(parent, false);
+            var rect = go.GetComponent<RectTransform>();
+            var sourceRect = emptyPageRoot != null ? emptyPageRoot.GetComponent<RectTransform>() : null;
+            if (sourceRect != null)
+            {
+                rect.anchorMin = sourceRect.anchorMin;
+                rect.anchorMax = sourceRect.anchorMax;
+                rect.pivot = sourceRect.pivot;
+                rect.anchoredPosition = sourceRect.anchoredPosition;
+                rect.sizeDelta = sourceRect.sizeDelta;
+            }
+            else
+            {
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+            }
+            go.SetActive(false);
+            profileRoot = go;
+            return profileRoot;
         }
 
         private void Awake()
