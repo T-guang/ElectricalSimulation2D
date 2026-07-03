@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 namespace ElectricalSim.AI
 {
-    public sealed class AIAssistantPanel : MonoBehaviour
+    public sealed class LocalInspectorPanel : MonoBehaviour
     {
         private const float PanelWidth = 320f;
         private const float CollapsedPanelWidth = 0f;
@@ -17,56 +17,50 @@ namespace ElectricalSim.AI
         private const float CollapseHandleSize = 36f;
         private const float HeaderHeight = 42f;
         private const float QuickActionsHeight = 166f;
-        private const float InputAreaHeight = 0f;
-
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text titleText;
-        [SerializeField] private Text modeText;
-        [SerializeField] private Button switchModeButton;
         [SerializeField] private Button explainButton;
         [SerializeField] private Button checkButton;
         [SerializeField] private Button submitPracticeButton;
         [SerializeField] private Button exitPracticeButton;
-        [SerializeField] private Button clearChatButton;
-        [SerializeField] private ScrollRect chatScrollRect;
-        [SerializeField] private RectTransform chatContent;
-        [SerializeField] private InputField questionInput;
-        [SerializeField] private Button sendButton;
+        [SerializeField] private Button clearReportButton;
+        [SerializeField] private ScrollRect reportScrollRect;
+        [SerializeField] private RectTransform reportContent;
 
-        private IAIAssistantService assistantService;
-        private AIAssistantMode currentMode = AIAssistantMode.LocalMock;
         private CircuitSummaryBuilder summaryBuilder;
         private Sprite collapseHandleSprite;
         private Button collapseHandleButton;
         private Text collapseHandleLabel;
         private bool isRightPanelCollapsed;
 
-        public static AIAssistantPanel Create(RectTransform parent, WorkspaceController workspace)
+        public static LocalInspectorPanel Create(RectTransform parent, WorkspaceController workspace)
         {
             if (parent == null)
             {
                 return null;
             }
 
-            var existing = parent.Find("AIAssistantPanel");
-            AIAssistantPanel panel;
+            var existing = parent.Find("LocalInspectorPanel");
+
+            LocalInspectorPanel panel;
             RectTransform rect;
             Image image;
 
             if (existing != null)
             {
-                panel = existing.GetComponent<AIAssistantPanel>() ?? existing.gameObject.AddComponent<AIAssistantPanel>();
+                existing.name = "LocalInspectorPanel";
+                panel = existing.GetComponent<LocalInspectorPanel>() ?? existing.gameObject.AddComponent<LocalInspectorPanel>();
                 rect = existing.GetComponent<RectTransform>();
                 image = existing.GetComponent<Image>() ?? existing.gameObject.AddComponent<Image>();
                 panel.ClearGeneratedChildren();
             }
             else
             {
-                var root = new GameObject("AIAssistantPanel", typeof(RectTransform), typeof(Image), typeof(AIAssistantPanel));
+                var root = new GameObject("LocalInspectorPanel", typeof(RectTransform), typeof(Image), typeof(LocalInspectorPanel));
                 root.transform.SetParent(parent, false);
                 rect = root.GetComponent<RectTransform>();
                 image = root.GetComponent<Image>();
-                panel = root.GetComponent<AIAssistantPanel>();
+                panel = root.GetComponent<LocalInspectorPanel>();
             }
 
             image.color = Color.white;
@@ -84,15 +78,13 @@ namespace ElectricalSim.AI
         {
             workspace = workspaceController;
             summaryBuilder = new CircuitSummaryBuilder(workspace);
-            SetAssistantMode(AIAssistantMode.LocalMock, false);
 
-            BindButton(sendButton, SendQuestion);
-            // BindButton(switchModeButton, ToggleAssistantMode);
             BindButton(explainButton, ExplainCurrentCircuit);
             BindButton(checkButton, CheckCurrentCircuit);
             BindButton(submitPracticeButton, SubmitPracticeCheck);
             BindButton(exitPracticeButton, ExitPractice);
-            BindButton(clearChatButton, ClearChat);
+            BindButton(clearReportButton, ClearReport);
+            ShowEmptyState();
         }
 
         private void ClearGeneratedChildren()
@@ -136,25 +128,21 @@ namespace ElectricalSim.AI
             actionLayout.childForceExpandWidth = true;
             actionLayout.childForceExpandHeight = false;
 
-            modeText = CreateLayoutText("ModeText", quickActions, "当前模式：本地助教", 13, TextAnchor.MiddleLeft, 22f);
-            modeText.gameObject.SetActive(false);
-            switchModeButton = CreateButton("SwitchModeButton", quickActions, "切换检查模式", new Color(0.92f, 0.95f, 0.98f), new Color(0.05f, 0.08f, 0.14f), 30f);
-            switchModeButton.gameObject.SetActive(false);
             explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
             checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.15f, 0.39f, 0.92f), Color.white, 34f);
             submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", new Color(0.12f, 0.65f, 0.25f), Color.white, 30f);
             submitPracticeButton.gameObject.SetActive(false);
             exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", new Color(0.85f, 0.18f, 0.16f), Color.white, 30f);
             exitPracticeButton.gameObject.SetActive(false);
-            clearChatButton = CreateButton("ClearChatButton", quickActions, "清空结果", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
+            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
 
-            var chatRoot = CreatePanelSection("ChatScrollView", root, 0f, 1f, Color.white);
-            chatScrollRect = chatRoot.gameObject.AddComponent<ScrollRect>();
-            chatScrollRect.horizontal = false;
-            chatScrollRect.vertical = true;
-            chatScrollRect.movementType = ScrollRect.MovementType.Clamped;
+            var reportRoot = CreatePanelSection("ReportScrollView", root, 0f, 1f, Color.white);
+            reportScrollRect = reportRoot.gameObject.AddComponent<ScrollRect>();
+            reportScrollRect.horizontal = false;
+            reportScrollRect.vertical = true;
+            reportScrollRect.movementType = ScrollRect.MovementType.Clamped;
 
-            var viewport = CreateRect("Viewport", chatRoot);
+            var viewport = CreateRect("Viewport", reportRoot);
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
             viewport.offsetMin = Vector2.zero;
@@ -164,13 +152,13 @@ namespace ElectricalSim.AI
             var mask = viewport.gameObject.AddComponent<Mask>();
             mask.showMaskGraphic = true;
 
-            chatContent = CreateRect("Content", viewport);
-            chatContent.anchorMin = new Vector2(0f, 1f);
-            chatContent.anchorMax = new Vector2(1f, 1f);
-            chatContent.pivot = new Vector2(0.5f, 1f);
-            chatContent.offsetMin = new Vector2(8f, 0f);
-            chatContent.offsetMax = new Vector2(-8f, 0f);
-            var contentLayout = chatContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            reportContent = CreateRect("Content", viewport);
+            reportContent.anchorMin = new Vector2(0f, 1f);
+            reportContent.anchorMax = new Vector2(1f, 1f);
+            reportContent.pivot = new Vector2(0.5f, 1f);
+            reportContent.offsetMin = new Vector2(8f, 0f);
+            reportContent.offsetMax = new Vector2(-8f, 0f);
+            var contentLayout = reportContent.gameObject.AddComponent<VerticalLayoutGroup>();
             contentLayout.padding = new RectOffset(0, 0, 8, 8);
             contentLayout.spacing = 8f;
             contentLayout.childAlignment = TextAnchor.UpperCenter;
@@ -178,33 +166,12 @@ namespace ElectricalSim.AI
             contentLayout.childControlHeight = true;
             contentLayout.childForceExpandWidth = true;
             contentLayout.childForceExpandHeight = false;
-            var fitter = chatContent.gameObject.AddComponent<ContentSizeFitter>();
+            var fitter = reportContent.gameObject.AddComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            chatScrollRect.viewport = viewport;
-            chatScrollRect.content = chatContent;
+            reportScrollRect.viewport = viewport;
+            reportScrollRect.content = reportContent;
 
-            var inputArea = CreatePanelSection("InputArea", root, InputAreaHeight, 0f, new Color(0.97f, 0.98f, 1f, 1f));
-            var inputLayout = inputArea.gameObject.AddComponent<HorizontalLayoutGroup>();
-            inputLayout.padding = new RectOffset(0, 0, 0, 0);
-            inputLayout.spacing = 8f;
-            inputLayout.childAlignment = TextAnchor.MiddleCenter;
-            inputLayout.childControlWidth = true;
-            inputLayout.childControlHeight = true;
-            inputLayout.childForceExpandWidth = false;
-            inputLayout.childForceExpandHeight = true;
-
-            questionInput = CreateInputField("QuestionInputField", inputArea);
-            var inputLayoutElement = questionInput.gameObject.AddComponent<LayoutElement>();
-            inputLayoutElement.flexibleWidth = 1f;
-            inputLayoutElement.minHeight = 46f;
-            inputLayoutElement.preferredHeight = 46f;
-
-            sendButton = CreateButton("SendButton", inputArea, "发送", new Color(0.16f, 0.45f, 0.95f), Color.white, 46f);
-            var sendLayout = sendButton.GetComponent<LayoutElement>();
-            sendLayout.minWidth = 68f;
-            sendLayout.preferredWidth = 68f;
-            inputArea.gameObject.SetActive(false);
         }
 
         private void EnsureCollapseHandle(RectTransform parent)
@@ -384,80 +351,6 @@ namespace ElectricalSim.AI
             return collapseHandleSprite;
         }
 
-        private void ToggleAssistantMode()
-        {
-            if (currentMode == AIAssistantMode.LocalMock)
-            {
-                SetAssistantMode(AIAssistantMode.RemoteApi, true);
-            }
-            else
-            {
-                SetAssistantMode(AIAssistantMode.LocalMock, true);
-            }
-        }
-
-        private void SetAssistantMode(AIAssistantMode mode, bool notify)
-        {
-            if (mode == AIAssistantMode.RemoteApi)
-            {
-                var remoteService = new RealAIAssistantService(AIAssistantConfig.LoadDefault(), this);
-                if (!remoteService.IsConfigured)
-                {
-                    currentMode = AIAssistantMode.LocalMock;
-                    assistantService = new MockAIAssistantService();
-                    RefreshModeLabel();
-                    if (notify)
-                    {
-                        AddAssistantMessage("真实 AI API 尚未配置，已继续使用本地 Mock 助教。");
-                    }
-                    return;
-                }
-
-                currentMode = AIAssistantMode.RemoteApi;
-                assistantService = remoteService;
-                RefreshModeLabel();
-                if (notify)
-                {
-                AddAssistantMessage("已切换到真实检查助手。当前版本仅保留远程服务结构，真实请求将在后续接入后端。");
-                }
-                return;
-            }
-
-            currentMode = AIAssistantMode.LocalMock;
-            assistantService = new MockAIAssistantService();
-            RefreshModeLabel();
-            if (notify)
-            {
-                AddAssistantMessage("已切换到本地 Mock 助教。");
-            }
-        }
-
-        private void RefreshModeLabel()
-        {
-            if (modeText != null)
-            {
-                modeText.text = currentMode == AIAssistantMode.RemoteApi ? "当前模式：真实AI" : "当前模式：本地助教";
-            }
-        }
-
-        private void SendQuestion()
-        {
-            var question = questionInput != null ? questionInput.text.Trim() : string.Empty;
-            if (string.IsNullOrEmpty(question))
-            {
-                AddAssistantMessage("请输入问题。");
-                return;
-            }
-
-            if (questionInput != null)
-            {
-                questionInput.text = string.Empty;
-            }
-
-            AddUserMessage(question);
-            AskAssistant(question);
-        }
-
         private void ExplainCurrentCircuit()
         {
             if (IndustrialCircuitExplainer.TryExplain(workspace, out var industrialExplanation))
@@ -467,7 +360,14 @@ namespace ElectricalSim.AI
                 return;
             }
 
-            AskAssistant("当前电路解释");
+            var summary = summaryBuilder != null ? summaryBuilder.BuildDetailedSummary() : string.Empty;
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                AddAssistantMessage("【当前电路解释】\n当前画布为空，请先搭建电路或加载标准图纸。");
+                return;
+            }
+
+            AddAssistantMessage("【当前电路解释】\n" + summary);
         }
 
         private void CheckCurrentCircuit()
@@ -2351,52 +2251,163 @@ namespace ElectricalSim.AI
             }
         }
 
-        private void AskAssistant(string question)
+        private void ClearReport()
         {
-            var summary = summaryBuilder != null ? summaryBuilder.BuildDetailedSummary() : "当前画布为空，请先搭建或加载一个电路。";
-            var service = assistantService ?? new MockAIAssistantService();
-            service.Ask(question, summary, AddAssistantMessage, error => AddAssistantMessage(string.IsNullOrWhiteSpace(error) ? "检查助手暂时不可用，请稍后再试。" : error));
-        }
-
-        private void ClearChat()
-        {
-            if (chatContent == null)
+            if (reportContent == null)
             {
                 return;
             }
 
-            for (var i = chatContent.childCount - 1; i >= 0; i--)
+            for (var i = reportContent.childCount - 1; i >= 0; i--)
             {
-                Destroy(chatContent.GetChild(i).gameObject);
+                Destroy(reportContent.GetChild(i).gameObject);
             }
-        }
-
-        private void AddUserMessage(string message)
-        {
-            AddMessage("我", message, true);
         }
 
         public void AddAssistantMessage(string message)
         {
-            AddMessage("检查助手", message, false);
+            AddReportBlock(message);
         }
 
-        private void AddMessage(string sender, string message, bool fromUser)
+        private void ShowEmptyState()
         {
-            if (chatContent == null)
+            ClearReport();
+            AddReportBlock("【尚未生成检查报告】\n点击“检查当前电路”查看接线问题，或点击“当前电路解释”查看当前电路状态。");
+        }
+
+        private void AddReportBlock(string message)
+        {
+            if (reportContent == null)
             {
                 return;
             }
 
-            var item = AIAssistantMessageItem.Create(chatContent);
-            item.SetMessage(sender, message, fromUser);
+            CreateReportBlock(reportContent, message);
             Canvas.ForceUpdateCanvases();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(chatContent);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(reportContent);
             Canvas.ForceUpdateCanvases();
-            if (chatScrollRect != null)
+            if (reportScrollRect != null)
             {
-                chatScrollRect.verticalNormalizedPosition = 0f;
+                reportScrollRect.verticalNormalizedPosition = 0f;
             }
+        }
+
+        private static RectTransform CreateReportBlock(Transform parent, string message)
+        {
+            var go = new GameObject("ReportBlock", typeof(RectTransform), typeof(Image), typeof(LayoutElement), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
+            go.transform.SetParent(parent, false);
+
+            var image = go.GetComponent<Image>();
+            image.color = ResolveReportBackground(message);
+            image.raycastTarget = false;
+
+            var layout = go.GetComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(12, 12, 10, 10);
+            layout.spacing = 6f;
+            layout.childAlignment = TextAnchor.UpperLeft;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var layoutElement = go.GetComponent<LayoutElement>();
+            layoutElement.flexibleWidth = 1f;
+            layoutElement.minHeight = 54f;
+
+            var fitter = go.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var title = CreateLayoutText("Title", go.transform, ResolveReportTitle(message), 15, TextAnchor.UpperLeft, 22f);
+            title.fontStyle = FontStyle.Bold;
+            title.color = ResolveReportTitleColor(message);
+
+            var body = CreateLayoutText("Body", go.transform, StripLeadingReportTitle(message), 13, TextAnchor.UpperLeft, 0f);
+            body.color = new Color(0.18f, 0.24f, 0.32f);
+            body.horizontalOverflow = HorizontalWrapMode.Wrap;
+            body.verticalOverflow = VerticalWrapMode.Overflow;
+            body.resizeTextForBestFit = false;
+
+            return go.GetComponent<RectTransform>();
+        }
+
+        private static string ResolveReportTitle(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return "检查报告";
+            }
+
+            var firstLineEnd = message.IndexOf('\n');
+            var firstLine = firstLineEnd >= 0 ? message.Substring(0, firstLineEnd).Trim() : message.Trim();
+            if (firstLine.StartsWith("【") && firstLine.EndsWith("】"))
+            {
+                return firstLine.Trim('【', '】');
+            }
+
+            return "检查报告";
+        }
+
+        private static string StripLeadingReportTitle(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return string.Empty;
+            }
+
+            var firstLineEnd = message.IndexOf('\n');
+            if (firstLineEnd <= 0)
+            {
+                return message;
+            }
+
+            var firstLine = message.Substring(0, firstLineEnd).Trim();
+            if (firstLine.StartsWith("【") && firstLine.EndsWith("】"))
+            {
+                return message.Substring(firstLineEnd + 1).Trim();
+            }
+
+            return message.Trim();
+        }
+
+        private static Color ResolveReportBackground(string message)
+        {
+            if (ContainsAny(message, "错误", "失败", "短路", "未形成有效"))
+            {
+                return new Color(1f, 0.94f, 0.94f, 1f);
+            }
+
+            if (ContainsAny(message, "警告", "提醒", "建议"))
+            {
+                return new Color(1f, 0.97f, 0.89f, 1f);
+            }
+
+            if (ContainsAny(message, "通过", "正常", "完成"))
+            {
+                return new Color(0.92f, 0.98f, 0.94f, 1f);
+            }
+
+            return new Color(0.94f, 0.97f, 1f, 1f);
+        }
+
+        private static Color ResolveReportTitleColor(string message)
+        {
+            if (ContainsAny(message, "错误", "失败", "短路", "未形成有效"))
+            {
+                return new Color(0.72f, 0.12f, 0.12f, 1f);
+            }
+
+            if (ContainsAny(message, "警告", "提醒", "建议"))
+            {
+                return new Color(0.73f, 0.36f, 0.05f, 1f);
+            }
+
+            if (ContainsAny(message, "通过", "正常", "完成"))
+            {
+                return new Color(0.10f, 0.45f, 0.20f, 1f);
+            }
+
+            return new Color(0.10f, 0.32f, 0.68f, 1f);
         }
 
         private static void BindButton(Button button, UnityEngine.Events.UnityAction action)
@@ -2490,31 +2501,5 @@ namespace ElectricalSim.AI
             return button;
         }
 
-        private static InputField CreateInputField(string name, Transform parent)
-        {
-            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(InputField));
-            go.transform.SetParent(parent, false);
-            var image = go.GetComponent<Image>();
-            image.color = Color.white;
-            image.raycastTarget = true;
-
-            var input = go.GetComponent<InputField>();
-            var text = CreateText("Text", go.transform, string.Empty, 14, TextAnchor.UpperLeft);
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
-            text.raycastTarget = true;
-            text.rectTransform.offsetMin = new Vector2(10f, 7f);
-            text.rectTransform.offsetMax = new Vector2(-10f, -7f);
-
-            var placeholder = CreateText("Placeholder", go.transform, "请输入问题", 14, TextAnchor.MiddleLeft);
-            placeholder.color = new Color(0.45f, 0.52f, 0.62f, 0.8f);
-            placeholder.rectTransform.offsetMin = new Vector2(10f, 6f);
-            placeholder.rectTransform.offsetMax = new Vector2(-10f, -6f);
-
-            input.textComponent = text;
-            input.placeholder = placeholder;
-            input.lineType = InputField.LineType.MultiLineNewline;
-            return input;
-        }
     }
 }

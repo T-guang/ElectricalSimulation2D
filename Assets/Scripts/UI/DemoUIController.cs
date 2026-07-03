@@ -17,7 +17,7 @@ namespace ElectricalSim.UI
         [SerializeField] private Button loadButton;
         [SerializeField] private SaveBlueprintDialog saveDialog;
         [SerializeField] private ImportBlueprintPanel importPanel;
-        [SerializeField] private AIAssistantPanel aiAssistantPanel;
+        [SerializeField] private LocalInspectorPanel localInspectorPanel;
         [SerializeField] private Button undoButton;
         [SerializeField] private Button redoButton;
         [SerializeField] private Button quickDeleteButton;
@@ -31,7 +31,7 @@ namespace ElectricalSim.UI
         {
             EnsureToolbarLayout();
             EnsureBlueprintPanels();
-            EnsureAIAssistantPanel();
+            EnsureLocalInspectorPanel();
             BindButton(startButton, ToggleSimulation);
             BindButton(clearWiresButton, workspace.ClearWires);
             BindButton(clearAllButton, workspace.ClearDrawing);
@@ -281,7 +281,7 @@ namespace ElectricalSim.UI
             }
         }
 
-        private void EnsureAIAssistantPanel()
+        private void EnsureLocalInspectorPanel()
         {
             if (workspace == null)
             {
@@ -299,7 +299,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            aiAssistantPanel = AIAssistantPanel.Create(parent, workspace);
+            localInspectorPanel = LocalInspectorPanel.Create(parent, workspace);
         }
         private void EnsureBlueprintPanels()
         {

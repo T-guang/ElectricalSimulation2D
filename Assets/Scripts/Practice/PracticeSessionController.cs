@@ -34,7 +34,7 @@ namespace ElectricalSim.Practice
 
         private WorkspaceController workspace;
         private BlueprintReferencePanel referencePanel;
-        private AIAssistantPanel aiPanel;
+        private LocalInspectorPanel inspectorPanel;
         private TopNavigationController navigation;
 
         private void Awake()
@@ -66,9 +66,9 @@ namespace ElectricalSim.Practice
                 referencePanel = FindObjectOfType<BlueprintReferencePanel>(true);
             }
 
-            if (aiPanel == null)
+            if (inspectorPanel == null)
             {
-                aiPanel = FindObjectOfType<AIAssistantPanel>(true);
+                inspectorPanel = FindObjectOfType<LocalInspectorPanel>(true);
             }
 
             if (navigation == null)
@@ -135,7 +135,7 @@ namespace ElectricalSim.Practice
                 UpdateReferencePanel(templateItem);
             }
 
-            aiPanel?.RefreshPracticeState();
+            inspectorPanel?.RefreshPracticeState();
             return true;
         }
 
@@ -147,7 +147,7 @@ namespace ElectricalSim.Practice
             CurrentTemplateItem = null;
             CurrentTemplateData = null;
 
-            aiPanel?.RefreshPracticeState();
+            inspectorPanel?.RefreshPracticeState();
 
             if (referencePanel != null)
             {
@@ -197,7 +197,7 @@ namespace ElectricalSim.Practice
             var connectionResult = ElectricalSim.Practice.Netlist.PracticeConnectionChecker.Check(workspace, CurrentTemplateData);
             var summary = PracticeFeedbackFormatter.Format(CurrentTemplateItem, connectionResult);
 
-            aiPanel?.AddAssistantMessage(summary);
+            inspectorPanel?.AddAssistantMessage(summary);
             workspace.SetStatus(connectionResult.Passed ? "练习检测已提交：接线通过。" : "练习检测已提交：接线需要修改。");
         }
 
