@@ -274,10 +274,13 @@ namespace ElectricalSim.UI
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(138f, 48f);
+            rect.sizeDelta = new Vector2(118f, MainUiTheme.ToolbarButtonHeight);
 
             var image = buttonObject.GetComponent<Image>();
-            image.color = new Color(1f, 1f, 1f, 0.98f);
+            image.color = MainUiTheme.ToolbarButton;
+            var outline = buttonObject.GetComponent<Outline>() ?? buttonObject.AddComponent<Outline>();
+            outline.effectColor = MainUiTheme.Divider;
+            outline.effectDistance = new Vector2(1f, -1f);
 
             var button = buttonObject.GetComponent<Button>();
             button.onClick.RemoveListener(ShowTemplateSelection);
@@ -295,17 +298,14 @@ namespace ElectricalSim.UI
             label.rectTransform.offsetMin = Vector2.zero;
             label.rectTransform.offsetMax = Vector2.zero;
             label.text = "加载图纸";
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = 16;
-            label.alignment = TextAnchor.MiddleCenter;
-            label.color = new Color(0.05f, 0.12f, 0.24f);
+            MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
             label.raycastTarget = false;
-            ApplyFileButtonIcon(button, "Toolbar/ui_toolbar_load_blueprint_24", new Color(0.39f, 0.45f, 0.55f, 1f));
+            ApplyFileButtonIcon(button, "Toolbar/ui_toolbar_load_blueprint_24", MainUiTheme.MutedText);
 
             PrepareFileButton(saveButton);
             PrepareFileButton(importButton);
-            ApplyFileButtonIcon(saveButton != null ? saveButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_save_blueprint_24", new Color(0.39f, 0.45f, 0.55f, 1f));
-            ApplyFileButtonIcon(importButton != null ? importButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_import_blueprint_24", new Color(0.39f, 0.45f, 0.55f, 1f));
+            ApplyFileButtonIcon(saveButton != null ? saveButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_save_blueprint_24", MainUiTheme.MutedText);
+            ApplyFileButtonIcon(importButton != null ? importButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_import_blueprint_24", MainUiTheme.MutedText);
             if (saveButton != null)
             {
                 saveButton.transform.SetParent(fileActionGroup, false);
@@ -338,8 +338,8 @@ namespace ElectricalSim.UI
             rect.anchorMin = new Vector2(1f, 0.5f);
             rect.anchorMax = new Vector2(1f, 0.5f);
             rect.pivot = new Vector2(1f, 0.5f);
-            rect.anchoredPosition = new Vector2(-48f, 0f);
-            rect.sizeDelta = new Vector2(442f, 48f);
+            rect.anchoredPosition = new Vector2(-24f, 0f);
+            rect.sizeDelta = new Vector2(382f, MainUiTheme.ToolbarHeight);
 
             var layout = groupObject.GetComponent<HorizontalLayoutGroup>();
             if (layout == null)
@@ -348,7 +348,7 @@ namespace ElectricalSim.UI
             }
 
             layout.childAlignment = TextAnchor.MiddleRight;
-            layout.spacing = 14f;
+            layout.spacing = 8f;
             layout.padding = new RectOffset(0, 0, 0, 0);
             layout.childControlWidth = false;
             layout.childControlHeight = false;
@@ -374,7 +374,19 @@ namespace ElectricalSim.UI
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(138f, 48f);
+            rect.sizeDelta = new Vector2(118f, MainUiTheme.ToolbarButtonHeight);
+
+            var image = buttonObject.GetComponent<Image>() ?? buttonObject.AddComponent<Image>();
+            image.color = MainUiTheme.ToolbarButton;
+            var outline = buttonObject.GetComponent<Outline>() ?? buttonObject.AddComponent<Outline>();
+            outline.effectColor = MainUiTheme.Divider;
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            var label = buttonObject.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
+            }
         }
 
         private static void ApplyFileButtonIcon(Button button, string iconPath, Color iconColor)
@@ -390,7 +402,7 @@ namespace ElectricalSim.UI
             {
                 label.rectTransform.anchorMin = Vector2.zero;
                 label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = new Vector2(36f, 0f);
+                label.rectTransform.offsetMin = new Vector2(32f, 0f);
                 label.rectTransform.offsetMax = new Vector2(-8f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
             }
@@ -425,11 +437,7 @@ namespace ElectricalSim.UI
             go.transform.SetParent(parent, false);
             var label = go.GetComponent<Text>();
             label.text = text;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = size;
-            label.fontStyle = style;
-            label.alignment = TextAnchor.UpperLeft;
-            label.color = color;
+            MainUiTheme.ApplyText(label, size, style, color, TextAnchor.UpperLeft);
             label.raycastTarget = false;
             return label;
         }

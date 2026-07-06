@@ -5,23 +5,35 @@ namespace ElectricalSim.UI
 {
     public sealed class WorkspaceGrid : MaskableGraphic
     {
-        [SerializeField] private float spacing = 32f;
-        [SerializeField] private Color lineColor = new Color(0.70f, 0.76f, 0.84f, 0.26f);
-        [SerializeField] private Color majorLineColor = new Color(0.62f, 0.69f, 0.78f, 0.34f);
-        [SerializeField] private int majorLineEvery = 4;
+        [SerializeField] private float spacing = 20f;
+        [SerializeField] private Color lineColor = new Color(0.918f, 0.941f, 0.969f, 1f);
+        [SerializeField] private Color majorLineColor = new Color(0.843f, 0.886f, 0.941f, 1f);
+        [SerializeField] private int majorLineEvery = 5;
         [SerializeField] private float lineWidth = 1f;
-        [SerializeField] private float majorLineWidth = 1.15f;
+        [SerializeField] private float majorLineWidth = 1.35f;
 
         protected override void Awake()
         {
             base.Awake();
             raycastTarget = false;
+            ApplyDesignDefaults();
         }
 
         protected override void OnValidate()
         {
             base.OnValidate();
             raycastTarget = false;
+            ApplyDesignDefaults();
+        }
+
+        private void ApplyDesignDefaults()
+        {
+            spacing = 20f;
+            lineColor = new Color(0.918f, 0.941f, 0.969f, 1f);
+            majorLineColor = new Color(0.843f, 0.886f, 0.941f, 1f);
+            majorLineEvery = 5;
+            lineWidth = 1f;
+            majorLineWidth = 1.35f;
         }
 
         protected override void OnPopulateMesh(VertexHelper vh)

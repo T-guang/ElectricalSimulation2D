@@ -66,8 +66,12 @@ namespace ElectricalSim.AI
                 panel = root.GetComponent<LocalInspectorPanel>();
             }
 
-            image.color = Color.white;
+            image.color = MainUiTheme.PanelBackground;
             image.raycastTarget = true;
+
+            var outline = rect.GetComponent<Outline>() ?? rect.gameObject.AddComponent<Outline>();
+            outline.effectColor = MainUiTheme.Divider;
+            outline.effectDistance = new Vector2(-1f, 0f);
 
             panel.BuildUi(rect);
             panel.Initialize(workspace);
@@ -107,7 +111,7 @@ namespace ElectricalSim.AI
             root.offsetMax = new Vector2(-PanelMargin, -PanelMargin);
 
             var rootLayout = root.GetComponent<VerticalLayoutGroup>() ?? root.gameObject.AddComponent<VerticalLayoutGroup>();
-            rootLayout.padding = new RectOffset(12, 12, 12, 12);
+            rootLayout.padding = new RectOffset(14, 14, 12, 12);
             rootLayout.spacing = 10f;
             rootLayout.childAlignment = TextAnchor.UpperCenter;
             rootLayout.childControlWidth = true;
@@ -115,13 +119,13 @@ namespace ElectricalSim.AI
             rootLayout.childForceExpandWidth = true;
             rootLayout.childForceExpandHeight = false;
 
-            var header = CreatePanelSection("Header", root, HeaderHeight, 0f, new Color(0.90f, 0.94f, 1f, 1f));
+            var header = CreatePanelSection("Header", root, HeaderHeight, 0f, MainUiTheme.SelectedBlue);
             titleText = CreateText("Title", header, "检查助手", 18, TextAnchor.MiddleLeft);
             titleText.fontStyle = FontStyle.Bold;
             titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
             titleText.rectTransform.offsetMax = new Vector2(-14f, 0f);
 
-            var quickActions = CreatePanelSection("QuickActions", root, QuickActionsHeight, 0f, new Color(0.97f, 0.98f, 1f, 1f));
+            var quickActions = CreatePanelSection("QuickActions", root, QuickActionsHeight, 0f, MainUiTheme.PanelBackground);
             var actionLayout = quickActions.gameObject.AddComponent<VerticalLayoutGroup>();
             actionLayout.padding = new RectOffset(0, 0, 0, 0);
             actionLayout.spacing = 7f;
@@ -131,18 +135,21 @@ namespace ElectricalSim.AI
             actionLayout.childForceExpandWidth = true;
             actionLayout.childForceExpandHeight = false;
 
-            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
-            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", new Color(0.15f, 0.39f, 0.92f), Color.white, 34f);
-            submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", new Color(0.12f, 0.65f, 0.25f), Color.white, 30f);
+            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 34f);
+            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", MainUiTheme.PrimaryBlue, Color.white, 34f);
+            submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", MainUiTheme.SuccessGreen, Color.white, 30f);
             submitPracticeButton.gameObject.SetActive(false);
-            exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", new Color(0.85f, 0.18f, 0.16f), Color.white, 30f);
+            exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", MainUiTheme.DangerRed, Color.white, 30f);
             exitPracticeButton.gameObject.SetActive(false);
-            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
+            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 34f);
             ApplyActionButtonIcon(explainButton, "Inspector/ui_circuit_explain_20", false);
             ApplyActionButtonIcon(checkButton, "Inspector/ui_check_circuit_20", true);
             ApplyActionButtonIcon(clearReportButton, "Inspector/ui_clear_result_20", false);
 
-            var reportRoot = CreatePanelSection("ReportScrollView", root, 0f, 1f, Color.white);
+            var reportRoot = CreatePanelSection("ReportScrollView", root, 0f, 1f, MainUiTheme.PanelBackground);
+            var reportOutline = reportRoot.gameObject.AddComponent<Outline>();
+            reportOutline.effectColor = MainUiTheme.Divider;
+            reportOutline.effectDistance = new Vector2(1f, -1f);
             reportScrollRect = reportRoot.gameObject.AddComponent<ScrollRect>();
             reportScrollRect.horizontal = false;
             reportScrollRect.vertical = true;
@@ -155,7 +162,7 @@ namespace ElectricalSim.AI
             viewport.offsetMin = Vector2.zero;
             viewport.offsetMax = Vector2.zero;
             var viewportImage = viewport.gameObject.AddComponent<Image>();
-            viewportImage.color = Color.white;
+            viewportImage.color = MainUiTheme.PanelBackground;
             viewport.gameObject.AddComponent<RectMask2D>();
 
             reportContent = CreateRect("Content", viewport);
@@ -202,9 +209,7 @@ namespace ElectricalSim.AI
                 labelRect.offsetMax = Vector2.zero;
 
                 var label = labelRect.gameObject.AddComponent<Text>();
-                label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                label.fontSize = 21;
-                label.alignment = TextAnchor.MiddleCenter;
+                MainUiTheme.ApplyText(label, 21, FontStyle.Bold, MainUiTheme.MutedText, TextAnchor.MiddleCenter);
                 label.raycastTarget = false;
             }
 
@@ -221,7 +226,7 @@ namespace ElectricalSim.AI
             image.raycastTarget = true;
 
             var outline = handle.GetComponent<Outline>() ?? handle.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
+            outline.effectColor = MainUiTheme.Divider;
             outline.effectDistance = new Vector2(1f, -1f);
 
             var shadow = handle.GetComponent<Shadow>() ?? handle.gameObject.AddComponent<Shadow>();
@@ -241,11 +246,11 @@ namespace ElectricalSim.AI
             collapseHandleLabel = handle.GetComponentInChildren<Text>(true);
             if (collapseHandleLabel != null)
             {
-                collapseHandleLabel.color = new Color(0.58f, 0.64f, 0.72f, 1f);
+                collapseHandleLabel.color = MainUiTheme.MutedText;
                 collapseHandleLabel.gameObject.SetActive(false);
             }
 
-            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "Sidebar/ui_sidebar_collapse_right_32", new Vector2(20f, 20f), new Color(0.58f, 0.64f, 0.72f, 1f));
+            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "Sidebar/ui_sidebar_collapse_right_32", new Vector2(20f, 20f), MainUiTheme.MutedText);
         }
 
         private void ToggleRightPanelCollapsed()
@@ -2593,6 +2598,9 @@ namespace ElectricalSim.AI
             var image = go.GetComponent<Image>();
             image.color = ResolveReportBackground(message);
             image.raycastTarget = false;
+            var outline = go.GetComponent<Outline>() ?? go.gameObject.AddComponent<Outline>();
+            outline.effectColor = ResolveReportBorder(message);
+            outline.effectDistance = new Vector2(1f, -1f);
 
             var layout = go.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(12, 12, 10, 10);
@@ -2616,7 +2624,7 @@ namespace ElectricalSim.AI
             title.color = ResolveReportTitleColor(message);
 
             var body = CreateLayoutText("Body", go.transform, StripLeadingReportTitle(message), 13, TextAnchor.UpperLeft, 0f);
-            body.color = new Color(0.18f, 0.24f, 0.32f);
+            body.color = MainUiTheme.SecondaryText;
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
             body.verticalOverflow = VerticalWrapMode.Overflow;
             body.resizeTextForBestFit = false;
@@ -2667,40 +2675,60 @@ namespace ElectricalSim.AI
         {
             if (ContainsAny(message, "错误", "失败", "短路", "未形成有效"))
             {
-                return new Color(1f, 0.94f, 0.94f, 1f);
+                return MainUiTheme.Hex("FEF2F2");
             }
 
             if (ContainsAny(message, "警告", "提醒", "建议"))
             {
-                return new Color(1f, 0.97f, 0.89f, 1f);
+                return MainUiTheme.Hex("FFFBEB");
             }
 
             if (ContainsAny(message, "通过", "正常", "完成"))
             {
-                return new Color(0.92f, 0.98f, 0.94f, 1f);
+                return MainUiTheme.Hex("F0FDF4");
             }
 
-            return new Color(0.94f, 0.97f, 1f, 1f);
+            return MainUiTheme.Hex("EFF6FF");
         }
 
         private static Color ResolveReportTitleColor(string message)
         {
             if (ContainsAny(message, "错误", "失败", "短路", "未形成有效"))
             {
-                return new Color(0.72f, 0.12f, 0.12f, 1f);
+                return MainUiTheme.DangerRed;
             }
 
             if (ContainsAny(message, "警告", "提醒", "建议"))
             {
-                return new Color(0.73f, 0.36f, 0.05f, 1f);
+                return MainUiTheme.Hex("D97706");
             }
 
             if (ContainsAny(message, "通过", "正常", "完成"))
             {
-                return new Color(0.10f, 0.45f, 0.20f, 1f);
+                return MainUiTheme.SuccessGreen;
             }
 
-            return new Color(0.10f, 0.32f, 0.68f, 1f);
+            return MainUiTheme.PrimaryBlue;
+        }
+
+        private static Color ResolveReportBorder(string message)
+        {
+            if (ContainsAny(message, "错误", "失败", "短路", "未形成有效"))
+            {
+                return MainUiTheme.Hex("FECACA");
+            }
+
+            if (ContainsAny(message, "警告", "提醒", "建议"))
+            {
+                return MainUiTheme.Hex("FDE68A");
+            }
+
+            if (ContainsAny(message, "通过", "正常", "完成"))
+            {
+                return MainUiTheme.Hex("BBF7D0");
+            }
+
+            return MainUiTheme.Hex("BFDBFE");
         }
 
         private static void BindButton(Button button, UnityEngine.Events.UnityAction action)
@@ -2744,10 +2772,7 @@ namespace ElectricalSim.AI
             go.transform.SetParent(parent, false);
             var label = go.GetComponent<Text>();
             label.text = text;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = fontSize;
-            label.alignment = alignment;
-            label.color = new Color(0.05f, 0.08f, 0.14f);
+            MainUiTheme.ApplyText(label, fontSize, FontStyle.Normal, MainUiTheme.DeepText, alignment);
             label.raycastTarget = false;
 
             var rect = label.rectTransform;
@@ -2781,6 +2806,11 @@ namespace ElectricalSim.AI
             image.color = backgroundColor;
             var button = go.GetComponent<Button>();
             button.targetGraphic = image;
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = backgroundColor == MainUiTheme.PrimaryBlue || backgroundColor == MainUiTheme.SuccessGreen || backgroundColor == MainUiTheme.DangerRed
+                ? backgroundColor
+                : MainUiTheme.Divider;
+            outline.effectDistance = new Vector2(1f, -1f);
 
             var layout = go.GetComponent<LayoutElement>();
             layout.minHeight = preferredHeight;
@@ -2789,6 +2819,7 @@ namespace ElectricalSim.AI
 
             var text = CreateText("Text", go.transform, label, 14, TextAnchor.MiddleCenter);
             text.color = textColor;
+            text.font = MainUiTheme.MainFont;
             text.resizeTextForBestFit = true;
             text.resizeTextMinSize = 10;
             text.resizeTextMaxSize = 14;
@@ -2799,7 +2830,7 @@ namespace ElectricalSim.AI
 
         private static void ApplyActionButtonIcon(Button button, string iconPath, bool primary)
         {
-            var iconColor = primary ? Color.white : new Color(0.39f, 0.45f, 0.55f, 1f);
+            var iconColor = primary ? Color.white : MainUiTheme.MutedText;
             var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(18f, 18f), new Vector2(18f, 0f), iconColor);
             if (icon == null || button == null)
             {

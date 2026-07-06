@@ -29,9 +29,9 @@ namespace ElectricalSim.UI
         private const float PaletteWidth = 380f;
         private const float CollapsedPaletteWidth = 0f;
         private const float PalettePadding = 16f;
-        private const float PaletteVerticalOffset = -83f;
+        private const float PaletteVerticalOffset = -60f;
         private const float CollapseHandleSize = 36f;
-        private const float CardWidth = 100f;
+        private const float CardWidth = 96f;
         private const float CardHeight = 122f;
         private const float CardGapX = 10f;
         private const float CardGapY = 12f;
@@ -91,11 +91,11 @@ namespace ElectricalSim.UI
             }
 
             var rootImage = root.GetComponent<Image>() ?? root.gameObject.AddComponent<Image>();
-            rootImage.color = Color.white;
+            rootImage.color = MainUiTheme.PanelBackground;
             rootImage.raycastTarget = true;
 
             var rootOutline = root.GetComponent<Outline>() ?? root.gameObject.AddComponent<Outline>();
-            rootOutline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
+            rootOutline.effectColor = MainUiTheme.Divider;
             rootOutline.effectDistance = new Vector2(1f, 0f);
 
             EnsureCollapseHandle(root);
@@ -111,10 +111,11 @@ namespace ElectricalSim.UI
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
-                    titleText.fontSize = 18;
-                    titleText.fontStyle = FontStyle.Bold;
-                    titleText.color = new Color(0.12f, 0.16f, 0.22f);
+                    MainUiTheme.ApplyText(titleText, 18, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+                    titleText.rectTransform.offsetMin = new Vector2(12f, 0f);
                 }
+
+                EnsureTitleAccent(title);
             }
 
             EnsureFilterButtons(root);
@@ -147,9 +148,7 @@ namespace ElectricalSim.UI
                 labelRect.offsetMax = Vector2.zero;
 
                 var label = labelRect.gameObject.AddComponent<Text>();
-                label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                label.fontSize = 21;
-                label.alignment = TextAnchor.MiddleCenter;
+                MainUiTheme.ApplyText(label, 21, FontStyle.Bold, MainUiTheme.MutedText, TextAnchor.MiddleCenter);
                 label.raycastTarget = false;
             }
 
@@ -166,7 +165,7 @@ namespace ElectricalSim.UI
             image.raycastTarget = true;
 
             var outline = handle.GetComponent<Outline>() ?? handle.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
+            outline.effectColor = MainUiTheme.Divider;
             outline.effectDistance = new Vector2(1f, -1f);
 
             var shadow = handle.GetComponent<Shadow>() ?? handle.gameObject.AddComponent<Shadow>();
@@ -186,11 +185,32 @@ namespace ElectricalSim.UI
             collapseHandleLabel = handle.GetComponentInChildren<Text>(true);
             if (collapseHandleLabel != null)
             {
-                collapseHandleLabel.color = new Color(0.58f, 0.64f, 0.72f, 1f);
+                collapseHandleLabel.color = MainUiTheme.MutedText;
                 collapseHandleLabel.gameObject.SetActive(false);
             }
 
-            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "Sidebar/ui_sidebar_collapse_left_32", new Vector2(20f, 20f), new Color(0.58f, 0.64f, 0.72f, 1f));
+            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "Sidebar/ui_sidebar_collapse_left_32", new Vector2(20f, 20f), MainUiTheme.MutedText);
+        }
+
+        private static void EnsureTitleAccent(RectTransform title)
+        {
+            var accent = title.Find("Accent") as RectTransform;
+            if (accent == null)
+            {
+                accent = CreateRect("Accent", title);
+                accent.gameObject.AddComponent<Image>();
+            }
+
+            accent.anchorMin = new Vector2(0f, 0.5f);
+            accent.anchorMax = new Vector2(0f, 0.5f);
+            accent.pivot = new Vector2(0f, 0.5f);
+            accent.anchoredPosition = new Vector2(0f, 0f);
+            accent.sizeDelta = new Vector2(4f, 18f);
+
+            var image = accent.GetComponent<Image>() ?? accent.gameObject.AddComponent<Image>();
+            image.color = MainUiTheme.PrimaryBlue;
+            image.raycastTarget = false;
+            accent.SetAsFirstSibling();
         }
 
         private void ToggleLeftPanelCollapsed()
@@ -337,9 +357,7 @@ namespace ElectricalSim.UI
                 textRect.offsetMax = new Vector2(-8f, -2f);
 
                 var text = textRect.gameObject.AddComponent<Text>();
-                text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                text.fontSize = 13;
-                text.alignment = TextAnchor.MiddleCenter;
+                MainUiTheme.ApplyText(text, 13, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
                 text.horizontalOverflow = HorizontalWrapMode.Wrap;
                 text.verticalOverflow = VerticalWrapMode.Truncate;
                 text.raycastTarget = false;
@@ -348,7 +366,7 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(width, 32f);
 
             var image = rect.GetComponent<Image>() ?? rect.gameObject.AddComponent<Image>();
-            image.color = new Color(0.92f, 0.95f, 0.98f, 1f);
+            image.color = MainUiTheme.FilterButton;
 
             var button = rect.GetComponent<Button>() ?? rect.gameObject.AddComponent<Button>();
             ApplyFilterIcon(rect, name);
@@ -356,7 +374,7 @@ namespace ElectricalSim.UI
             if (labelText != null)
             {
                 labelText.text = label;
-                labelText.color = new Color(0.16f, 0.22f, 0.32f);
+                MainUiTheme.ApplyText(labelText, 13, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
                 labelText.alignment = TextAnchor.MiddleCenter;
                 labelText.rectTransform.offsetMin = new Vector2(24f, 2f);
                 labelText.rectTransform.offsetMax = new Vector2(-8f, -2f);
@@ -445,7 +463,7 @@ namespace ElectricalSim.UI
             viewport.offsetMax = new Vector2(-PalettePadding, -104f);
 
             var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
-            viewportImage.color = Color.white;
+            viewportImage.color = MainUiTheme.PanelBackground;
             viewportImage.raycastTarget = true;
         }
 
@@ -471,11 +489,11 @@ namespace ElectricalSim.UI
             logPanel.SetAsLastSibling();
 
             var panelImage = logPanel.GetComponent<Image>() ?? logPanel.gameObject.AddComponent<Image>();
-            panelImage.color = Color.white;
+            panelImage.color = MainUiTheme.PanelBackground;
             panelImage.raycastTarget = true;
 
             var outline = logPanel.GetComponent<Outline>() ?? logPanel.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.90f, 0.91f, 0.92f, 1f);
+            outline.effectColor = MainUiTheme.Divider;
             outline.effectDistance = new Vector2(1f, -1f);
 
             var title = logPanel.Find("ActionLogTitle") as RectTransform;
@@ -489,9 +507,7 @@ namespace ElectricalSim.UI
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
-                    titleText.fontSize = 16;
-                    titleText.fontStyle = FontStyle.Bold;
-                    titleText.color = new Color(0.12f, 0.16f, 0.22f);
+                    MainUiTheme.ApplyText(titleText, 15, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
                 }
             }
 
@@ -515,7 +531,7 @@ namespace ElectricalSim.UI
                 viewport.offsetMax = new Vector2(-10f, -74f);
 
                 var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
-                viewportImage.color = new Color(0.98f, 0.99f, 1f, 1f);
+                viewportImage.color = MainUiTheme.PanelBackground;
                 viewportImage.raycastTarget = true;
             }
         }
@@ -537,10 +553,7 @@ namespace ElectricalSim.UI
                 titleRect.sizeDelta = new Vector2(OperationLogWidth, 34f);
 
                 var title = titleRect.gameObject.AddComponent<Text>();
-                title.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                title.fontSize = 17;
-                title.alignment = TextAnchor.MiddleLeft;
-                title.color = new Color(0.07f, 0.12f, 0.18f);
+                MainUiTheme.ApplyText(title, 16, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
                 title.raycastTarget = false;
                 title.text = sectionDisplayNames.TryGetValue(category, out var displayName) ? displayName : category.ToString();
 
@@ -669,9 +682,7 @@ namespace ElectricalSim.UI
 
             var label = EnsureChildText(rect, "Label");
             label.text = definition.displayName;
-            label.fontSize = 13;
-            label.alignment = TextAnchor.UpperCenter;
-            label.color = new Color(0.12f, 0.16f, 0.22f);
+            MainUiTheme.ApplyText(label, 13, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperCenter);
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
             label.verticalOverflow = VerticalWrapMode.Truncate;
             label.resizeTextForBestFit = true;
@@ -687,8 +698,8 @@ namespace ElectricalSim.UI
             labelRect.sizeDelta = new Vector2(-12f, 36f);
 
             var outline = rect.GetComponent<Outline>() ?? rect.gameObject.AddComponent<Outline>();
-            var normalOutline = new Color(0.91f, 0.94f, 0.97f, 0.48f);
-            var hoverOutline = new Color(0.58f, 0.77f, 0.99f, 1f);
+            var normalOutline = MainUiTheme.Hex("EEF2F7");
+            var hoverOutline = MainUiTheme.Hex("93C5FD");
             outline.effectColor = normalOutline;
             outline.effectDistance = new Vector2(1f, -1f);
 
@@ -698,7 +709,7 @@ namespace ElectricalSim.UI
                 paletteItem.ConfigureCardVisual(
                     background,
                     Color.white,
-                    new Color(0.97f, 0.98f, 1f, 1f),
+                    MainUiTheme.Hex("F8FBFF"),
                     outline,
                     normalOutline,
                     hoverOutline);
@@ -972,7 +983,7 @@ namespace ElectricalSim.UI
                     if (titleText != null && sectionDisplayNames.TryGetValue(categoryEnum, out var sectionName))
                     {
                         titleText.text = sectionName;
-                        titleText.fontSize = 17;
+                        MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
                     }
                 }
 
@@ -1072,13 +1083,13 @@ namespace ElectricalSim.UI
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                image.color = selected ? new Color(0.20f, 0.45f, 0.95f, 1f) : new Color(0.91f, 0.94f, 0.98f, 1f);
+                image.color = selected ? MainUiTheme.PrimaryBlue : MainUiTheme.FilterButton;
             }
 
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                label.color = selected ? Color.white : new Color(0.16f, 0.22f, 0.32f);
+                MainUiTheme.ApplyText(label, 13, FontStyle.Normal, selected ? Color.white : MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
             }
         }
 
