@@ -288,9 +288,7 @@ namespace ElectricalSim.UI
             var img = parent.GetComponent<Image>();
             if (img != null)
             {
-                img.sprite = UiThemeTokens.GetRoundedSprite(radius);
-                img.type = Image.Type.Sliced;
-                img.color = bgColor;
+                img.enabled = false;
             }
 
             var outline = parent.GetComponent<UnityEngine.UI.Outline>();
@@ -321,36 +319,29 @@ namespace ElectricalSim.UI
                 }
             }
 
-            if (radius == 99)
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+
+            var go = new GameObject("Backplate", typeof(RectTransform), typeof(Image));
+            go.transform.SetParent(parent, false);
+            go.transform.SetSiblingIndex(text.transform.GetSiblingIndex());
+
+            var rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(-12, -4);
+            rect.offsetMax = new Vector2(12, 4);
+
+            var backplateImg = go.GetComponent<Image>();
+            backplateImg.sprite = UiThemeTokens.GetRoundedSprite(radius);
+            backplateImg.type = Image.Type.Sliced;
+            backplateImg.color = bgColor;
+
+            if (bgColor != borderColor)
             {
-                text.horizontalOverflow = HorizontalWrapMode.Overflow;
-                text.verticalOverflow = VerticalWrapMode.Overflow;
-
-                var layout = parent.GetComponent<HorizontalLayoutGroup>();
-                if (layout == null) layout = parent.gameObject.AddComponent<HorizontalLayoutGroup>();
-
-                layout.childAlignment = TextAnchor.MiddleCenter;
-                layout.padding = new RectOffset(12, 12, 0, 0);
-                layout.childControlHeight = true;
-                layout.childControlWidth = true;
-                layout.childForceExpandHeight = false;
-                layout.childForceExpandWidth = false;
-
-                var fitter = parent.GetComponent<ContentSizeFitter>();
-                if (fitter == null) fitter = parent.gameObject.AddComponent<ContentSizeFitter>();
-                fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-                fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
-
-                var layoutElement = parent.GetComponent<LayoutElement>();
-                if (layoutElement == null) layoutElement = parent.gameObject.AddComponent<LayoutElement>();
-                layoutElement.preferredHeight = 26f;
-                layoutElement.minHeight = 26f;
-
-                var rect = parent.GetComponent<RectTransform>();
-                if (rect != null)
-                {
-                    rect.sizeDelta = new Vector2(rect.sizeDelta.x, 26f);
-                }
+                var bpOutline = go.AddComponent<UnityEngine.UI.Outline>();
+                bpOutline.effectColor = borderColor;
+                bpOutline.effectDistance = new Vector2(1, -1);
             }
         }
 
@@ -868,9 +859,11 @@ namespace ElectricalSim.UI
 
                 var layout = paginationRoot.GetComponent<HorizontalLayoutGroup>();
                 layout.childAlignment = TextAnchor.MiddleCenter;
-                layout.spacing = 16f;
+                layout.spacing = 8f;
                 layout.childControlHeight = false;
                 layout.childControlWidth = false;
+                layout.childForceExpandHeight = false;
+                layout.childForceExpandWidth = false;
             }
 
             foreach (Transform child in paginationRoot.transform)
