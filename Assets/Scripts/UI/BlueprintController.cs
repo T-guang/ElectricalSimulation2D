@@ -6,6 +6,11 @@ namespace ElectricalSim.UI
 {
     public sealed class BlueprintController : MonoBehaviour
     {
+        private const float PageMargin = 28f;
+        private const float CardWidth = 446f;
+        private const float CardHeight = 336f;
+        private const float CardGap = 27f;
+
         [SerializeField] private TopNavigationController navigation;
         [SerializeField] private List<Button> blueprintButtons = new List<Button>();
         [SerializeField] private List<GameObject> blueprintCards = new List<GameObject>();
@@ -40,11 +45,19 @@ namespace ElectricalSim.UI
         private void ApplyTheme()
         {
             var bg = GetComponent<Image>();
-            if (bg != null) bg.color = UiThemeTokens.Background;
+            if (bg != null) bg.color = MainUiTheme.Hex("F8FBFF");
+
+            ApplyFilterButtonMetrics();
 
             foreach (var card in blueprintCards)
             {
                 if (card == null) continue;
+
+                var rect = card.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    rect.sizeDelta = new Vector2(CardWidth, CardHeight);
+                }
                 
                 var images = card.GetComponentsInChildren<Image>(true);
                 var cardBg = card.GetComponent<Image>();
@@ -52,10 +65,14 @@ namespace ElectricalSim.UI
 
                 if (cardBg != null)
                 {
-                    cardBg.sprite = UiThemeTokens.GetRoundedSprite(12);
+                    cardBg.sprite = UiThemeTokens.GetRoundedSprite(16);
                     cardBg.type = Image.Type.Sliced;
-                    cardBg.color = UiThemeTokens.CardBackground;
+                    cardBg.color = MainUiTheme.Hex("FAFCFF");
                 }
+
+                var outline = card.GetComponent<Outline>() ?? card.AddComponent<Outline>();
+                outline.effectColor = MainUiTheme.Hex("D2D2D2");
+                outline.effectDistance = new Vector2(1f, -1f);
                 
                 if (card.GetComponent<UnityEngine.UI.Shadow>() == null)
                 {
@@ -72,22 +89,43 @@ namespace ElectricalSim.UI
                     {
                         btnBg.sprite = UiThemeTokens.GetRoundedSprite(8);
                         btnBg.type = Image.Type.Sliced;
-                        btnBg.color = UiThemeTokens.PrimaryBlue;
+                        btnBg.color = MainUiTheme.PrimaryBlue;
                         
                         var btnText = btn.GetComponentInChildren<Text>();
-                        if (btnText != null) btnText.color = Color.white;
+                        if (btnText != null)
+                        {
+                            btnText.font = MainUiTheme.BodyFont;
+                            btnText.fontSize = 20;
+                            btnText.color = Color.white;
+                            btnText.resizeTextForBestFit = false;
+                        }
                     }
                 }
+
+                ApplyBlueprintCardTextStyle(card);
             }
 
             if (searchInput != null)
             {
+                var searchRect = searchInput.GetComponent<RectTransform>();
+                if (searchRect != null)
+                {
+                    searchRect.sizeDelta = new Vector2(236f, 36f);
+                }
+
                 var searchBg = searchInput.GetComponent<Image>();
                 if (searchBg != null)
                 {
-                    searchBg.sprite = UiThemeTokens.GetRoundedSprite(8);
+                    searchBg.sprite = UiThemeTokens.GetRoundedSprite(16);
                     searchBg.type = Image.Type.Sliced;
                     searchBg.color = Color.white;
+                }
+
+                if (searchInput.textComponent != null)
+                {
+                    searchInput.textComponent.font = MainUiTheme.BodyFont;
+                    searchInput.textComponent.fontSize = 16;
+                    searchInput.textComponent.color = MainUiTheme.Hex("464646");
                 }
             }
 
@@ -103,10 +141,70 @@ namespace ElectricalSim.UI
                 {
                     cfgBg.sprite = UiThemeTokens.GetRoundedSprite(8);
                     cfgBg.type = Image.Type.Sliced;
-                    cfgBg.color = UiThemeTokens.PrimaryBlue;
+                    cfgBg.color = MainUiTheme.PrimaryBlue;
                 }
                 var txt = configureButton.GetComponentInChildren<Text>();
-                if (txt != null) txt.color = Color.white;
+                if (txt != null)
+                {
+                    txt.font = MainUiTheme.BodyFont;
+                    txt.fontSize = 20;
+                    txt.color = Color.white;
+                    txt.resizeTextForBestFit = false;
+                }
+            }
+        }
+
+        private void ApplyFilterButtonMetrics()
+        {
+            for (var i = 0; i < categoryButtons.Count; i++)
+            {
+                var rect = categoryButtons[i] != null ? categoryButtons[i].GetComponent<RectTransform>() : null;
+                if (rect != null)
+                {
+                    rect.sizeDelta = new Vector2(175f, 36f);
+                }
+            }
+
+            for (var i = 0; i < difficultyButtons.Count; i++)
+            {
+                var rect = difficultyButtons[i] != null ? difficultyButtons[i].GetComponent<RectTransform>() : null;
+                if (rect != null)
+                {
+                    rect.sizeDelta = new Vector2(138f, 36f);
+                }
+            }
+        }
+
+        private static void ApplyBlueprintCardTextStyle(GameObject card)
+        {
+            var texts = card.GetComponentsInChildren<Text>(true);
+            for (var i = 0; i < texts.Length; i++)
+            {
+                var text = texts[i];
+                if (text == null)
+                {
+                    continue;
+                }
+
+                text.font = MainUiTheme.BodyFont;
+                text.resizeTextForBestFit = false;
+                if (IsActionLabel(text.text))
+                {
+                    text.fontSize = 20;
+                    text.fontStyle = FontStyle.Bold;
+                    text.color = Color.white;
+                }
+                else if (IsCategoryLabel(text.text) || IsDifficultyLabel(text.text))
+                {
+                    text.fontSize = 18;
+                    text.color = MainUiTheme.Hex("858A8D");
+                }
+                else if (!string.IsNullOrWhiteSpace(text.text))
+                {
+                    text.fontSize = 20;
+                    text.fontStyle = FontStyle.Bold;
+                    text.color = MainUiTheme.Hex("464646");
+                }
             }
         }
 
@@ -548,9 +646,14 @@ namespace ElectricalSim.UI
                 var rect = blueprintCards[i].GetComponent<RectTransform>();
                 if (rect != null)
                 {
-                    var row = visibleIndex / 4;
-                    var col = visibleIndex % 4;
-                    rect.anchoredPosition = new Vector2(32f + col * 470f, -26f - row * 334f);
+                    var availableWidth = cardContent != null && cardContent.rect.width > 1f
+                        ? cardContent.rect.width
+                        : Mathf.Max(960f, Screen.width - PageMargin * 2f);
+                    var columns = Mathf.Max(1, Mathf.FloorToInt((availableWidth - PageMargin + CardGap) / (CardWidth + CardGap)));
+                    var row = visibleIndex / columns;
+                    var col = visibleIndex % columns;
+                    rect.sizeDelta = new Vector2(CardWidth, CardHeight);
+                    rect.anchoredPosition = new Vector2(PageMargin + col * (CardWidth + CardGap), -PageMargin - row * (CardHeight + CardGap));
                 }
 
                 visibleIndex++;
@@ -558,8 +661,10 @@ namespace ElectricalSim.UI
 
             if (cardContent != null)
             {
-                var rows = Mathf.CeilToInt(visibleIndex / 4f);
-                cardContent.sizeDelta = new Vector2(0f, Mathf.Max(720f, 32f + rows * 334f));
+                var availableWidth = cardContent.rect.width > 1f ? cardContent.rect.width : Mathf.Max(960f, Screen.width - PageMargin * 2f);
+                var columns = Mathf.Max(1, Mathf.FloorToInt((availableWidth - PageMargin + CardGap) / (CardWidth + CardGap)));
+                var rows = Mathf.CeilToInt(visibleIndex / (float)columns);
+                cardContent.sizeDelta = new Vector2(0f, Mathf.Max(720f, PageMargin + rows * (CardHeight + CardGap)));
             }
 
             RefreshButtonStates();
@@ -649,14 +754,59 @@ namespace ElectricalSim.UI
             {
                 image.sprite = UiThemeTokens.GetRoundedSprite(16);
                 image.type = Image.Type.Sliced;
-                image.color = active ? UiThemeTokens.PrimaryBlue : new Color(0.94f, 0.96f, 0.98f);
+                image.color = ResolveFilterFill(button, active);
             }
+
+            var outline = button.GetComponent<Outline>() ?? button.gameObject.AddComponent<Outline>();
+            outline.effectColor = ResolveFilterBorder(button, active);
+            outline.effectDistance = new Vector2(1f, -1f);
 
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                label.color = active ? Color.white : UiThemeTokens.TextDark;
+                label.font = MainUiTheme.BodyFont;
+                label.fontSize = 20;
+                label.resizeTextForBestFit = false;
+                label.color = ResolveFilterTextColor(button, active);
             }
+        }
+
+        private static Color ResolveFilterFill(Button button, bool active)
+        {
+            if (!active)
+            {
+                return Color.white;
+            }
+
+            var text = button != null && button.GetComponentInChildren<Text>() != null ? button.GetComponentInChildren<Text>().text : string.Empty;
+            if (text.Contains("初级")) return MainUiTheme.Hex("DCFCE7");
+            if (text.Contains("中级")) return MainUiTheme.Hex("FEF3C7");
+            if (text.Contains("高级")) return MainUiTheme.Hex("FEE2E2");
+            return MainUiTheme.Hex("DBEAFE");
+        }
+
+        private static Color ResolveFilterBorder(Button button, bool active)
+        {
+            if (!active)
+            {
+                return MainUiTheme.Hex("D2D2D2");
+            }
+
+            return ResolveFilterTextColor(button, true);
+        }
+
+        private static Color ResolveFilterTextColor(Button button, bool active)
+        {
+            if (!active)
+            {
+                return MainUiTheme.Hex("464646");
+            }
+
+            var text = button != null && button.GetComponentInChildren<Text>() != null ? button.GetComponentInChildren<Text>().text : string.Empty;
+            if (text.Contains("初级")) return MainUiTheme.Hex("0BB148");
+            if (text.Contains("中级")) return MainUiTheme.Hex("F59E0B");
+            if (text.Contains("高级")) return MainUiTheme.Hex("EF4444");
+            return MainUiTheme.PrimaryBlue;
         }
     }
 }

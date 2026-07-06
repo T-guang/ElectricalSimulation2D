@@ -83,48 +83,7 @@ namespace ElectricalSim.UI
                 }
             }
 
-            var titleTransform = transform.Find("Logo") ?? transform.Find("Title");
-            if (titleTransform != null)
-            {
-                var titleText = titleTransform.Find("Text")?.GetComponent<Text>();
-                if (titleText == null) titleText = titleTransform.GetComponentInChildren<Text>();
-                if (titleText != null)
-                {
-                    titleText.color = UiThemeTokens.TextDark;
-                    titleText.fontSize = 28;
-                    titleText.fontStyle = FontStyle.Bold;
-                    titleText.resizeTextForBestFit = false;
-                }
-                
-                if (titleTransform.Find("IconWrapper") == null)
-                {
-                    var wrapperObj = new GameObject("IconWrapper", typeof(RectTransform));
-                    wrapperObj.transform.SetParent(titleTransform, false);
-                    wrapperObj.transform.SetAsFirstSibling();
-                    var wrapperRt = wrapperObj.GetComponent<RectTransform>();
-                    wrapperRt.sizeDelta = new Vector2(36f, 36f);
-
-                    var iconObj = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-                    iconObj.transform.SetParent(wrapperObj.transform, false);
-                    var img = iconObj.GetComponent<Image>();
-                    img.sprite = Resources.Load<Sprite>("UI/Icons/ui_sidebar_yalong_logo_320");
-                    img.preserveAspect = true;
-                    var rt = iconObj.GetComponent<RectTransform>();
-                    rt.sizeDelta = new Vector2(36f, 36f);
-                    rt.anchorMin = new Vector2(0.5f, 0.5f);
-                    rt.anchorMax = new Vector2(0.5f, 0.5f);
-                    rt.pivot = new Vector2(0.5f, 0.5f);
-                    rt.anchoredPosition = new Vector2(0f, 4f); // Move it up by 4 pixels!
-                    
-                    var hz = titleTransform.GetComponent<HorizontalLayoutGroup>() ?? titleTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
-                    hz.spacing = 10f;
-                    hz.childAlignment = TextAnchor.MiddleLeft;
-                    hz.childForceExpandHeight = false;
-                    hz.childForceExpandWidth = false;
-                    hz.childControlHeight = false;
-                    hz.childControlWidth = false;
-                }
-            }
+            ApplyBrandGroupLayout();
 
             for (int i = 0; i < tabButtons.Count; i++)
             {
@@ -144,6 +103,89 @@ namespace ElectricalSim.UI
                     tabLabels[i].fontSize = 18;
                     tabLabels[i].resizeTextForBestFit = false;
                 }
+            }
+        }
+
+        private void ApplyBrandGroupLayout()
+        {
+            var titleTransform = transform.Find("Logo") ?? transform.Find("Title");
+            var brandRect = titleTransform as RectTransform;
+            if (brandRect == null)
+            {
+                return;
+            }
+
+            brandRect.anchorMin = new Vector2(0f, 0.5f);
+            brandRect.anchorMax = new Vector2(0f, 0.5f);
+            brandRect.pivot = new Vector2(0f, 0.5f);
+            brandRect.anchoredPosition = new Vector2(24f, 2f);
+            brandRect.sizeDelta = new Vector2(390f, 44f);
+
+            var layout = titleTransform.GetComponent<HorizontalLayoutGroup>() ?? titleTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 10f;
+            layout.padding = new RectOffset(0, 0, 0, 0);
+            layout.childAlignment = TextAnchor.MiddleLeft;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childControlHeight = false;
+            layout.childControlWidth = false;
+
+            var iconWrapper = titleTransform.Find("IconWrapper") as RectTransform;
+            if (iconWrapper == null)
+            {
+                var wrapperObj = new GameObject("IconWrapper", typeof(RectTransform), typeof(LayoutElement));
+                wrapperObj.transform.SetParent(titleTransform, false);
+                wrapperObj.transform.SetAsFirstSibling();
+                iconWrapper = wrapperObj.GetComponent<RectTransform>();
+            }
+
+            iconWrapper.sizeDelta = new Vector2(36f, 36f);
+            var wrapperLayout = iconWrapper.GetComponent<LayoutElement>() ?? iconWrapper.gameObject.AddComponent<LayoutElement>();
+            wrapperLayout.preferredWidth = 36f;
+            wrapperLayout.preferredHeight = 36f;
+            wrapperLayout.flexibleWidth = 0f;
+            wrapperLayout.flexibleHeight = 0f;
+
+            var icon = iconWrapper.Find("Icon") as RectTransform;
+            if (icon == null)
+            {
+                var iconObj = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+                iconObj.transform.SetParent(iconWrapper, false);
+                icon = iconObj.GetComponent<RectTransform>();
+            }
+
+            icon.anchorMin = new Vector2(0.5f, 0.5f);
+            icon.anchorMax = new Vector2(0.5f, 0.5f);
+            icon.pivot = new Vector2(0.5f, 0.5f);
+            icon.anchoredPosition = Vector2.zero;
+            icon.sizeDelta = new Vector2(36f, 36f);
+
+            var iconImage = icon.GetComponent<Image>() ?? icon.gameObject.AddComponent<Image>();
+            iconImage.sprite = UiIconLibrary.Load("Logo/ui_logo_main_320");
+            iconImage.preserveAspect = true;
+            iconImage.color = Color.white;
+            iconImage.raycastTarget = false;
+
+            var titleText = titleTransform.Find("Text")?.GetComponent<Text>();
+            if (titleText == null)
+            {
+                titleText = titleTransform.GetComponentInChildren<Text>(true);
+            }
+
+            if (titleText != null)
+            {
+                titleText.transform.SetAsLastSibling();
+                titleText.color = UiThemeTokens.TextDark;
+                titleText.font = MainUiTheme.TitleFont;
+                titleText.fontSize = 20;
+                titleText.fontStyle = FontStyle.Bold;
+                titleText.alignment = TextAnchor.MiddleLeft;
+                titleText.resizeTextForBestFit = false;
+                titleText.verticalOverflow = VerticalWrapMode.Overflow;
+
+                var textLayout = titleText.GetComponent<LayoutElement>() ?? titleText.gameObject.AddComponent<LayoutElement>();
+                textLayout.preferredWidth = 300f;
+                textLayout.preferredHeight = 38f;
             }
         }
 
