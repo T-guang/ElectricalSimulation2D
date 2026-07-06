@@ -323,13 +323,28 @@ namespace ElectricalSim.UI
 
             if (radius == 99)
             {
+                text.horizontalOverflow = HorizontalWrapMode.Overflow;
+                text.verticalOverflow = VerticalWrapMode.Overflow;
+
                 var layout = parent.GetComponent<HorizontalLayoutGroup>();
                 if (layout == null) layout = parent.gameObject.AddComponent<HorizontalLayoutGroup>();
 
                 layout.childAlignment = TextAnchor.MiddleCenter;
-                layout.padding = new RectOffset(12, 12, 4, 4);
-                layout.childControlHeight = false;
-                layout.childControlWidth = false;
+                layout.padding = new RectOffset(12, 12, 0, 0);
+                layout.childControlHeight = true;
+                layout.childControlWidth = true;
+                layout.childForceExpandHeight = false;
+                layout.childForceExpandWidth = false;
+
+                var fitter = parent.GetComponent<ContentSizeFitter>();
+                if (fitter == null) fitter = parent.gameObject.AddComponent<ContentSizeFitter>();
+                fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+                var layoutElement = parent.GetComponent<LayoutElement>();
+                if (layoutElement == null) layoutElement = parent.gameObject.AddComponent<LayoutElement>();
+                layoutElement.preferredHeight = 26f;
+                layoutElement.minHeight = 26f;
 
                 var rect = parent.GetComponent<RectTransform>();
                 if (rect != null)
