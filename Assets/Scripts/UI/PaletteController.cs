@@ -513,13 +513,18 @@ namespace ElectricalSim.UI
             panelImage.enabled = true;
             panelImage.sprite = UiThemeTokens.GetRoundedSprite(8);
             panelImage.type = Image.Type.Sliced;
-            panelImage.color = MainUiTheme.PanelBackground;
+            panelImage.color = Color.white;
             panelImage.raycastTarget = true;
 
             var outline = logPanel.GetComponent<Outline>() ?? logPanel.gameObject.AddComponent<Outline>();
             outline.effectColor = MainUiTheme.Divider;
             outline.effectDistance = new Vector2(1f, -1f);
             outline.enabled = true;
+
+            var shadow = logPanel.GetComponent<Shadow>() ?? logPanel.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.06f);
+            shadow.effectDistance = new Vector2(0f, -2f);
+            shadow.enabled = true;
             
             var topBorder = logPanel.Find("TopBorder") as RectTransform;
             if (topBorder == null)
@@ -548,7 +553,7 @@ namespace ElectricalSim.UI
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
-                    MainUiTheme.ApplyText(titleText, 15, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft, true);
+                    MainUiTheme.ApplyText(titleText, 15, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft, true);
                 }
 
                 var clearButtonRect = title.Find("ClearButton") as RectTransform;
@@ -600,8 +605,8 @@ namespace ElectricalSim.UI
                 var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
 
                 var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
-                viewportImage.enabled = true;
-                viewportImage.color = MainUiTheme.PanelBackground;
+                viewportImage.enabled = false;
+                viewportImage.color = Color.clear;
                 viewportImage.raycastTarget = true;
 
                 var actionLogText = viewport.Find("ActionLogText") as RectTransform;

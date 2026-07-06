@@ -122,17 +122,17 @@ namespace ElectricalSim.UI
             quickDeleteButton = EnsureButton(toolbar, quickDeleteButton, "DeleteSelectionButton", "删除");
             lockButton = EnsureButton(toolbar, lockButton, "InteractionLockButton", "锁定");
 
-            var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(720f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleLeft, 8f);
-            var rightGroup = EnsureGroup(toolbar, "RightActionGroup", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(400f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleRight, 8f);
-            var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0.53f, 0.5f), new Vector2(0.53f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(220f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleCenter, 8f);
+            var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(860f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleLeft, 12f);
+            var rightGroup = EnsureGroup(toolbar, "RightActionGroup", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(440f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleRight, 12f);
+            var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0.53f, 0.5f), new Vector2(0.53f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleCenter, 10f);
 
-            MoveButtonToGroup(startButton, leftGroup, new Vector2(110f, MainUiTheme.ToolbarButtonHeight), "开始仿真");
-            MoveButtonToGroup(undoButton, leftGroup, new Vector2(88f, MainUiTheme.ToolbarButtonHeight), "撤销");
-            MoveButtonToGroup(redoButton, leftGroup, new Vector2(88f, MainUiTheme.ToolbarButtonHeight), "重做");
-            MoveButtonToGroup(quickDeleteButton, leftGroup, new Vector2(88f, MainUiTheme.ToolbarButtonHeight), "删除");
-            MoveButtonToGroup(clearWiresButton, leftGroup, new Vector2(88f, MainUiTheme.ToolbarButtonHeight), "清线");
-            MoveButtonToGroup(clearAllButton, leftGroup, new Vector2(88f, MainUiTheme.ToolbarButtonHeight), "清空");
-            MoveButtonToGroup(lockButton, leftGroup, new Vector2(88f, MainUiTheme.ToolbarButtonHeight), "锁定");
+            MoveButtonToGroup(startButton, leftGroup, new Vector2(128f, 38f), "开始仿真");
+            MoveButtonToGroup(undoButton, leftGroup, new Vector2(96f, 38f), "撤销");
+            MoveButtonToGroup(redoButton, leftGroup, new Vector2(96f, 38f), "重做");
+            MoveButtonToGroup(quickDeleteButton, leftGroup, new Vector2(96f, 38f), "删除");
+            MoveButtonToGroup(clearWiresButton, leftGroup, new Vector2(96f, 38f), "清线");
+            MoveButtonToGroup(clearAllButton, leftGroup, new Vector2(96f, 38f), "清空");
+            MoveButtonToGroup(lockButton, leftGroup, new Vector2(96f, 38f), "锁定");
 
             StyleToolbarButton(startButton, true, false);
             StyleToolbarButton(undoButton, false, false);
@@ -152,11 +152,13 @@ namespace ElectricalSim.UI
             
             if (saveButton != null)
             {
+                MoveButtonToGroup(saveButton, rightGroup, new Vector2(120f, 38f), "保存图纸");
                 StyleToolbarButton(saveButton, false, false);
                 ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 20f);
             }
             if (loadButton != null)
             {
+                MoveButtonToGroup(loadButton, rightGroup, new Vector2(120f, 38f), "加载图纸");
                 StyleToolbarButton(loadButton, false, false);
                 ApplyToolbarIcon(loadButton, "ui_toolbar_load_blueprint_24", 20f);
             }
@@ -349,7 +351,8 @@ namespace ElectricalSim.UI
 
             Color? color = null;
             if (primary) color = Color.white;
-            if (danger) color = MainUiTheme.DangerRed;
+            else if (danger) color = MainUiTheme.Hex("DC2626");
+            else color = MainUiTheme.Hex("64748B");
             
             var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(iconSize, iconSize), new Vector2(16f, 0f), color);
             if (icon == null)
@@ -362,36 +365,46 @@ namespace ElectricalSim.UI
             {
                 label.rectTransform.anchorMin = Vector2.zero;
                 label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = new Vector2(34f, 0f);
-                label.rectTransform.offsetMax = new Vector2(-6f, 0f);
+                label.rectTransform.offsetMin = new Vector2(40f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-12f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
-                label.fontSize = 17;
                 label.verticalOverflow = VerticalWrapMode.Overflow;
-                if (danger) { label.color = MainUiTheme.DangerRed; }
-                if (primary) { label.color = Color.white; }
             }
         }
 
         private static void StyleToolbarButton(Button button, bool primary, bool danger)
         {
-            if (button == null)
+            if (button == null) return;
+
+            var image = button.GetComponent<Image>();
+            if (image != null)
             {
-                return;
+                image.sprite = UiThemeTokens.GetRoundedSprite(8);
+                image.type = Image.Type.Sliced;
+                
+                if (primary) image.color = MainUiTheme.Hex("2563EB");
+                else if (danger) image.color = Color.white;
+                else image.color = MainUiTheme.Hex("F8FAFC");
             }
 
-            if (primary)
-            {
-                MainUiTheme.StyleButton(button, MainUiTheme.PrimaryBlue, Color.white, MainUiTheme.PrimaryBlue, true);
-                return;
-            }
+            var outline = button.GetComponent<Outline>();
+            if (outline == null) outline = button.gameObject.AddComponent<Outline>();
+            
+            if (primary) outline.effectColor = MainUiTheme.Hex("2563EB");
+            else if (danger) outline.effectColor = MainUiTheme.Hex("FCA5A5");
+            else outline.effectColor = MainUiTheme.Hex("E5E7EB");
+            
+            outline.effectDistance = new Vector2(1f, -1f);
 
-            if (danger)
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
             {
-                MainUiTheme.StyleButton(button, Color.white, MainUiTheme.DangerRed, MainUiTheme.DangerBorder);
-                return;
+                label.fontSize = 14;
+                label.fontStyle = FontStyle.Bold;
+                if (primary) label.color = Color.white;
+                else if (danger) label.color = MainUiTheme.Hex("DC2626");
+                else label.color = MainUiTheme.Hex("334155");
             }
-
-            MainUiTheme.StyleButton(button, Color.white, MainUiTheme.DeepText, MainUiTheme.Divider);
         }
 
         private RectTransform EnsureGroup(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta, TextAnchor childAlignment, float spacing)
