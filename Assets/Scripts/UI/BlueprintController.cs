@@ -269,15 +269,6 @@ namespace ElectricalSim.UI
                     text.color = MainUiTheme.Hex("1F2937");
                 }
             }
-            
-            var images = card.GetComponentsInChildren<Image>(true);
-            foreach (var img in images)
-            {
-                if (img.gameObject.name == "Backplate")
-                {
-                    UnityEngine.Object.DestroyImmediate(img.gameObject);
-                }
-            }
         }
 
         private static void StyleTagParent(Text text, Color bgColor, Color borderColor, int radius, bool keepInteractable)
@@ -329,8 +320,16 @@ namespace ElectricalSim.UI
             var rect = go.GetComponent<RectTransform>();
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
-            rect.offsetMin = new Vector2(-12, -4);
-            rect.offsetMax = new Vector2(12, 4);
+            if (radius == 99)
+            {
+                rect.offsetMin = new Vector2(-12, -4);
+                rect.offsetMax = new Vector2(12, 4);
+            }
+            else
+            {
+                rect.offsetMin = new Vector2(-8, -4);
+                rect.offsetMax = new Vector2(8, 4);
+            }
 
             var backplateImg = go.GetComponent<Image>();
             backplateImg.sprite = UiThemeTokens.GetRoundedSprite(radius);
