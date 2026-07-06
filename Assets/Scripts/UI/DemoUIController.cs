@@ -125,13 +125,13 @@ namespace ElectricalSim.UI
             var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(720f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleLeft, 8f);
             var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0.53f, 0.5f), new Vector2(0.53f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(188f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleCenter, 10f);
 
-            MoveButtonToGroup(startButton, leftGroup, new Vector2(108f, MainUiTheme.ToolbarButtonHeight), "开始仿真");
-            MoveButtonToGroup(undoButton, leftGroup, new Vector2(76f, MainUiTheme.ToolbarButtonHeight), "撤销");
-            MoveButtonToGroup(redoButton, leftGroup, new Vector2(76f, MainUiTheme.ToolbarButtonHeight), "重做");
-            MoveButtonToGroup(quickDeleteButton, leftGroup, new Vector2(80f, MainUiTheme.ToolbarButtonHeight), "删除");
-            MoveButtonToGroup(clearWiresButton, leftGroup, new Vector2(80f, MainUiTheme.ToolbarButtonHeight), "清线");
-            MoveButtonToGroup(clearAllButton, leftGroup, new Vector2(80f, MainUiTheme.ToolbarButtonHeight), "清空");
-            MoveButtonToGroup(lockButton, leftGroup, new Vector2(80f, MainUiTheme.ToolbarButtonHeight), "锁定");
+            MoveButtonToGroup(startButton, leftGroup, new Vector2(120f, MainUiTheme.ToolbarButtonHeight), "开始仿真");
+            MoveButtonToGroup(undoButton, leftGroup, new Vector2(96f, MainUiTheme.ToolbarButtonHeight), "撤销");
+            MoveButtonToGroup(redoButton, leftGroup, new Vector2(96f, MainUiTheme.ToolbarButtonHeight), "重做");
+            MoveButtonToGroup(quickDeleteButton, leftGroup, new Vector2(96f, MainUiTheme.ToolbarButtonHeight), "删除");
+            MoveButtonToGroup(clearWiresButton, leftGroup, new Vector2(96f, MainUiTheme.ToolbarButtonHeight), "清线");
+            MoveButtonToGroup(clearAllButton, leftGroup, new Vector2(96f, MainUiTheme.ToolbarButtonHeight), "清空");
+            MoveButtonToGroup(lockButton, leftGroup, new Vector2(96f, MainUiTheme.ToolbarButtonHeight), "锁定");
 
             StyleToolbarButton(startButton, true, false);
             StyleToolbarButton(undoButton, false, false);
@@ -167,9 +167,10 @@ namespace ElectricalSim.UI
                 labelGo.transform.SetAsFirstSibling();
                 var labelText = labelGo.GetComponent<Text>();
                 labelText.text = "导线颜色";
-                MainUiTheme.ApplyText(labelText, 16, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+                MainUiTheme.ApplyText(labelText, 18, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+                labelText.horizontalOverflow = HorizontalWrapMode.Overflow;
                 var rt = labelText.rectTransform;
-                rt.sizeDelta = new Vector2(72f, 28f);
+                rt.sizeDelta = new Vector2(96f, 28f);
             }
 
             for (var i = 0; i < colorButtons.Count; i++)
@@ -283,8 +284,8 @@ namespace ElectricalSim.UI
             iconRect.anchorMin = new Vector2(0f, 0.5f);
             iconRect.anchorMax = new Vector2(0f, 0.5f);
             iconRect.pivot = new Vector2(0f, 0.5f);
-            iconRect.anchoredPosition = new Vector2(0f, 0f);
-            iconRect.sizeDelta = new Vector2(132f, 42f);
+            iconRect.anchoredPosition = new Vector2(16f, 0f);
+            iconRect.sizeDelta = new Vector2(48f, 48f);
 
             var image = iconRect.GetComponent<Image>() ?? iconRect.gameObject.AddComponent<Image>();
             image.sprite = sprite;
@@ -302,12 +303,13 @@ namespace ElectricalSim.UI
 
             titleRect.anchorMin = Vector2.zero;
             titleRect.anchorMax = Vector2.one;
-            titleRect.offsetMin = new Vector2(146f, 0f);
+            titleRect.offsetMin = new Vector2(76f, 0f);
             titleRect.offsetMax = Vector2.zero;
 
             var titleText = titleRect.GetComponent<Text>() ?? titleRect.gameObject.AddComponent<Text>();
             titleText.text = titleValue;
-            MainUiTheme.ApplyText(titleText, 20, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+            MainUiTheme.ApplyText(titleText, 30, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+            titleText.resizeTextForBestFit = false;
             titleText.raycastTarget = false;
 
             iconRect.SetAsFirstSibling();
@@ -355,10 +357,10 @@ namespace ElectricalSim.UI
             {
                 label.rectTransform.anchorMin = Vector2.zero;
                 label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = new Vector2(40f, 0f);
-                label.rectTransform.offsetMax = new Vector2(0f, 0f);
+                label.rectTransform.offsetMin = new Vector2(44f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-4f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
-                label.fontSize = 16;
+                label.fontSize = 18;
             }
         }
 
