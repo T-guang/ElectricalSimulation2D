@@ -65,6 +65,7 @@ namespace ElectricalSim.Core
 
             wireManager.Initialize(wireLayer, this);
             EnsureComponentParameterView();
+            ClearActionLog();
         }
 
         private void Update()
@@ -635,13 +636,32 @@ namespace ElectricalSim.Core
                 return;
             }
 
-            if (actionLogEntries.Count > 0 && actionLogEntries[actionLogEntries.Count - 1].EndsWith(message))
+            if (actionLogEntries.Count > 0 && actionLogEntries[actionLogEntries.Count - 1].Contains(message))
             {
                 return;
             }
 
-            actionLogEntries.Add("[" + System.DateTime.Now.ToString("HH:mm:ss") + "] " + message);
+            string timeStr = $"<color=#94A3B8>{System.DateTime.Now.ToString("HH:mm:ss")}</color>";
+            string msgColor = "#1F2937";
+
+            if (message.Contains("失败") || message.Contains("错误"))
+            {
+                msgColor = "#DC2626";
+            }
+            else if (message.Contains("完成") || message.Contains("成功"))
+            {
+                msgColor = "#16A34A";
+            }
+            else if (message.Contains("无法") || message.Contains("没有"))
+            {
+                msgColor = "#EA580C";
+            }
+
+            string formattedMessage = $"{timeStr}  <color={msgColor}>{message}</color>";
+            actionLogEntries.Add(formattedMessage);
             TrimActionLogEntries();
+            
+            actionLogText.supportRichText = true;
             actionLogText.text = string.Join("\n", actionLogEntries);
 
             if (actionLogScrollRect != null)
@@ -656,7 +676,8 @@ namespace ElectricalSim.Core
             actionLogEntries.Clear();
             if (actionLogText != null)
             {
-                actionLogText.text = "";
+                actionLogText.supportRichText = true;
+                actionLogText.text = "<color=#94A3B8><b>暂无操作记录</b>\n\n拖拽元件、接线、仿真和检查操作会显示在这里。</color>";
             }
         }
 

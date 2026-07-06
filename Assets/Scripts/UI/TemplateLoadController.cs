@@ -1,4 +1,4 @@
-﻿using ElectricalSim.Core;
+using ElectricalSim.Core;
 using ElectricalSim.Templates;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -298,7 +298,7 @@ namespace ElectricalSim.UI
             label.rectTransform.offsetMin = Vector2.zero;
             label.rectTransform.offsetMax = Vector2.zero;
             label.text = "加载图纸";
-            MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
+            MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter, false);
             label.raycastTarget = false;
             ApplyFileButtonIcon(button, "Toolbar/ui_toolbar_load_blueprint_24", MainUiTheme.MutedText);
 
@@ -385,7 +385,7 @@ namespace ElectricalSim.UI
             var label = buttonObject.GetComponentInChildren<Text>();
             if (label != null)
             {
-                MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
+                MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter, false);
             }
         }
 
@@ -437,7 +437,7 @@ namespace ElectricalSim.UI
             go.transform.SetParent(parent, false);
             var label = go.GetComponent<Text>();
             label.text = text;
-            MainUiTheme.ApplyText(label, size, style, color, TextAnchor.UpperLeft);
+            MainUiTheme.ApplyText(label, size, style, color, TextAnchor.UpperLeft, false);
             label.raycastTarget = false;
             return label;
         }

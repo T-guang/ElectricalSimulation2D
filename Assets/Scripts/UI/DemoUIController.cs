@@ -168,7 +168,7 @@ namespace ElectricalSim.UI
                 labelGo.transform.SetAsFirstSibling();
                 var labelText = labelGo.GetComponent<Text>();
                 labelText.text = "导线颜色";
-                MainUiTheme.ApplyText(labelText, 14, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleCenter);
+                MainUiTheme.ApplyText(labelText, 14, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleCenter, false);
                 labelText.horizontalOverflow = HorizontalWrapMode.Overflow;
                 var rt = labelText.rectTransform;
                 rt.sizeDelta = new Vector2(72f, 28f);
@@ -309,7 +309,7 @@ namespace ElectricalSim.UI
 
             var titleText = titleRect.GetComponent<Text>() ?? titleRect.gameObject.AddComponent<Text>();
             titleText.text = titleValue;
-            MainUiTheme.ApplyText(titleText, 30, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+            MainUiTheme.ApplyText(titleText, 22, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft, true);
             titleText.resizeTextForBestFit = false;
             titleText.raycastTarget = false;
 
@@ -456,7 +456,7 @@ namespace ElectricalSim.UI
             go.transform.SetParent(parent, false);
             var text = go.GetComponent<Text>();
             text.text = value;
-            MainUiTheme.ApplyText(text, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
+            MainUiTheme.ApplyText(text, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter, false);
             text.resizeTextForBestFit = true;
             text.resizeTextMinSize = 10;
             text.resizeTextMaxSize = 14;
@@ -512,7 +512,7 @@ namespace ElectricalSim.UI
                 text.resizeTextForBestFit = true;
                 text.resizeTextMinSize = 10;
                 text.resizeTextMaxSize = 14;
-                text.font = MainUiTheme.MainFont;
+                text.font = MainUiTheme.BodyFont;
             }
         }
 
@@ -601,7 +601,7 @@ namespace ElectricalSim.UI
                     continue;
                 }
 
-                text.font = MainUiTheme.MainFont;
+                text.font = MainUiTheme.BodyFont;
                 if (text.fontSize <= 0 || text.fontSize == 16)
                 {
                     text.fontSize = defaultSize;
@@ -641,7 +641,7 @@ namespace ElectricalSim.UI
 
                 if (label != null)
                 {
-                    MainUiTheme.ApplyText(label, 15, selected ? FontStyle.Bold : FontStyle.Normal, selected ? MainUiTheme.PrimaryBlue : MainUiTheme.NormalText, TextAnchor.MiddleCenter);
+                    MainUiTheme.ApplyText(label, 15, selected ? FontStyle.Bold : FontStyle.Normal, selected ? MainUiTheme.PrimaryBlue : MainUiTheme.NormalText, TextAnchor.MiddleCenter, true);
                 }
             }
         }

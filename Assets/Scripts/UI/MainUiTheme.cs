@@ -28,32 +28,45 @@ namespace ElectricalSim.UI
         public static readonly Color GridMinor = Hex("EAF0F7");
         public static readonly Color GridMajor = Hex("D7E2F0");
 
-        private static Font mainFont;
-        public static Font MainFont
+        private static Font titleFont;
+        public static Font TitleFont
         {
             get
             {
-                if (mainFont == null)
+                if (titleFont == null)
                 {
-                    mainFont = Resources.Load<Font>("UI/Fonts/Maoken");
-                    if (mainFont == null)
+                    titleFont = Resources.Load<Font>("UI/Fonts/Maoken");
+                    if (titleFont == null)
                     {
-                        mainFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                        titleFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                     }
                 }
-                return mainFont;
+                return titleFont;
             }
         }
 
-        public static void ApplyText(Text text, int size, FontStyle style, Color color, TextAnchor alignment)
+        private static Font bodyFont;
+        public static Font BodyFont
+        {
+            get
+            {
+                if (bodyFont == null)
+                {
+                    bodyFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                }
+                return bodyFont;
+            }
+        }
+
+        public static void ApplyText(Text text, int size, FontStyle style, Color color, TextAnchor alignment, bool isTitle = false)
         {
             if (text == null)
             {
                 return;
             }
 
-            text.font = MainFont;
-            text.fontSize = size + 2;
+            text.font = isTitle ? TitleFont : BodyFont;
+            text.fontSize = isTitle ? size + 2 : size;
             text.fontStyle = style;
             text.color = color;
             text.alignment = alignment;

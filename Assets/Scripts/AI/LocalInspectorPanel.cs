@@ -120,7 +120,7 @@ namespace ElectricalSim.AI
             rootLayout.childForceExpandHeight = false;
 
             var header = CreatePanelSection("Header", root, HeaderHeight, 0f, MainUiTheme.SelectedBlue);
-            titleText = CreateText("Title", header, "检查助手", 20, TextAnchor.MiddleLeft);
+            titleText = CreateText("Title", header, "检查助手", 16, TextAnchor.MiddleLeft, true, FontStyle.Bold);
             titleText.fontStyle = FontStyle.Bold;
             titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
             titleText.rectTransform.offsetMax = new Vector2(-14f, 0f);
@@ -209,7 +209,7 @@ namespace ElectricalSim.AI
                 labelRect.offsetMax = Vector2.zero;
 
                 var label = labelRect.gameObject.AddComponent<Text>();
-                MainUiTheme.ApplyText(label, 21, FontStyle.Bold, MainUiTheme.MutedText, TextAnchor.MiddleCenter);
+                MainUiTheme.ApplyText(label, 21, FontStyle.Bold, MainUiTheme.MutedText, TextAnchor.MiddleCenter, false);
                 label.raycastTarget = false;
             }
 
@@ -2766,13 +2766,13 @@ namespace ElectricalSim.AI
             return go.GetComponent<RectTransform>();
         }
 
-        private static Text CreateText(string name, Transform parent, string text, int fontSize, TextAnchor alignment)
+        private static Text CreateText(string name, Transform parent, string text, int fontSize, TextAnchor alignment, bool isTitle = false, FontStyle style = FontStyle.Normal)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Text));
             go.transform.SetParent(parent, false);
             var label = go.GetComponent<Text>();
             label.text = text;
-            MainUiTheme.ApplyText(label, fontSize, FontStyle.Normal, MainUiTheme.DeepText, alignment);
+            MainUiTheme.ApplyText(label, fontSize, style, MainUiTheme.DeepText, alignment, isTitle);
             label.raycastTarget = false;
 
             var rect = label.rectTransform;
@@ -2819,7 +2819,7 @@ namespace ElectricalSim.AI
 
             var text = CreateText("Text", go.transform, label, 14, TextAnchor.MiddleCenter);
             text.color = textColor;
-            text.font = MainUiTheme.MainFont;
+            text.font = MainUiTheme.BodyFont;
             text.resizeTextForBestFit = true;
             text.resizeTextMinSize = 10;
             text.resizeTextMaxSize = 14;
