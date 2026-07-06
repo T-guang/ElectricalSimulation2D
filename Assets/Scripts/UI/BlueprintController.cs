@@ -242,7 +242,6 @@ namespace ElectricalSim.UI
                     text.fontSize = 20;
                     text.fontStyle = FontStyle.Bold;
                     text.color = Color.white;
-                    StyleTagParent(text, MainUiTheme.PrimaryBlue, MainUiTheme.PrimaryBlue, 8, true);
                 }
                 else if (IsCategoryLabel(text.text) || IsDifficultyLabel(text.text))
                 {
@@ -273,14 +272,39 @@ namespace ElectricalSim.UI
 
         private static void StyleTagParent(Text text, Color bgColor, Color borderColor, int radius, bool keepInteractable)
         {
+            if (text == null) return;
+
             var parent = text.transform.parent;
             if (parent == null || parent == text.transform) return;
 
-            var img = parent.GetComponent<Image>();
-            if (img != null)
+            for (var i = parent.childCount - 1; i >= 0; i--)
             {
-                img.enabled = false;
+                var child = parent.GetChild(i);
+                if (child != null && child.name == "Backplate")
+                {
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                }
             }
+
+            var parentRect = parent.GetComponent<RectTransform>();
+            if (parentRect != null)
+            {
+                var isPill = radius >= 90;
+                parentRect.sizeDelta = isPill
+                    ? new Vector2(Mathf.Max(parentRect.sizeDelta.x, 64f), 26f)
+                    : new Vector2(Mathf.Max(parentRect.sizeDelta.x, 96f), 32f);
+            }
+
+            var img = parent.GetComponent<Image>();
+            if (img == null)
+            {
+                img = parent.gameObject.AddComponent<Image>();
+            }
+
+            img.enabled = true;
+            img.sprite = UiThemeTokens.GetRoundedSprite(radius >= 90 ? 13 : radius);
+            img.type = Image.Type.Sliced;
+            img.color = bgColor;
 
             var outline = parent.GetComponent<UnityEngine.UI.Outline>();
             if (outline != null)
@@ -288,60 +312,46 @@ namespace ElectricalSim.UI
                 UnityEngine.Object.DestroyImmediate(outline);
             }
 
+            if (bgColor != borderColor)
+            {
+                outline = parent.gameObject.AddComponent<UnityEngine.UI.Outline>();
+                outline.effectColor = borderColor;
+                outline.effectDistance = new Vector2(1f, -1f);
+            }
+
             var btn = parent.GetComponent<Button>();
             if (btn != null)
             {
-                if (keepInteractable)
-                {
-                    var colors = btn.colors;
-                    colors.normalColor = Color.white;
-                    colors.highlightedColor = Color.white;
-                    colors.pressedColor = new Color(0.9f, 0.9f, 0.9f);
-                    colors.selectedColor = Color.white;
-                    btn.colors = colors;
+                var colors = btn.colors;
+                colors.normalColor = Color.white;
+                colors.highlightedColor = Color.white;
+                colors.pressedColor = Color.white;
+                colors.selectedColor = Color.white;
+                btn.colors = colors;
 
-                    var nav = btn.navigation;
-                    nav.mode = Navigation.Mode.None;
-                    btn.navigation = nav;
-                }
-                else
+                var nav = btn.navigation;
+                nav.mode = Navigation.Mode.None;
+                btn.navigation = nav;
+
+                if (!keepInteractable)
                 {
-                    UnityEngine.Object.DestroyImmediate(btn);
+                    btn.interactable = false;
                 }
             }
 
+            var textRect = text.GetComponent<RectTransform>();
+            if (textRect != null)
+            {
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.offsetMin = new Vector2(6f, 0f);
+                textRect.offsetMax = new Vector2(-6f, 0f);
+            }
+
+            text.alignment = TextAnchor.MiddleCenter;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
-
-            var go = new GameObject("Backplate", typeof(RectTransform), typeof(Image));
-            go.transform.SetParent(parent, false);
-            go.transform.SetSiblingIndex(text.transform.GetSiblingIndex());
-
-            var rect = go.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            if (radius == 99)
-            {
-                rect.offsetMin = new Vector2(-12, -4);
-                rect.offsetMax = new Vector2(12, 4);
-            }
-            else
-            {
-                rect.offsetMin = new Vector2(-8, -4);
-                rect.offsetMax = new Vector2(8, 4);
-            }
-
-            var backplateImg = go.GetComponent<Image>();
-            backplateImg.sprite = UiThemeTokens.GetRoundedSprite(radius);
-            backplateImg.type = Image.Type.Sliced;
-            backplateImg.color = bgColor;
-
-            if (bgColor != borderColor)
-            {
-                var bpOutline = go.AddComponent<UnityEngine.UI.Outline>();
-                bpOutline.effectColor = borderColor;
-                bpOutline.effectDistance = new Vector2(1, -1);
-            }
+            text.resizeTextForBestFit = false;
         }
 
         private void StyleModal(GameObject modal)
