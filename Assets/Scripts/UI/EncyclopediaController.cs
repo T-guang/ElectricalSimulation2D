@@ -908,8 +908,8 @@ namespace ElectricalSim.UI
 
             if (cachedTitleFont == null)
             {
-                Debug.LogWarning("未找到猫啃风字体资源，标题已回退到 Arial.ttf。");
-                cachedTitleFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                Debug.LogWarning("未找到猫啃风字体资源，标题已回退到内置字体。");
+                cachedTitleFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             }
 
             return cachedTitleFont;
@@ -919,7 +919,7 @@ namespace ElectricalSim.UI
         {
             if (cachedBodyFont != null) return cachedBodyFont;
 
-            cachedBodyFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            cachedBodyFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             return cachedBodyFont;
         }
