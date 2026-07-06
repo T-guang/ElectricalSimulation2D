@@ -287,7 +287,7 @@ namespace ElectricalSim.UI
             iconRect.anchorMin = new Vector2(0f, 0.5f);
             iconRect.anchorMax = new Vector2(0f, 0.5f);
             iconRect.pivot = new Vector2(0f, 0.5f);
-            iconRect.anchoredPosition = new Vector2(16f, 0f);
+            iconRect.anchoredPosition = new Vector2(16f, 6f);
             iconRect.sizeDelta = new Vector2(48f, 48f);
 
             var image = iconRect.GetComponent<Image>() ?? iconRect.gameObject.AddComponent<Image>();
@@ -306,8 +306,8 @@ namespace ElectricalSim.UI
 
             titleRect.anchorMin = Vector2.zero;
             titleRect.anchorMax = Vector2.one;
-            titleRect.offsetMin = new Vector2(76f, 0f);
-            titleRect.offsetMax = Vector2.zero;
+            titleRect.offsetMin = new Vector2(76f, 6f);
+            titleRect.offsetMax = new Vector2(0f, 6f);
 
             var titleText = titleRect.GetComponent<Text>() ?? titleRect.gameObject.AddComponent<Text>();
             titleText.text = titleValue;
