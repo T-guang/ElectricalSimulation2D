@@ -999,23 +999,18 @@ namespace ElectricalSim.UI
 
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 36f);
 
-            var iconGo = CreateObject("Icon", go.transform, typeof(RectTransform), typeof(Image));
-            var iconRect = iconGo.GetComponent<RectTransform>();
-            iconRect.sizeDelta = new Vector2(20f, 20f);
-            var iconImg = iconGo.GetComponent<Image>();
-            iconImg.color = MainUiTheme.Hex("6B7280");
-            
-            var spriteName = GetFilterIconName(text);
-            var sprite = Resources.Load<Sprite>("Icons/" + spriteName);
+            var sprite = GetFilterIconSprite(text);
             if (sprite != null)
             {
+                var iconGo = CreateObject("Icon", go.transform, typeof(RectTransform), typeof(Image));
+                var iconRect = iconGo.GetComponent<RectTransform>();
+                iconRect.sizeDelta = new Vector2(20f, 20f);
+                var iconImg = iconGo.GetComponent<Image>();
+                iconImg.color = MainUiTheme.Hex("6B7280");
                 iconImg.sprite = sprite;
                 iconImg.type = Image.Type.Simple;
                 iconImg.preserveAspect = true;
-            }
-            else
-            {
-                iconImg.sprite = UiThemeTokens.GetRoundedSprite(8);
+                iconImg.raycastTarget = false;
             }
 
             var label = CreateText("Text", go.transform, text, 16, FontStyle.Normal, MainUiTheme.Hex("464646"));
@@ -1024,20 +1019,21 @@ namespace ElectricalSim.UI
             return btn;
         }
 
-        private string GetFilterIconName(string filter)
+        private Sprite GetFilterIconSprite(string filterName)
         {
-            switch (filter)
+            string path = null;
+            switch (filterName)
             {
-                case "全部": return "ic_all";
-                case "推荐": return "ic_star";
-                case "家庭电路": return "ic_home";
-                case "工业电路": return "ic_industry";
-                case "电机控制": return "ic_motor";
-                case "正反转": return "ic_rotate";
-                case "星三角": return "ic_triangle";
-                case "自动往返": return "ic_arrows";
-                default: return "ic_default";
+                case "全部": path = "UIAssets/Filter/ui_filter_all_24"; break;
+                case "推荐": path = "UIAssets/Filter/ui_filter_recommend_24"; break;
+                case "家庭电路": path = "UIAssets/Filter/ui_filter_home_24"; break;
+                case "工业电路": path = "UIAssets/Filter/ui_filter_industry_24"; break;
+                case "电机控制": path = "UIAssets/Filter/ui_filter_motor_24"; break;
+                case "正反转": path = "UIAssets/Filter/ui_filter_reverse_24"; break;
+                case "星三角": path = "UIAssets/Filter/ui_filter_star_delta_24"; break;
+                case "自动往返": path = "UIAssets/Filter/ui_filter_auto_reciprocating_24"; break;
             }
+            return string.IsNullOrEmpty(path) ? null : Resources.Load<Sprite>(path);
         }
 
         private Button CreateButton(Transform parent, string text, Color background, Color textColor)
@@ -1070,12 +1066,34 @@ namespace ElectricalSim.UI
             image.color = Color.white;
 
             var text = CreateText("Text", go.transform, string.Empty, 14, FontStyle.Normal, TextPrimary);
-            Stretch(text.rectTransform, 12f, 10f, 4f, 4f);
             text.alignment = TextAnchor.MiddleLeft;
 
             var hint = CreateText("Placeholder", go.transform, placeholder, 14, FontStyle.Normal, HexColor(0x94A3B8));
-            Stretch(hint.rectTransform, 12f, 10f, 4f, 4f);
             hint.alignment = TextAnchor.MiddleLeft;
+
+            var iconSprite = Resources.Load<Sprite>("UIAssets/Common/ui_common_search_24");
+            if (iconSprite != null)
+            {
+                var iconGo = CreateObject("SearchIcon", go.transform, typeof(RectTransform), typeof(Image));
+                var iconRect = iconGo.GetComponent<RectTransform>();
+                iconRect.anchorMin = new Vector2(0f, 0.5f);
+                iconRect.anchorMax = new Vector2(0f, 0.5f);
+                iconRect.pivot = new Vector2(0f, 0.5f);
+                iconRect.anchoredPosition = new Vector2(10f, 0f);
+                iconRect.sizeDelta = new Vector2(18f, 18f);
+                var iconImg = iconGo.GetComponent<Image>();
+                iconImg.sprite = iconSprite;
+                iconImg.color = MainUiTheme.Hex("94A3B8");
+                iconImg.raycastTarget = false;
+
+                Stretch(text.rectTransform, 36f, 10f, 4f, 4f);
+                Stretch(hint.rectTransform, 36f, 10f, 4f, 4f);
+            }
+            else
+            {
+                Stretch(text.rectTransform, 12f, 10f, 4f, 4f);
+                Stretch(hint.rectTransform, 12f, 10f, 4f, 4f);
+            }
 
             var input = go.GetComponent<InputField>();
             input.textComponent = text;
@@ -1097,13 +1115,31 @@ namespace ElectricalSim.UI
             Stretch(label.rectTransform, 12f, 28f, 0f, 0f);
             label.alignment = TextAnchor.MiddleLeft;
 
-            var arrow = CreateText("Arrow", go.transform, "▼", 12, FontStyle.Normal, TextSecondary);
-            arrow.alignment = TextAnchor.MiddleCenter;
-            arrow.rectTransform.anchorMin = new Vector2(1f, 0f);
-            arrow.rectTransform.anchorMax = new Vector2(1f, 1f);
-            arrow.rectTransform.pivot = new Vector2(1f, 0.5f);
-            arrow.rectTransform.offsetMin = new Vector2(-28f, 0f);
-            arrow.rectTransform.offsetMax = new Vector2(0f, 0f);
+            var iconSprite = Resources.Load<Sprite>("UIAssets/Common/ui_common_dropdown_24");
+            if (iconSprite != null)
+            {
+                var arrowGo = CreateObject("Arrow", go.transform, typeof(RectTransform), typeof(Image));
+                var arrowRect = arrowGo.GetComponent<RectTransform>();
+                arrowRect.anchorMin = new Vector2(1f, 0.5f);
+                arrowRect.anchorMax = new Vector2(1f, 0.5f);
+                arrowRect.pivot = new Vector2(1f, 0.5f);
+                arrowRect.anchoredPosition = new Vector2(-10f, 0f);
+                arrowRect.sizeDelta = new Vector2(18f, 18f);
+                var arrowImg = arrowGo.GetComponent<Image>();
+                arrowImg.sprite = iconSprite;
+                arrowImg.color = TextSecondary;
+                arrowImg.raycastTarget = false;
+            }
+            else
+            {
+                var arrow = CreateText("Arrow", go.transform, "▼", 12, FontStyle.Normal, TextSecondary);
+                arrow.alignment = TextAnchor.MiddleCenter;
+                arrow.rectTransform.anchorMin = new Vector2(1f, 0f);
+                arrow.rectTransform.anchorMax = new Vector2(1f, 1f);
+                arrow.rectTransform.pivot = new Vector2(1f, 0.5f);
+                arrow.rectTransform.offsetMin = new Vector2(-28f, 0f);
+                arrow.rectTransform.offsetMax = new Vector2(0f, 0f);
+            }
 
             var dropdown = go.GetComponent<Dropdown>();
             dropdown.captionText = label;
