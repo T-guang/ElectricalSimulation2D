@@ -2619,11 +2619,11 @@ namespace ElectricalSim.AI
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var title = CreateLayoutText("Title", go.transform, ResolveReportTitle(message), 15, TextAnchor.UpperLeft, 22f);
+            var title = CreateLayoutText("Title", go.transform, ResolveReportTitle(message), 16, TextAnchor.UpperLeft, 24f);
             title.fontStyle = FontStyle.Bold;
             title.color = ResolveReportTitleColor(message);
 
-            var body = CreateLayoutText("Body", go.transform, StripLeadingReportTitle(message), 13, TextAnchor.UpperLeft, 0f);
+            var body = CreateLayoutText("Body", go.transform, StripLeadingReportTitle(message), 14, TextAnchor.UpperLeft, 0f);
             body.color = MainUiTheme.SecondaryText;
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
             body.verticalOverflow = VerticalWrapMode.Overflow;

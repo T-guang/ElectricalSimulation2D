@@ -113,6 +113,7 @@ namespace ElectricalSim.UI
             title.pivot = new Vector2(0.5f, 1f);
             title.anchoredPosition = new Vector2(0f, -16f);
             title.sizeDelta = new Vector2(-PalettePadding * 2f, 38f);
+            title.gameObject.SetActive(true);
             
             var titleText = title.GetComponent<Text>();
             if (titleText != null)
@@ -342,9 +343,9 @@ namespace ElectricalSim.UI
                 layout.childAlignment = TextAnchor.MiddleLeft;
             }
 
-            allFilterButton = allFilterButton != null ? allFilterButton : EnsureFilterButton(row, "Filter_All", "全部", 56f);
-            householdFilterButton = householdFilterButton != null ? householdFilterButton : EnsureFilterButton(row, "Filter_Household", "家庭电路组件", 118f);
-            industrialFilterButton = industrialFilterButton != null ? industrialFilterButton : EnsureFilterButton(row, "Filter_Industrial", "工业电路组件", 118f);
+            allFilterButton = allFilterButton != null ? allFilterButton : EnsureFilterButton(row, "Filter_All", "全部", 72f);
+            householdFilterButton = householdFilterButton != null ? householdFilterButton : EnsureFilterButton(row, "Filter_Household", "家庭电路组件", 136f);
+            industrialFilterButton = industrialFilterButton != null ? industrialFilterButton : EnsureFilterButton(row, "Filter_Industrial", "工业电路组件", 136f);
         }
 
         private Button EnsureFilterButton(RectTransform row, string name, string label, float width)
@@ -541,6 +542,17 @@ namespace ElectricalSim.UI
                 var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
                 viewportImage.color = MainUiTheme.PanelBackground;
                 viewportImage.raycastTarget = true;
+
+                var actionLogText = viewport.Find("ActionLogText") as RectTransform;
+                if (actionLogText != null)
+                {
+                    var text = actionLogText.GetComponent<Text>();
+                    if (text != null)
+                    {
+                        MainUiTheme.ApplyText(text, 14, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperLeft);
+                        text.lineSpacing = 1.25f;
+                    }
+                }
             }
         }
 
