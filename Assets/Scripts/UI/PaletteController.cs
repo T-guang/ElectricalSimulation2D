@@ -33,9 +33,9 @@ namespace ElectricalSim.UI
         private const float CollapseHandleSize = 36f;
         private const float CardWidth = 96f;
         private const float CardHeight = 132f;
-        private const float CardGapX = 10f;
+        private const float CardGapX = 16f;
         private const float CardGapY = 12f;
-        private const float ContentLeft = 8f;
+        private const float ContentLeft = 14f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
         private const float OperationLogHeight = 180f;
@@ -488,13 +488,13 @@ namespace ElectricalSim.UI
 
         private void EnsureActionLogLayout()
         {
-            var parent = transform.parent;
-            if (parent == null)
+            var simRoot = transform.parent != null ? transform.parent.parent : null;
+            if (simRoot == null)
             {
                 return;
             }
 
-            var logPanel = parent.Find("ActionLogPanel") as RectTransform;
+            var logPanel = simRoot.Find("ActionLogPanel") as RectTransform;
             if (logPanel == null)
             {
                 return;
