@@ -488,7 +488,12 @@ namespace ElectricalSim.UI
 
         private void EnsureActionLogLayout()
         {
-            var simRoot = transform.parent != null ? transform.parent.parent : null;
+            var simRoot = transform.parent;
+            while (simRoot != null && simRoot.name != "SimulationPage")
+            {
+                simRoot = simRoot.parent;
+            }
+
             if (simRoot == null)
             {
                 return;
@@ -508,6 +513,7 @@ namespace ElectricalSim.UI
             logPanel.SetAsLastSibling();
 
             var panelImage = logPanel.GetComponent<Image>() ?? logPanel.gameObject.AddComponent<Image>();
+            panelImage.enabled = true;
             panelImage.sprite = UiThemeTokens.GetRoundedSprite(8);
             panelImage.type = Image.Type.Sliced;
             panelImage.color = MainUiTheme.PanelBackground;
@@ -597,6 +603,7 @@ namespace ElectricalSim.UI
                 var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
 
                 var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
+                viewportImage.enabled = true;
                 viewportImage.color = MainUiTheme.PanelBackground;
                 viewportImage.raycastTarget = true;
 

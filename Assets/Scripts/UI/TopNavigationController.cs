@@ -83,7 +83,7 @@ namespace ElectricalSim.UI
                 }
             }
 
-            var titleTransform = transform.Find("Title");
+            var titleTransform = transform.Find("Logo") ?? transform.Find("Title");
             if (titleTransform != null)
             {
                 var titleText = titleTransform.Find("Text")?.GetComponent<Text>();
@@ -91,7 +91,7 @@ namespace ElectricalSim.UI
                 if (titleText != null)
                 {
                     titleText.color = UiThemeTokens.TextDark;
-                    titleText.fontSize = 30;
+                    titleText.fontSize = 28;
                     titleText.fontStyle = FontStyle.Bold;
                     titleText.resizeTextForBestFit = false;
                 }
@@ -103,11 +103,17 @@ namespace ElectricalSim.UI
                     iconObj.transform.SetAsFirstSibling();
                     var img = iconObj.GetComponent<Image>();
                     img.sprite = Resources.Load<Sprite>("UI/Icons/ui_sidebar_yalong_logo_320");
+                    img.preserveAspect = true;
                     var rt = iconObj.GetComponent<RectTransform>();
-                    rt.sizeDelta = new Vector2(24f, 24f);
+                    rt.sizeDelta = new Vector2(36f, 36f);
                     
-                    var hz = titleTransform.GetComponent<HorizontalLayoutGroup>();
-                    if (hz != null) hz.spacing = 8f;
+                    var hz = titleTransform.GetComponent<HorizontalLayoutGroup>() ?? titleTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
+                    hz.spacing = 10f;
+                    hz.childAlignment = TextAnchor.MiddleLeft;
+                    hz.childForceExpandHeight = false;
+                    hz.childForceExpandWidth = false;
+                    hz.childControlHeight = false;
+                    hz.childControlWidth = false;
                 }
             }
 
