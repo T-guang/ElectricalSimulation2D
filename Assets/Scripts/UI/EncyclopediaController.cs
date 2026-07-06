@@ -116,7 +116,7 @@ namespace ElectricalSim.UI
 
         private void CreateHeader()
         {
-            var title = CreateText("EncyclopediaTitle", transform, "元器件百科", 30, FontStyle.Bold, MainUiTheme.Hex("111827"));
+            var title = CreateText("EncyclopediaTitle", transform, "元器件百科", 30, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
             title.alignment = TextAnchor.MiddleLeft;
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -30f), new Vector2(320f, 54f));
 
@@ -169,7 +169,7 @@ namespace ElectricalSim.UI
             sidebarOutline.effectColor = MainUiTheme.Hex("E2E8F0");
             sidebarOutline.effectDistance = new Vector2(1f, -1f);
 
-            var sidebarTitle = CreateText("SidebarTitle", sidebar, "分类", 20, FontStyle.Bold, MainUiTheme.Hex("1E293B"));
+            var sidebarTitle = CreateText("SidebarTitle", sidebar, "分类", 20, FontStyle.Bold, MainUiTheme.Hex("1E293B"), true);
             sidebarTitle.alignment = TextAnchor.MiddleLeft;
             SetRect(sidebarTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(20f, -18f), new Vector2(-40f, 40f));
 
@@ -402,7 +402,7 @@ namespace ElectricalSim.UI
             infoLayout.childForceExpandHeight = false;
             infoLayout.spacing = 6f;
 
-            var name = CreateText("NameText", infoArea, entry.DisplayName, 16, FontStyle.Bold, MainUiTheme.Hex("111827"));
+            var name = CreateText("NameText", infoArea, entry.DisplayName, 16, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
             name.alignment = TextAnchor.MiddleLeft;
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
             name.verticalOverflow = VerticalWrapMode.Overflow;
@@ -513,7 +513,7 @@ namespace ElectricalSim.UI
             infoLayout.childForceExpandHeight = false;
             infoLayout.spacing = 6f;
 
-            var title = CreateText("NameText", infoPanel, entry.DisplayName, 24, FontStyle.Bold, MainUiTheme.Hex("111827"));
+            var title = CreateText("NameText", infoPanel, entry.DisplayName, 24, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
             title.alignment = TextAnchor.MiddleLeft;
             title.verticalOverflow = VerticalWrapMode.Overflow;
             title.gameObject.AddComponent<LayoutElement>().preferredHeight = 38f;
@@ -558,7 +558,7 @@ namespace ElectricalSim.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            var titleText = CreateText("Title", card, title, 18, FontStyle.Bold, MainUiTheme.Hex("1E293B"));
+            var titleText = CreateText("Title", card, title, 18, FontStyle.Bold, MainUiTheme.Hex("1E293B"), true);
             titleText.alignment = TextAnchor.MiddleLeft;
             titleText.gameObject.AddComponent<LayoutElement>().preferredHeight = 28f;
 
@@ -889,13 +889,14 @@ namespace ElectricalSim.UI
             return button;
         }
 
-        private static Font cachedUiFont;
+        private static Font cachedTitleFont;
+        private static Font cachedBodyFont;
 
-        private static Font ResolveUiFont()
+        private static Font ResolveTitleFont()
         {
-            if (cachedUiFont != null) return cachedUiFont;
+            if (cachedTitleFont != null) return cachedTitleFont;
 
-            cachedUiFont =
+            cachedTitleFont =
                 Resources.Load<Font>("Fonts/maoken_fengyasong") ??
                 Resources.Load<Font>("Fonts/MaokenFengyasong") ??
                 Resources.Load<Font>("Fonts/maoken") ??
@@ -905,21 +906,30 @@ namespace ElectricalSim.UI
                 Resources.Load<Font>("maoken") ??
                 Resources.Load<Font>("Maoken");
 
-            if (cachedUiFont == null)
+            if (cachedTitleFont == null)
             {
-                Debug.LogWarning("未找到猫啃风字体资源，已回退到 Arial.ttf。请将字体放入 Assets/Resources/Fonts/ 下。");
-                cachedUiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                Debug.LogWarning("未找到猫啃风字体资源，标题已回退到 Arial.ttf。");
+                cachedTitleFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
             }
 
-            return cachedUiFont;
+            return cachedTitleFont;
         }
 
-        private static Text CreateText(string name, Transform parent, string value, int size, FontStyle style, Color color)
+        private static Font ResolveBodyFont()
+        {
+            if (cachedBodyFont != null) return cachedBodyFont;
+
+            cachedBodyFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+            return cachedBodyFont;
+        }
+
+        private static Text CreateText(string name, Transform parent, string value, int size, FontStyle style, Color color, bool useTitleFont = false)
         {
             var text = new GameObject(name, typeof(RectTransform), typeof(Text)).GetComponent<Text>();
             text.transform.SetParent(parent, false);
             text.text = value;
-            text.font = ResolveUiFont();
+            text.font = useTitleFont ? ResolveTitleFont() : ResolveBodyFont();
             text.fontSize = size;
             text.fontStyle = style;
             text.color = color;
