@@ -488,18 +488,15 @@ namespace ElectricalSim.UI
 
         private void EnsureActionLogLayout()
         {
-            var simRoot = transform.parent;
-            while (simRoot != null && simRoot.name != "SimulationPage")
-            {
-                simRoot = simRoot.parent;
-            }
-
-            if (simRoot == null)
+            if (workspace == null)
             {
                 return;
             }
 
-            var logPanel = simRoot.Find("ActionLogPanel") as RectTransform;
+            var field = typeof(WorkspaceController).GetField("actionLogScrollRect", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var scrollRect = field?.GetValue(workspace) as ScrollRect;
+            var logPanel = scrollRect != null ? scrollRect.transform as RectTransform : null;
+
             if (logPanel == null)
             {
                 return;

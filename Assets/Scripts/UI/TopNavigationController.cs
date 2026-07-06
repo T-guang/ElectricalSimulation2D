@@ -96,16 +96,25 @@ namespace ElectricalSim.UI
                     titleText.resizeTextForBestFit = false;
                 }
                 
-                if (titleTransform.Find("Icon") == null)
+                if (titleTransform.Find("IconWrapper") == null)
                 {
+                    var wrapperObj = new GameObject("IconWrapper", typeof(RectTransform));
+                    wrapperObj.transform.SetParent(titleTransform, false);
+                    wrapperObj.transform.SetAsFirstSibling();
+                    var wrapperRt = wrapperObj.GetComponent<RectTransform>();
+                    wrapperRt.sizeDelta = new Vector2(36f, 36f);
+
                     var iconObj = new GameObject("Icon", typeof(RectTransform), typeof(Image));
-                    iconObj.transform.SetParent(titleTransform, false);
-                    iconObj.transform.SetAsFirstSibling();
+                    iconObj.transform.SetParent(wrapperObj.transform, false);
                     var img = iconObj.GetComponent<Image>();
                     img.sprite = Resources.Load<Sprite>("UI/Icons/ui_sidebar_yalong_logo_320");
                     img.preserveAspect = true;
                     var rt = iconObj.GetComponent<RectTransform>();
                     rt.sizeDelta = new Vector2(36f, 36f);
+                    rt.anchorMin = new Vector2(0.5f, 0.5f);
+                    rt.anchorMax = new Vector2(0.5f, 0.5f);
+                    rt.pivot = new Vector2(0.5f, 0.5f);
+                    rt.anchoredPosition = new Vector2(0f, 4f); // Move it up by 4 pixels!
                     
                     var hz = titleTransform.GetComponent<HorizontalLayoutGroup>() ?? titleTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
                     hz.spacing = 10f;
