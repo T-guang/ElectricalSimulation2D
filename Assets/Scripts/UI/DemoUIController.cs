@@ -365,7 +365,8 @@ namespace ElectricalSim.UI
                 label.rectTransform.offsetMin = new Vector2(34f, 0f);
                 label.rectTransform.offsetMax = new Vector2(-6f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
-                label.fontSize = 15;
+                label.fontSize = 17;
+                label.verticalOverflow = VerticalWrapMode.Overflow;
                 if (danger) { label.color = MainUiTheme.DangerRed; }
                 if (primary) { label.color = Color.white; }
             }

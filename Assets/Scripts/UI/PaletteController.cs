@@ -479,6 +479,8 @@ namespace ElectricalSim.UI
             viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + OperationLogMargin + 16f);
             viewport.offsetMax = new Vector2(-PalettePadding, -104f);
 
+            var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
+
             var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
             viewportImage.color = MainUiTheme.PanelBackground;
             viewportImage.raycastTarget = true;
@@ -506,6 +508,7 @@ namespace ElectricalSim.UI
             logPanel.SetAsLastSibling();
 
             var panelImage = logPanel.GetComponent<Image>() ?? logPanel.gameObject.AddComponent<Image>();
+            panelImage.sprite = null;
             panelImage.color = MainUiTheme.PanelBackground;
             panelImage.raycastTarget = true;
 

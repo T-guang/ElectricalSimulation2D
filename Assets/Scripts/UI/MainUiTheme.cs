@@ -53,10 +53,11 @@ namespace ElectricalSim.UI
             }
 
             text.font = MainFont;
-            text.fontSize = size;
+            text.fontSize = size + 2;
             text.fontStyle = style;
             text.color = color;
             text.alignment = alignment;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
         }
 
         public static void StyleButton(Button button, Color background, Color textColor, Color borderColor, bool bold = false)
