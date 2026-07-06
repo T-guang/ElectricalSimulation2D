@@ -402,10 +402,11 @@ namespace ElectricalSim.UI
             infoLayout.childForceExpandHeight = false;
             infoLayout.spacing = 6f;
 
-            var name = CreateText("NameText", infoArea, entry.DisplayName, 16, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
+            var name = CreateText("NameText", infoArea, entry.DisplayName, 17, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
             name.alignment = TextAnchor.MiddleLeft;
+            name.lineSpacing = 1.1f;
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
-            name.verticalOverflow = VerticalWrapMode.Overflow;
+            name.verticalOverflow = VerticalWrapMode.Truncate;
 
             var category = CreateText("CategoryText", infoArea, entry.Category, 12, FontStyle.Normal, MainUiTheme.Hex("64748B"));
             category.alignment = TextAnchor.MiddleLeft;
