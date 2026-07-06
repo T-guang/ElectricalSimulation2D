@@ -118,7 +118,7 @@ namespace ElectricalSim.UI
             brandRect.anchorMin = new Vector2(0f, 0.5f);
             brandRect.anchorMax = new Vector2(0f, 0.5f);
             brandRect.pivot = new Vector2(0f, 0.5f);
-            brandRect.anchoredPosition = new Vector2(24f, 2f);
+            brandRect.anchoredPosition = new Vector2(24f, 7f);
             brandRect.sizeDelta = new Vector2(390f, 44f);
 
             var layout = titleTransform.GetComponent<HorizontalLayoutGroup>() ?? titleTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
