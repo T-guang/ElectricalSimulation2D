@@ -48,7 +48,6 @@ namespace ElectricalSim.UI
             if (bg != null) bg.color = MainUiTheme.Hex("F8FBFF");
 
             ApplyFilterButtonMetrics();
-            ApplyFilterAreaLayout();
 
             foreach (var card in blueprintCards)
             {
@@ -96,8 +95,7 @@ namespace ElectricalSim.UI
                         if (btnText != null)
                         {
                             btnText.font = MainUiTheme.BodyFont;
-                            btnText.fontSize = 16;
-                            btnText.fontStyle = FontStyle.Bold;
+                            btnText.fontSize = 20;
                             btnText.color = Color.white;
                             btnText.resizeTextForBestFit = false;
                         }
@@ -177,112 +175,9 @@ namespace ElectricalSim.UI
             }
         }
 
-        private void ApplyFilterAreaLayout()
-        {
-            const float rowLabelX = 34f;
-            const float buttonStartX = 114f;
-            const float firstRowY = -24f;
-            const float secondRowY = -74f;
-            const float rowHeight = 36f;
-
-            EnsureFilterRowLabel("BlueprintTypeRowLabel", "\u7535\u8def\u7c7b\u578b", rowLabelX, firstRowY, rowHeight);
-            EnsureFilterRowLabel("BlueprintDifficultyRowLabel", "\u96be\u5ea6", rowLabelX, secondRowY, rowHeight);
-
-            for (var i = 0; i < categoryButtons.Count; i++)
-            {
-                PositionFilterButton(categoryButtons[i], buttonStartX + i * 184f, firstRowY, 175f, rowHeight);
-            }
-
-            for (var i = 0; i < difficultyButtons.Count; i++)
-            {
-                PositionFilterButton(difficultyButtons[i], buttonStartX + i * 146f, secondRowY, 138f, rowHeight);
-            }
-
-            if (searchInput != null)
-            {
-                var searchRect = searchInput.GetComponent<RectTransform>();
-                if (searchRect != null)
-                {
-                    searchRect.anchorMin = new Vector2(1f, 1f);
-                    searchRect.anchorMax = new Vector2(1f, 1f);
-                    searchRect.pivot = new Vector2(1f, 1f);
-                    searchRect.anchoredPosition = new Vector2(-28f, secondRowY);
-                    searchRect.sizeDelta = new Vector2(236f, 36f);
-                }
-
-                var placeholder = searchInput.placeholder as Text;
-                if (placeholder != null)
-                {
-                    placeholder.color = MainUiTheme.Hex("94A3B8");
-                    placeholder.font = MainUiTheme.BodyFont;
-                    placeholder.fontSize = 15;
-                }
-            }
-        }
-
-        private void EnsureFilterRowLabel(string name, string text, float x, float y, float height)
-        {
-            var existing = transform.Find(name);
-            Text label;
-            RectTransform rect;
-            if (existing == null)
-            {
-                var obj = new GameObject(name, typeof(RectTransform), typeof(Text));
-                obj.transform.SetParent(transform, false);
-                rect = obj.GetComponent<RectTransform>();
-                label = obj.GetComponent<Text>();
-            }
-            else
-            {
-                rect = existing as RectTransform;
-                label = existing.GetComponent<Text>();
-            }
-
-            if (rect == null || label == null)
-            {
-                return;
-            }
-
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(x, y);
-            rect.sizeDelta = new Vector2(76f, height);
-
-            label.text = text;
-            label.font = MainUiTheme.BodyFont;
-            label.fontSize = 16;
-            label.fontStyle = FontStyle.Bold;
-            label.color = MainUiTheme.Hex("64748B");
-            label.alignment = TextAnchor.MiddleLeft;
-            label.resizeTextForBestFit = false;
-        }
-
-        private static void PositionFilterButton(Button button, float x, float y, float width, float height)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            var rect = button.GetComponent<RectTransform>();
-            if (rect == null)
-            {
-                return;
-            }
-
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = new Vector2(0f, 1f);
-            rect.anchoredPosition = new Vector2(x, y);
-            rect.sizeDelta = new Vector2(width, height);
-        }
-
         private static void ApplyBlueprintCardTextStyle(GameObject card)
         {
             var texts = card.GetComponentsInChildren<Text>(true);
-            string category = null;
-            string difficulty = null;
             for (var i = 0; i < texts.Length; i++)
             {
                 var text = texts[i];
@@ -291,150 +186,26 @@ namespace ElectricalSim.UI
                     continue;
                 }
 
-                if (IsGeneratedCardTagText(text))
-                {
-                    continue;
-                }
-
                 text.font = MainUiTheme.BodyFont;
                 text.resizeTextForBestFit = false;
                 if (IsActionLabel(text.text))
                 {
-                    text.fontSize = 16;
+                    text.fontSize = 20;
                     text.fontStyle = FontStyle.Bold;
                     text.color = Color.white;
                 }
-                else if (IsCategoryLabel(text.text))
+                else if (IsCategoryLabel(text.text) || IsDifficultyLabel(text.text))
                 {
-                    category = text.text;
-                    text.gameObject.SetActive(false);
-                }
-                else if (IsDifficultyLabel(text.text))
-                {
-                    difficulty = text.text;
-                    text.gameObject.SetActive(false);
+                    text.fontSize = 18;
+                    text.color = MainUiTheme.Hex("858A8D");
                 }
                 else if (!string.IsNullOrWhiteSpace(text.text))
                 {
                     text.fontSize = 20;
                     text.fontStyle = FontStyle.Bold;
-                    text.color = MainUiTheme.Hex("1F2937");
+                    text.color = MainUiTheme.Hex("464646");
                 }
             }
-
-            EnsureCardTag(card, "BlueprintTypeTag", string.IsNullOrWhiteSpace(category) ? "\u5de5\u4e1a\u7535\u8def" : category, new Vector2(16f, 18f), new Vector2(86f, 28f), MainUiTheme.Hex("DBEAFE"), MainUiTheme.PrimaryBlue);
-            EnsureCardTag(card, "BlueprintDifficultyTag", string.IsNullOrWhiteSpace(difficulty) ? "\u521d\u7ea7" : difficulty, new Vector2(112f, 18f), new Vector2(68f, 28f), ResolveDifficultyTagFill(difficulty), Color.white);
-            PositionCardActionButton(card);
-        }
-
-        private static bool IsGeneratedCardTagText(Text text)
-        {
-            var parent = text != null ? text.transform.parent : null;
-            return parent != null && (parent.name == "BlueprintTypeTag" || parent.name == "BlueprintDifficultyTag");
-        }
-
-        private static void EnsureCardTag(GameObject card, string name, string text, Vector2 position, Vector2 size, Color fill, Color textColor)
-        {
-            var cardRect = card != null ? card.GetComponent<RectTransform>() : null;
-            if (cardRect == null)
-            {
-                return;
-            }
-
-            var tag = card.transform.Find(name) as RectTransform;
-            Text label;
-            Image bg;
-            if (tag == null)
-            {
-                var obj = new GameObject(name, typeof(RectTransform), typeof(Image));
-                obj.transform.SetParent(card.transform, false);
-                tag = obj.GetComponent<RectTransform>();
-                bg = obj.GetComponent<Image>();
-
-                var labelObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
-                labelObj.transform.SetParent(obj.transform, false);
-                label = labelObj.GetComponent<Text>();
-                var labelRect = labelObj.GetComponent<RectTransform>();
-                labelRect.anchorMin = Vector2.zero;
-                labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = Vector2.zero;
-                labelRect.offsetMax = Vector2.zero;
-            }
-            else
-            {
-                bg = tag.GetComponent<Image>() ?? tag.gameObject.AddComponent<Image>();
-                label = tag.GetComponentInChildren<Text>(true);
-                if (label == null)
-                {
-                    var labelObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
-                    labelObj.transform.SetParent(tag, false);
-                    label = labelObj.GetComponent<Text>();
-                    var labelRect = labelObj.GetComponent<RectTransform>();
-                    labelRect.anchorMin = Vector2.zero;
-                    labelRect.anchorMax = Vector2.one;
-                    labelRect.offsetMin = Vector2.zero;
-                    labelRect.offsetMax = Vector2.zero;
-                }
-            }
-
-            tag.anchorMin = new Vector2(0f, 0f);
-            tag.anchorMax = new Vector2(0f, 0f);
-            tag.pivot = new Vector2(0f, 0f);
-            tag.anchoredPosition = position;
-            tag.sizeDelta = size;
-            tag.SetAsLastSibling();
-
-            bg.sprite = UiThemeTokens.GetRoundedSprite(8);
-            bg.type = Image.Type.Sliced;
-            bg.color = fill;
-            bg.raycastTarget = false;
-
-            label.text = NormalizeTagText(text);
-            label.font = MainUiTheme.BodyFont;
-            label.fontSize = 15;
-            label.fontStyle = FontStyle.Bold;
-            label.color = textColor;
-            label.alignment = TextAnchor.MiddleCenter;
-            label.resizeTextForBestFit = false;
-            label.raycastTarget = false;
-        }
-
-        private static void PositionCardActionButton(GameObject card)
-        {
-            var button = card != null ? card.GetComponentInChildren<Button>(true) : null;
-            var rect = button != null ? button.GetComponent<RectTransform>() : null;
-            if (rect == null)
-            {
-                return;
-            }
-
-            rect.anchorMin = new Vector2(1f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(1f, 0f);
-            rect.anchoredPosition = new Vector2(-16f, 16f);
-            rect.sizeDelta = new Vector2(116f, 32f);
-        }
-
-        private static Color ResolveDifficultyTagFill(string difficulty)
-        {
-            if (string.IsNullOrWhiteSpace(difficulty))
-            {
-                return MainUiTheme.Hex("0BB148");
-            }
-
-            if (difficulty.Contains("\u9ad8") || difficulty.Contains("楂")) return MainUiTheme.Hex("EF4444");
-            if (difficulty.Contains("\u4e2d") || difficulty.Contains("\u8fdb") || difficulty.Contains("涓")) return MainUiTheme.Hex("F59E0B");
-            return MainUiTheme.Hex("0BB148");
-        }
-
-        private static string NormalizeTagText(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            return value.Replace("\u56fe\u7eb8", string.Empty).Trim();
         }
 
         private void StyleModal(GameObject modal)
@@ -991,172 +762,13 @@ namespace ElectricalSim.UI
             outline.effectDistance = new Vector2(1f, -1f);
 
             var label = button.GetComponentInChildren<Text>();
-            var countText = string.Empty;
             if (label != null)
             {
-                countText = ExtractCountText(label.text, out var displayText);
-                label.text = displayText;
                 label.font = MainUiTheme.BodyFont;
-                label.fontSize = 16;
-                label.fontStyle = FontStyle.Bold;
+                label.fontSize = 20;
                 label.resizeTextForBestFit = false;
                 label.color = ResolveFilterTextColor(button, active);
-                label.alignment = TextAnchor.MiddleCenter;
-
-                var labelRect = label.GetComponent<RectTransform>();
-                if (labelRect != null)
-                {
-                    labelRect.offsetMin = new Vector2(10f, labelRect.offsetMin.y);
-                    labelRect.offsetMax = new Vector2(string.IsNullOrEmpty(countText) ? -10f : -34f, labelRect.offsetMax.y);
-                }
             }
-
-            ApplyCountBadge(button, countText, active);
-
-            if (label != null)
-            {
-                if (image != null)
-                {
-                    image.color = ResolveFilterFillByDisplayText(label.text, active);
-                }
-
-                outline.effectColor = ResolveFilterTextColorByDisplayText(label.text, active);
-                label.color = ResolveFilterTextColorByDisplayText(label.text, active);
-            }
-        }
-
-        private static string ExtractCountText(string raw, out string displayText)
-        {
-            displayText = raw;
-            if (string.IsNullOrWhiteSpace(raw))
-            {
-                return string.Empty;
-            }
-
-            var open = raw.LastIndexOf('(');
-            var close = raw.LastIndexOf(')');
-            if (open < 0 || close <= open)
-            {
-                open = raw.LastIndexOf('\uff08');
-                close = raw.LastIndexOf('\uff09');
-            }
-
-            if (open < 0 || close <= open)
-            {
-                return string.Empty;
-            }
-
-            displayText = raw.Substring(0, open).Trim();
-            return raw.Substring(open + 1, close - open - 1).Trim();
-        }
-
-        private static void ApplyCountBadge(Button button, string countText, bool active)
-        {
-            if (button == null)
-            {
-                return;
-            }
-
-            var badge = button.transform.Find("CountBadge") as RectTransform;
-            if (string.IsNullOrWhiteSpace(countText))
-            {
-                if (badge != null)
-                {
-                    badge.gameObject.SetActive(false);
-                }
-                return;
-            }
-
-            Text badgeText;
-            Image badgeBg;
-            if (badge == null)
-            {
-                var obj = new GameObject("CountBadge", typeof(RectTransform), typeof(Image));
-                obj.transform.SetParent(button.transform, false);
-                badge = obj.GetComponent<RectTransform>();
-                badgeBg = obj.GetComponent<Image>();
-
-                var textObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
-                textObj.transform.SetParent(obj.transform, false);
-                badgeText = textObj.GetComponent<Text>();
-                var textRect = textObj.GetComponent<RectTransform>();
-                textRect.anchorMin = Vector2.zero;
-                textRect.anchorMax = Vector2.one;
-                textRect.offsetMin = Vector2.zero;
-                textRect.offsetMax = Vector2.zero;
-            }
-            else
-            {
-                badgeBg = badge.GetComponent<Image>() ?? badge.gameObject.AddComponent<Image>();
-                badgeText = badge.GetComponentInChildren<Text>(true);
-            }
-
-            badge.gameObject.SetActive(true);
-            badge.anchorMin = new Vector2(1f, 0.5f);
-            badge.anchorMax = new Vector2(1f, 0.5f);
-            badge.pivot = new Vector2(1f, 0.5f);
-            badge.anchoredPosition = new Vector2(-8f, 0f);
-            badge.sizeDelta = new Vector2(24f, 24f);
-            badge.SetAsLastSibling();
-
-            badgeBg.sprite = UiThemeTokens.GetRoundedSprite(12);
-            badgeBg.type = Image.Type.Sliced;
-            badgeBg.color = active ? new Color(1f, 1f, 1f, 0.65f) : MainUiTheme.Hex("BFDAFC");
-            badgeBg.raycastTarget = false;
-
-            if (badgeText != null)
-            {
-                badgeText.text = countText;
-                badgeText.font = MainUiTheme.BodyFont;
-                badgeText.fontSize = 12;
-                badgeText.fontStyle = FontStyle.Bold;
-                var buttonLabel = button.GetComponentInChildren<Text>() != null ? button.GetComponentInChildren<Text>().text : string.Empty;
-                badgeText.color = active ? ResolveFilterTextColorByDisplayText(buttonLabel, true) : MainUiTheme.Hex("1F2937");
-                badgeText.alignment = TextAnchor.MiddleCenter;
-                badgeText.resizeTextForBestFit = false;
-                badgeText.raycastTarget = false;
-            }
-        }
-
-        private static Color ResolveFilterFillByDisplayText(string text, bool active)
-        {
-            if (!active)
-            {
-                return Color.white;
-            }
-
-            if (IsPrimaryDifficultyDisplayText(text)) return MainUiTheme.Hex("DCFCE7");
-            if (IsMiddleDifficultyDisplayText(text)) return MainUiTheme.Hex("FEF3C7");
-            if (IsAdvancedDifficultyDisplayText(text)) return MainUiTheme.Hex("FEE2E2");
-            return MainUiTheme.Hex("DBEAFE");
-        }
-
-        private static Color ResolveFilterTextColorByDisplayText(string text, bool active)
-        {
-            if (!active)
-            {
-                return MainUiTheme.Hex("464646");
-            }
-
-            if (IsPrimaryDifficultyDisplayText(text)) return MainUiTheme.Hex("0BB148");
-            if (IsMiddleDifficultyDisplayText(text)) return MainUiTheme.Hex("F59E0B");
-            if (IsAdvancedDifficultyDisplayText(text)) return MainUiTheme.Hex("EF4444");
-            return MainUiTheme.PrimaryBlue;
-        }
-
-        private static bool IsPrimaryDifficultyDisplayText(string text)
-        {
-            return !string.IsNullOrEmpty(text) && (text.Contains("\u521d\u7ea7") || text.Contains("\u5165\u95e8") || text.Contains("鍒濈骇"));
-        }
-
-        private static bool IsMiddleDifficultyDisplayText(string text)
-        {
-            return !string.IsNullOrEmpty(text) && (text.Contains("\u4e2d\u7ea7") || text.Contains("\u8fdb\u9636") || text.Contains("涓骇"));
-        }
-
-        private static bool IsAdvancedDifficultyDisplayText(string text)
-        {
-            return !string.IsNullOrEmpty(text) && (text.Contains("\u9ad8\u7ea7") || text.Contains("楂樼骇"));
         }
 
         private static Color ResolveFilterFill(Button button, bool active)
