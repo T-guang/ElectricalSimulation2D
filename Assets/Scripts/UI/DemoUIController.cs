@@ -141,23 +141,35 @@ namespace ElectricalSim.UI
             StyleToolbarButton(clearAllButton, false, true);
             StyleToolbarButton(lockButton, false, false);
 
-            ApplyToolbarIcon(startButton, "ui_toolbar_start_32", 18f);
-            ApplyToolbarIcon(undoButton, "ui_toolbar_undo_24", 18f);
-            ApplyToolbarIcon(redoButton, "ui_toolbar_redo_24", 18f);
-            ApplyToolbarIcon(quickDeleteButton, "ui_toolbar_delete_24", 18f);
-            ApplyToolbarIcon(clearWiresButton, "ui_toolbar_clear_wire_24", 18f);
-            ApplyToolbarIcon(clearAllButton, "ui_toolbar_clear_all_24", 18f);
-            ApplyToolbarIcon(lockButton, "ui_toolbar_lock_24", 18f);
+            ApplyToolbarIcon(startButton, "ui_toolbar_start_32", 24f);
+            ApplyToolbarIcon(undoButton, "ui_toolbar_undo_24", 24f);
+            ApplyToolbarIcon(redoButton, "ui_toolbar_redo_24", 24f);
+            ApplyToolbarIcon(quickDeleteButton, "ui_toolbar_delete_24", 24f);
+            ApplyToolbarIcon(clearWiresButton, "ui_toolbar_clear_wire_24", 24f);
+            ApplyToolbarIcon(clearAllButton, "ui_toolbar_clear_all_24", 24f);
+            ApplyToolbarIcon(lockButton, "ui_toolbar_lock_24", 24f);
             
             if (saveButton != null)
             {
                 StyleToolbarButton(saveButton, false, false);
-                ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 18f);
+                ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 24f);
             }
             if (loadButton != null)
             {
                 StyleToolbarButton(loadButton, false, false);
-                ApplyToolbarIcon(loadButton, "ui_toolbar_load_blueprint_24", 18f);
+                ApplyToolbarIcon(loadButton, "ui_toolbar_load_blueprint_24", 24f);
+            }
+
+            if (colorGroup.Find("WireColorLabel") == null)
+            {
+                var labelGo = new GameObject("WireColorLabel", typeof(RectTransform), typeof(Text));
+                labelGo.transform.SetParent(colorGroup, false);
+                labelGo.transform.SetAsFirstSibling();
+                var labelText = labelGo.GetComponent<Text>();
+                labelText.text = "导线颜色";
+                MainUiTheme.ApplyText(labelText, 16, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+                var rt = labelText.rectTransform;
+                rt.sizeDelta = new Vector2(72f, 28f);
             }
 
             for (var i = 0; i < colorButtons.Count; i++)
@@ -332,7 +344,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(iconSize, iconSize), new Vector2(18f, 0f));
+            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(24f, 24f), new Vector2(16f, 0f));
             if (icon == null)
             {
                 return;
@@ -343,9 +355,10 @@ namespace ElectricalSim.UI
             {
                 label.rectTransform.anchorMin = Vector2.zero;
                 label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = new Vector2(32f, 0f);
-                label.rectTransform.offsetMax = new Vector2(-2f, 0f);
+                label.rectTransform.offsetMin = new Vector2(40f, 0f);
+                label.rectTransform.offsetMax = new Vector2(0f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
+                label.fontSize = 16;
             }
         }
 
@@ -362,13 +375,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            if (danger)
-            {
-                MainUiTheme.StyleButton(button, Color.white, MainUiTheme.DangerRed, MainUiTheme.DangerBorder);
-                return;
-            }
-
-            MainUiTheme.StyleButton(button, MainUiTheme.ToolbarButton, MainUiTheme.SecondaryText, MainUiTheme.Divider);
+            MainUiTheme.StyleButton(button, Color.clear, MainUiTheme.DeepText, Color.clear);
         }
 
         private RectTransform EnsureGroup(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta, TextAnchor childAlignment, float spacing)

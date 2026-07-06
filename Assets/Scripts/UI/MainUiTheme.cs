@@ -77,6 +77,7 @@ namespace ElectricalSim.UI
             var outline = button.GetComponent<Outline>() ?? button.gameObject.AddComponent<Outline>();
             outline.effectColor = borderColor;
             outline.effectDistance = new Vector2(1f, -1f);
+            outline.enabled = borderColor.a > 0f;
 
             var text = button.GetComponentInChildren<Text>(true);
             if (text != null)

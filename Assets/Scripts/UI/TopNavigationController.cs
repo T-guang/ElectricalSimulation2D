@@ -93,7 +93,7 @@ namespace ElectricalSim.UI
                     var font = Resources.Load<Font>("Fonts/MaokenFengyaSong");
                     if (font != null) titleText.font = font;
                     titleText.color = UiThemeTokens.TextDark;
-                    titleText.fontSize = 24;
+                    titleText.fontSize = 28;
                     titleText.fontStyle = FontStyle.Bold;
                     titleText.resizeTextForBestFit = false;
                 }
@@ -130,7 +130,7 @@ namespace ElectricalSim.UI
                 {
                     var font = Resources.Load<Font>("Fonts/MaokenFengyaSong");
                     if (font != null) tabLabels[i].font = font;
-                    tabLabels[i].fontSize = 16;
+                    tabLabels[i].fontSize = 18;
                     tabLabels[i].resizeTextForBestFit = false;
                 }
             }
