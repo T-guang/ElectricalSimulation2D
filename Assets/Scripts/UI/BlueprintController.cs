@@ -37,8 +37,127 @@ namespace ElectricalSim.UI
         private int activeCategory;
         private int activeDifficulty = -1;
 
+        private void ApplyTheme()
+        {
+            var bg = GetComponent<Image>();
+            if (bg != null) bg.color = UiThemeTokens.Background;
+
+            foreach (var card in blueprintCards)
+            {
+                if (card == null) continue;
+                
+                var images = card.GetComponentsInChildren<Image>(true);
+                var cardBg = card.GetComponent<Image>();
+                if (cardBg == null && images.Length > 0) cardBg = images[0];
+
+                if (cardBg != null)
+                {
+                    cardBg.sprite = UiThemeTokens.GetRoundedSprite(12);
+                    cardBg.type = Image.Type.Sliced;
+                    cardBg.color = UiThemeTokens.CardBackground;
+                }
+                
+                if (card.GetComponent<UnityEngine.UI.Shadow>() == null)
+                {
+                    var shadow = card.AddComponent<UnityEngine.UI.Shadow>();
+                    shadow.effectColor = new Color(0, 0, 0, 0.04f);
+                    shadow.effectDistance = new Vector2(0, -4);
+                }
+
+                var btn = card.GetComponentInChildren<Button>(true);
+                if (btn != null)
+                {
+                    var btnBg = btn.GetComponent<Image>();
+                    if (btnBg != null && btnBg != cardBg)
+                    {
+                        btnBg.sprite = UiThemeTokens.GetRoundedSprite(8);
+                        btnBg.type = Image.Type.Sliced;
+                        btnBg.color = UiThemeTokens.PrimaryBlue;
+                        
+                        var btnText = btn.GetComponentInChildren<Text>();
+                        if (btnText != null) btnText.color = Color.white;
+                    }
+                }
+            }
+
+            if (searchInput != null)
+            {
+                var searchBg = searchInput.GetComponent<Image>();
+                if (searchBg != null)
+                {
+                    searchBg.sprite = UiThemeTokens.GetRoundedSprite(8);
+                    searchBg.type = Image.Type.Sliced;
+                    searchBg.color = Color.white;
+                }
+            }
+
+            StyleModal(previewModal);
+            StyleModal(referencePanel);
+            StyleCloseButton(previewCloseButton);
+            StyleCloseButton(referenceCloseButton);
+
+            if (configureButton != null)
+            {
+                var cfgBg = configureButton.GetComponent<Image>();
+                if (cfgBg != null)
+                {
+                    cfgBg.sprite = UiThemeTokens.GetRoundedSprite(8);
+                    cfgBg.type = Image.Type.Sliced;
+                    cfgBg.color = UiThemeTokens.PrimaryBlue;
+                }
+                var txt = configureButton.GetComponentInChildren<Text>();
+                if (txt != null) txt.color = Color.white;
+            }
+        }
+
+        private void StyleModal(GameObject modal)
+        {
+            if (modal == null) return;
+            var modalImages = modal.GetComponentsInChildren<Image>(true);
+            foreach (var img in modalImages)
+            {
+                if (img.color.r > 0.9f && img.color.g > 0.9f && img.color.b > 0.9f && img.rectTransform.rect.width > 200)
+                {
+                    img.sprite = UiThemeTokens.GetRoundedSprite(16);
+                    img.type = Image.Type.Sliced;
+                    img.color = UiThemeTokens.CardBackground;
+                    
+                    if (img.gameObject.GetComponent<UnityEngine.UI.Shadow>() == null)
+                    {
+                        var shadow = img.gameObject.AddComponent<UnityEngine.UI.Shadow>();
+                        shadow.effectColor = new Color(0, 0, 0, 0.15f);
+                        shadow.effectDistance = new Vector2(0, -8);
+                    }
+                }
+            }
+        }
+
+        private void StyleCloseButton(Button closeBtn)
+        {
+            if (closeBtn == null) return;
+            
+            var outline = closeBtn.GetComponent<UnityEngine.UI.Outline>();
+            if (outline != null) Destroy(outline);
+
+            var closeBg = closeBtn.GetComponent<Image>();
+            if (closeBg != null)
+            {
+                closeBg.sprite = UiThemeTokens.GetRoundedSprite(16);
+                closeBg.type = Image.Type.Sliced;
+                closeBg.color = new Color(0.94f, 0.95f, 0.97f);
+            }
+            var closeText = closeBtn.GetComponentInChildren<Text>();
+            if (closeText != null)
+            {
+                closeText.color = UiThemeTokens.TextMuted;
+                closeText.text = "✕";
+                closeText.fontSize = 20;
+            }
+        }
+
         private void Awake()
         {
+
             // Scene-authored cards are legacy gallery placeholders. Keep one as
             // the clone template, but exclude every static card from filtering
             // and counts so the gallery is driven only by template_catalog.json.
@@ -169,6 +288,7 @@ namespace ElectricalSim.UI
             ClosePreview();
             HideReference();
             ApplyFilter();
+            ApplyTheme();
         }
 
         private void OpenPreview(int index)
@@ -527,13 +647,15 @@ namespace ElectricalSim.UI
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                image.color = active ? new Color(0.12f, 0.45f, 1f) : new Color(0.94f, 0.96f, 0.98f);
+                image.sprite = UiThemeTokens.GetRoundedSprite(16);
+                image.type = Image.Type.Sliced;
+                image.color = active ? UiThemeTokens.PrimaryBlue : new Color(0.94f, 0.96f, 0.98f);
             }
 
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                label.color = active ? Color.white : new Color(0.26f, 0.34f, 0.45f);
+                label.color = active ? Color.white : UiThemeTokens.TextDark;
             }
         }
     }

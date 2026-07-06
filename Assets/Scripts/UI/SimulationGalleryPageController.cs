@@ -10,13 +10,13 @@ namespace ElectricalSim.UI
     public sealed class SimulationGalleryPageController : MonoBehaviour
     {
         private const string CatalogPath = "Blueprints/Templates/template_catalog";
-        private static readonly Color PageBackground = HexColor(0xF3F7FC);
-        private static readonly Color CardBackground = Color.white;
-        private static readonly Color TextPrimary = HexColor(0x111827);
-        private static readonly Color TextSecondary = HexColor(0x475569);
-        private static readonly Color BorderColor = HexColor(0xE5EAF2);
-        private static readonly Color Blue = HexColor(0x2563EB);
-        private static readonly Color PaleBlue = HexColor(0xEFF6FF);
+        private static Color PageBackground => UiThemeTokens.Background;
+        private static Color CardBackground => UiThemeTokens.CardBackground;
+        private static Color TextPrimary => UiThemeTokens.TextDark;
+        private static Color TextSecondary => UiThemeTokens.TextMuted;
+        private static Color BorderColor => UiThemeTokens.BorderColor;
+        private static Color Blue => UiThemeTokens.PrimaryBlue;
+        private static Color PaleBlue => UiThemeTokens.PrimaryLight;
 
         private readonly List<GalleryEntry> entries = new List<GalleryEntry>();
         private readonly Dictionary<string, Button> filterButtons = new Dictionary<string, Button>();
@@ -208,7 +208,7 @@ namespace ElectricalSim.UI
             grid.padding = new RectOffset(24, 24, 20, 24);
             grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
             grid.startAxis = GridLayoutGroup.Axis.Horizontal;
-            grid.childAlignment = TextAnchor.UpperCenter;
+            grid.childAlignment = TextAnchor.UpperLeft;
             grid.constraint = GridLayoutGroup.Constraint.Flexible;
 
             var fitter = content.GetComponent<ContentSizeFitter>();
@@ -404,10 +404,16 @@ namespace ElectricalSim.UI
 
         private void CreateCard(GalleryEntry entry)
         {
-            var card = CreateObject("CaseCard_" + entry.Id, gridContent, typeof(RectTransform), typeof(Image), typeof(Button));
+            var card = CreateObject("CaseCard_" + entry.Id, gridContent, typeof(RectTransform), typeof(Image), typeof(Button), typeof(UnityEngine.UI.Shadow));
             var image = card.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(12);
+            image.type = Image.Type.Sliced;
             image.color = CardBackground;
             image.raycastTarget = true;
+            
+            var shadow = card.GetComponent<UnityEngine.UI.Shadow>();
+            shadow.effectColor = new Color(0, 0, 0, 0.04f);
+            shadow.effectDistance = new Vector2(0, -4);
 
             var button = card.GetComponent<Button>();
             button.onClick.AddListener(() => ShowDetail(entry));
@@ -419,7 +425,10 @@ namespace ElectricalSim.UI
             thumbRect.pivot = new Vector2(0.5f, 1f);
             thumbRect.offsetMin = new Vector2(14f, -140f);
             thumbRect.offsetMax = new Vector2(-14f, -14f);
-            thumbPanel.GetComponent<Image>().color = HexColor(0xF1F5F9);
+            var thumbImage = thumbPanel.GetComponent<Image>();
+            thumbImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+            thumbImage.type = Image.Type.Sliced;
+            thumbImage.color = HexColor(0xF1F5F9);
 
             var thumbnailSprite = LoadThumbnail(entry.ThumbnailPath);
             if (thumbnailSprite != null)
@@ -626,8 +635,14 @@ namespace ElectricalSim.UI
 
         private void CreateSection(Transform parent, string title, string body)
         {
-            var card = CreateObject("SectionCard", parent, typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement));
-            card.GetComponent<Image>().color = CardBackground;
+            var card = CreateObject("SectionCard", parent, typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement), typeof(UnityEngine.UI.Shadow));
+            var image = card.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(12);
+            image.type = Image.Type.Sliced;
+            image.color = CardBackground;
+            var shadow = card.GetComponent<UnityEngine.UI.Shadow>();
+            shadow.effectColor = new Color(0, 0, 0, 0.03f);
+            shadow.effectDistance = new Vector2(0, -2);
             var vertical = card.GetComponent<VerticalLayoutGroup>();
             vertical.padding = new RectOffset(20, 20, 16, 18);
             vertical.spacing = 8f;
@@ -646,8 +661,14 @@ namespace ElectricalSim.UI
 
         private GameObject CreateSectionCard(Transform parent)
         {
-            var card = CreateObject("SectionCard", parent, typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement));
-            card.GetComponent<Image>().color = CardBackground;
+            var card = CreateObject("SectionCard", parent, typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement), typeof(UnityEngine.UI.Shadow));
+            var image = card.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(12);
+            image.type = Image.Type.Sliced;
+            image.color = CardBackground;
+            var shadow = card.GetComponent<UnityEngine.UI.Shadow>();
+            shadow.effectColor = new Color(0, 0, 0, 0.03f);
+            shadow.effectDistance = new Vector2(0, -2);
             var layout = card.GetComponent<HorizontalLayoutGroup>();
             layout.childControlHeight = true;
             layout.childForceExpandHeight = false;
@@ -856,6 +877,9 @@ namespace ElectricalSim.UI
         private Button CreatePillButton(Transform parent, string text, float width, float height)
         {
             var button = CreateButton(parent, text, HexColor(0xF1F5F9), HexColor(0x334155));
+            var image = button.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(16);
+            image.type = Image.Type.Sliced;
             var rect = button.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(width, height);
             return button;
@@ -865,6 +889,8 @@ namespace ElectricalSim.UI
         {
             var go = CreateObject("Button", parent, typeof(RectTransform), typeof(Image), typeof(Button));
             var image = go.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.type = Image.Type.Sliced;
             image.color = background;
             image.raycastTarget = true;
 
@@ -878,7 +904,10 @@ namespace ElectricalSim.UI
         {
             var go = CreateObject("SearchInput", parent, typeof(RectTransform), typeof(Image), typeof(InputField));
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
-            go.GetComponent<Image>().color = Color.white;
+            var image = go.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
 
             var text = CreateText("Text", go.transform, string.Empty, 14, FontStyle.Normal, TextPrimary);
             Stretch(text.rectTransform, 12f, 10f, 4f, 4f);
@@ -899,7 +928,10 @@ namespace ElectricalSim.UI
         {
             var go = CreateObject("SortDropdown", parent, typeof(RectTransform), typeof(Image), typeof(Dropdown));
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
-            go.GetComponent<Image>().color = Color.white;
+            var image = go.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
 
             var label = CreateText("Label", go.transform, string.Empty, 14, FontStyle.Normal, TextPrimary);
             Stretch(label.rectTransform, 12f, 28f, 0f, 0f);

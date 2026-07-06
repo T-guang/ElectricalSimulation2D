@@ -141,13 +141,24 @@ namespace ElectricalSim.UI
             StyleToolbarButton(clearAllButton, false, true);
             StyleToolbarButton(lockButton, false, false);
 
-            ApplyToolbarIcon(startButton, "Toolbar/ui_toolbar_start_32", 22f);
-            ApplyToolbarIcon(undoButton, "Toolbar/ui_toolbar_undo_24", 18f);
-            ApplyToolbarIcon(redoButton, "Toolbar/ui_toolbar_redo_24", 18f);
-            ApplyToolbarIcon(quickDeleteButton, "Toolbar/ui_toolbar_delete_24", 18f);
-            ApplyToolbarIcon(clearWiresButton, "Toolbar/ui_toolbar_clear_wire_24", 18f);
-            ApplyToolbarIcon(clearAllButton, "Toolbar/ui_toolbar_clear_all_24", 18f);
-            ApplyToolbarIcon(lockButton, "Toolbar/ui_toolbar_lock_24", 18f);
+            ApplyToolbarIcon(startButton, "ui_toolbar_start_32", 18f);
+            ApplyToolbarIcon(undoButton, "ui_toolbar_undo_24", 18f);
+            ApplyToolbarIcon(redoButton, "ui_toolbar_redo_24", 18f);
+            ApplyToolbarIcon(quickDeleteButton, "ui_toolbar_delete_24", 18f);
+            ApplyToolbarIcon(clearWiresButton, "ui_toolbar_clear_wire_24", 18f);
+            ApplyToolbarIcon(clearAllButton, "ui_toolbar_clear_all_24", 18f);
+            ApplyToolbarIcon(lockButton, "ui_toolbar_lock_24", 18f);
+            
+            if (saveButton != null)
+            {
+                StyleToolbarButton(saveButton, false, false);
+                ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 18f);
+            }
+            if (loadButton != null)
+            {
+                StyleToolbarButton(loadButton, false, false);
+                ApplyToolbarIcon(loadButton, "ui_toolbar_load_blueprint_24", 18f);
+            }
 
             for (var i = 0; i < colorButtons.Count; i++)
             {
@@ -158,6 +169,12 @@ namespace ElectricalSim.UI
                 }
 
                 MoveButtonToGroup(button, colorGroup, new Vector2(28f, 28f), null);
+                var img = button.GetComponent<Image>();
+                if (img != null)
+                {
+                    img.sprite = UiThemeTokens.GetRoundedSprite(6, 32);
+                    img.type = Image.Type.Sliced;
+                }
             }
 
             if (quickRoot != null)
@@ -233,7 +250,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            var sprite = UiIconLibrary.Load("Logo/ui_logo_main_320");
+            var sprite = UiIconLibrary.Load("ui_sidebar_yalong_logo_320");
             if (sprite == null)
             {
                 return;

@@ -36,7 +36,7 @@ namespace ElectricalSim.UI
             {
                 if (mainFont == null)
                 {
-                    mainFont = Resources.Load<Font>("Fonts/MaokenFengyasong/maoken_fengyasong");
+                    mainFont = Resources.Load<Font>("Fonts/MaokenFengyaSong");
                     if (mainFont == null)
                     {
                         mainFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -69,6 +69,8 @@ namespace ElectricalSim.UI
             }
 
             var image = button.GetComponent<Image>() ?? button.gameObject.AddComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.type = Image.Type.Sliced;
             image.color = background;
             image.raycastTarget = true;
 

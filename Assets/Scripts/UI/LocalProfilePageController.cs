@@ -40,12 +40,12 @@ namespace ElectricalSim.UI
                 bg = gameObject.AddComponent<Image>();
             }
 
-            bg.color = new Color(0.96f, 0.98f, 1f, 1f);
+            bg.color = UiThemeTokens.Background;
 
-            var title = CreateText("ProfileTitle", root, "系统信息", 32, FontStyle.Bold, new Color(0.05f, 0.08f, 0.14f), TextAnchor.MiddleLeft);
+            var title = CreateText("ProfileTitle", root, "系统信息", 32, FontStyle.Bold, UiThemeTokens.TextDark, TextAnchor.MiddleLeft);
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(44f, -34f), new Vector2(-88f, 52f));
 
-            var subtitle = CreateText("ProfileSubtitle", root, "当前为单机本地模式，数据保存在本机。", 18, FontStyle.Normal, new Color(0.35f, 0.42f, 0.52f), TextAnchor.MiddleLeft);
+            var subtitle = CreateText("ProfileSubtitle", root, "当前为单机本地模式，数据保存在本机。", 18, FontStyle.Normal, UiThemeTokens.TextMuted, TextAnchor.MiddleLeft);
             SetRect(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(44f, -82f), new Vector2(-88f, 36f));
 
             var scrollGo = new GameObject("ProfileScrollView", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
@@ -97,10 +97,15 @@ namespace ElectricalSim.UI
 
         private Text AddCard(string title, string body, Action<RectTransform> extraBuilder = null)
         {
-            var card = new GameObject(title + "Card", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
+            var card = new GameObject(title + "Card", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(UnityEngine.UI.Shadow));
             card.transform.SetParent(contentRoot, false);
             var image = card.GetComponent<Image>();
-            image.color = Color.white;
+            image.sprite = UiThemeTokens.GetRoundedSprite(12);
+            image.type = Image.Type.Sliced;
+            image.color = UiThemeTokens.CardBackground;
+            var shadow = card.GetComponent<UnityEngine.UI.Shadow>();
+            shadow.effectColor = new Color(0, 0, 0, 0.04f);
+            shadow.effectDistance = new Vector2(0, -4);
 
             var layout = card.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(24, 24, 24, 24);
@@ -110,10 +115,10 @@ namespace ElectricalSim.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            var titleText = CreateText("Title", card.transform, title, 18, FontStyle.Bold, new Color(0.06f, 0.14f, 0.26f), TextAnchor.MiddleLeft);
+            var titleText = CreateText("Title", card.transform, title, 18, FontStyle.Bold, UiThemeTokens.TextDark, TextAnchor.MiddleLeft);
             titleText.rectTransform.sizeDelta = new Vector2(0f, 28f);
 
-            var bodyText = CreateText("Body", card.transform, body, 14, FontStyle.Normal, new Color(0.35f, 0.42f, 0.52f), TextAnchor.UpperLeft);
+            var bodyText = CreateText("Body", card.transform, body, 14, FontStyle.Normal, UiThemeTokens.TextMuted, TextAnchor.UpperLeft);
             bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
             bodyText.verticalOverflow = VerticalWrapMode.Overflow;
 
@@ -159,13 +164,15 @@ namespace ElectricalSim.UI
             var go = new GameObject(label, typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<Image>();
-            image.color = primary ? new Color(0.14f, 0.38f, 0.92f, 1f) : new Color(0.92f, 0.95f, 0.99f, 1f);
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.type = Image.Type.Sliced;
+            image.color = primary ? UiThemeTokens.PrimaryBlue : new Color(0.94f, 0.96f, 0.98f);
             var button = go.GetComponent<Button>();
             button.onClick.AddListener(action);
             var element = go.GetComponent<LayoutElement>();
             element.preferredWidth = 140f;
             element.preferredHeight = 36f;
-            var textColor = primary ? Color.white : new Color(0.33f, 0.41f, 0.55f);
+            var textColor = primary ? Color.white : UiThemeTokens.TextDark;
             CreateText("Text", go.transform, label, 14, FontStyle.Normal, textColor, TextAnchor.MiddleCenter);
         }
 

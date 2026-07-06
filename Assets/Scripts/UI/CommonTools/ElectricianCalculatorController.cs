@@ -114,7 +114,12 @@ namespace ElectricalSim.UI.CommonTools
 
             // Modern Segmented Control for Tabs
             var tabsContainer = CreateRect("TabsContainer", transform);
-            SetRect(tabsContainer, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -114), new Vector2(-80, 48));
+            tabsContainer.anchorMin = new Vector2(0, 1);
+            tabsContainer.anchorMax = new Vector2(1, 1);
+            tabsContainer.pivot = new Vector2(0.5f, 1);
+            tabsContainer.anchoredPosition = new Vector2(0, -114);
+            tabsContainer.sizeDelta = new Vector2(-80, 48);
+            
             var bgImg = tabsContainer.gameObject.AddComponent<Image>();
             bgImg.sprite = GetRoundedSprite();
             bgImg.type = Image.Type.Sliced;
@@ -122,17 +127,20 @@ namespace ElectricalSim.UI.CommonTools
 
             var hLayout = tabsContainer.gameObject.AddComponent<HorizontalLayoutGroup>();
             hLayout.padding = new RectOffset(4, 4, 4, 4);
-            hLayout.spacing = 4;
             hLayout.childControlWidth = true;
             hLayout.childControlHeight = true;
             hLayout.childForceExpandWidth = true;
-            hLayout.childForceExpandHeight = true;
+            hLayout.spacing = 2;
 
             tabsArea = tabsContainer;
 
             // Content Area
             contentArea = CreateRect("ContentArea", transform);
-            SetRect(contentArea, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(0, -96), new Vector2(-80, -192));
+            contentArea.anchorMin = new Vector2(0, 0);
+            contentArea.anchorMax = new Vector2(1, 1);
+            contentArea.pivot = new Vector2(0.5f, 0.5f);
+            contentArea.offsetMin = new Vector2(40, 40);
+            contentArea.offsetMax = new Vector2(-40, -180);
 
             tabs = new Button[4];
             pages = new RectTransform[4];
@@ -245,16 +253,24 @@ namespace ElectricalSim.UI.CommonTools
             loadResult = CreateResultArea(container, out loadResultBg);
         }
 
+        private double GetValidNumber(InputField field, string fieldName, bool allowZero = false)
+        {
+            if (string.IsNullOrEmpty(field.text)) throw new Exception($"请完整填写【{fieldName}】");
+            if (!double.TryParse(field.text, out double val)) throw new Exception($"【{fieldName}】必须是有效数字");
+            if (val < 0) throw new Exception($"【{fieldName}】不能为负数");
+            if (!allowZero && val == 0) throw new Exception($"【{fieldName}】不能为 0");
+            return val;
+        }
+
         private void CalculateLoadCurrent()
         {
             try
             {
-                double pRaw = double.Parse(loadPower.text);
+                double pRaw = GetValidNumber(loadPower, "额定功率");
                 double pW = loadPowerUnit.value == 1 ? pRaw * 1000 : pRaw;
-                double cosPhi = double.Parse(loadCosPhi.text);
-                double eta = double.Parse(loadEta.text);
-                double count = double.Parse(loadCount.text);
-                if (pW <= 0 || cosPhi <= 0 || eta <= 0 || count <= 0) throw new Exception("参数必须大于 0");
+                double cosPhi = GetValidNumber(loadCosPhi, "功率因数");
+                double eta = GetValidNumber(loadEta, "效率");
+                double count = GetValidNumber(loadCount, "负载数量");
 
                 double singleI = 0;
                 string formula = "";
@@ -308,8 +324,7 @@ namespace ElectricalSim.UI.CommonTools
         {
             try
             {
-                double i = double.Parse(wireCurrent.text);
-                if (i <= 0) throw new Exception("电流必须大于 0");
+                double i = GetValidNumber(wireCurrent, "负载总电流");
 
                 bool isCopper = wireMaterial.value == 0;
                 double minDensity = isCopper ? 5 : 3;
@@ -367,11 +382,10 @@ namespace ElectricalSim.UI.CommonTools
         {
             try
             {
-                double pKw = double.Parse(motorPower.text);
-                double u = double.Parse(motorVoltage.text);
-                double cosPhi = double.Parse(motorCosPhi.text);
-                double eta = double.Parse(motorEta.text);
-                if (pKw <= 0 || u <= 0 || cosPhi <= 0 || eta <= 0) throw new Exception("参数必须大于 0");
+                double pKw = GetValidNumber(motorPower, "电机功率");
+                double u = GetValidNumber(motorVoltage, "线电压");
+                double cosPhi = GetValidNumber(motorCosPhi, "功率因数");
+                double eta = GetValidNumber(motorEta, "效率");
 
                 double pW = pKw * 1000;
                 double iRated = pW / (1.7320508 * u * cosPhi * eta);
@@ -435,13 +449,19 @@ namespace ElectricalSim.UI.CommonTools
         {
             try
             {
-                double GetVal(InputField f) => string.IsNullOrEmpty(f.text) ? 0 : double.Parse(f.text);
+                double GetValOrZero(InputField f, string name)
+                {
+                    if (string.IsNullOrEmpty(f.text)) return 0;
+                    if (!double.TryParse(f.text, out double val)) throw new Exception($"【{name}】必须是有效数字");
+                    if (val < 0) throw new Exception($"【{name}】不能为负数");
+                    return val;
+                }
                 
-                double lCount = GetVal(multiLightCount); double lPower = GetVal(multiLightPower);
-                double fCount = GetVal(multiFanCount); double fPower = GetVal(multiFanPower);
-                double mCount = GetVal(multiMotorCount); double mPower = GetVal(multiMotorPower);
-                double oPower = GetVal(multiOtherPower);
-                double cosPhi = GetVal(multiCosPhi);
+                double lCount = GetValOrZero(multiLightCount, "照明灯数量"); double lPower = GetValOrZero(multiLightPower, "单灯功率");
+                double fCount = GetValOrZero(multiFanCount, "风扇数量"); double fPower = GetValOrZero(multiFanPower, "单风扇功率");
+                double mCount = GetValOrZero(multiMotorCount, "电机数量"); double mPower = GetValOrZero(multiMotorPower, "单电机功率");
+                double oPower = GetValOrZero(multiOtherPower, "其他功率");
+                double cosPhi = GetValOrZero(multiCosPhi, "平均功率因数");
                 
                 if (cosPhi <= 0) cosPhi = 0.8;
                 
@@ -560,6 +580,7 @@ namespace ElectricalSim.UI.CommonTools
             layout.padding = new RectOffset(40, 40, 32, 40);
             layout.spacing = 16;
             layout.childControlWidth = true;
+            layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 

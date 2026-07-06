@@ -44,13 +44,94 @@ namespace ElectricalSim.UI
                 toolsRoot.AddComponent<CommonToolsPageController>();
             }
 
+            if (simulationRoot != null)
+            {
+                var bg = simulationRoot.GetComponent<Image>();
+                if (bg != null) bg.color = UiThemeTokens.Background;
+            }
+
             for (var i = 0; i < tabButtons.Count; i++)
             {
                 var index = i;
                 tabButtons[i].onClick.AddListener(() => SelectTab(index));
             }
 
+            ApplyThemeToNavBar();
             SelectTab(0);
+        }
+
+        private void ApplyThemeToNavBar()
+        {
+            var navRect = GetComponent<RectTransform>();
+            if (navRect != null)
+            {
+                navRect.sizeDelta = new Vector2(navRect.sizeDelta.x, 60f);
+                var bg = navRect.GetComponent<Image>();
+                if (bg != null) bg.color = Color.white;
+                
+                if (navRect.Find("BottomBorder") == null)
+                {
+                    var border = new GameObject("BottomBorder", typeof(RectTransform), typeof(Image));
+                    border.transform.SetParent(navRect, false);
+                    var borderRt = border.GetComponent<RectTransform>();
+                    borderRt.anchorMin = new Vector2(0, 0);
+                    borderRt.anchorMax = new Vector2(1, 0);
+                    borderRt.pivot = new Vector2(0.5f, 0f);
+                    borderRt.sizeDelta = new Vector2(0, 1f);
+                    borderRt.anchoredPosition = Vector2.zero;
+                    border.GetComponent<Image>().color = UiThemeTokens.BorderColor;
+                }
+            }
+
+            var titleTransform = transform.Find("Title");
+            if (titleTransform != null)
+            {
+                var titleText = titleTransform.Find("Text")?.GetComponent<Text>();
+                if (titleText == null) titleText = titleTransform.GetComponentInChildren<Text>();
+                if (titleText != null)
+                {
+                    var font = Resources.Load<Font>("Fonts/MaokenFengyaSong");
+                    if (font != null) titleText.font = font;
+                    titleText.color = UiThemeTokens.TextDark;
+                    titleText.fontSize = 20;
+                    titleText.fontStyle = FontStyle.Bold;
+                }
+                
+                if (titleTransform.Find("Icon") == null)
+                {
+                    var iconObj = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+                    iconObj.transform.SetParent(titleTransform, false);
+                    iconObj.transform.SetAsFirstSibling();
+                    var img = iconObj.GetComponent<Image>();
+                    img.sprite = Resources.Load<Sprite>("UI/Icons/ui_sidebar_yalong_logo_320");
+                    var rt = iconObj.GetComponent<RectTransform>();
+                    rt.sizeDelta = new Vector2(24f, 24f);
+                    
+                    var hz = titleTransform.GetComponent<HorizontalLayoutGroup>();
+                    if (hz != null) hz.spacing = 8f;
+                }
+            }
+
+            for (int i = 0; i < tabButtons.Count; i++)
+            {
+                var btnRect = tabButtons[i].GetComponent<RectTransform>();
+                if (btnRect != null)
+                {
+                    btnRect.sizeDelta = new Vector2(btnRect.sizeDelta.x, 36f);
+                    var img = tabButtons[i].GetComponent<Image>();
+                    if (img != null)
+                    {
+                        img.sprite = UiThemeTokens.GetRoundedSprite(8);
+                        img.type = Image.Type.Sliced;
+                    }
+                }
+                if (i < tabLabels.Count && tabLabels[i] != null)
+                {
+                    var font = Resources.Load<Font>("Fonts/MaokenFengyaSong");
+                    if (font != null) tabLabels[i].font = font;
+                    tabLabels[i].fontSize = 15;
+                }
+            }
         }
 
         public void SelectTab(int index)
@@ -72,12 +153,12 @@ namespace ElectricalSim.UI
                 var image = tabButtons[i].GetComponent<Image>();
                 if (image != null)
                 {
-                    image.color = active ? new Color(0.89f, 0.94f, 1f) : Color.white;
+                    image.color = active ? UiThemeTokens.PrimaryLight : Color.white;
                 }
 
                 if (i < tabLabels.Count && tabLabels[i] != null)
                 {
-                    tabLabels[i].color = active ? new Color(0.06f, 0.38f, 0.95f) : new Color(0.05f, 0.08f, 0.14f);
+                    tabLabels[i].color = active ? UiThemeTokens.PrimaryBlue : UiThemeTokens.TextMuted;
                     tabLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
                 }
             }
@@ -102,6 +183,77 @@ namespace ElectricalSim.UI
                 default:
                     return PageId.Simulation;
             }
+        }
+    }
+
+    /// <summary>
+    /// 全局 UI 视觉主题规范 (V1.6 升级版)
+    /// </summary>
+    public static class UiThemeTokens
+    {
+        public static readonly Color Background = ParseColor("#F7F9FC", new Color(0.97f, 0.98f, 1f));
+        public static readonly Color CardBackground = Color.white;
+        
+        public static readonly Color PrimaryBlue = ParseColor("#3B82F6", new Color(0.23f, 0.51f, 0.96f));
+        public static readonly Color PrimaryHover = ParseColor("#2563EB", new Color(0.15f, 0.39f, 0.92f));
+        public static readonly Color PrimaryLight = ParseColor("#EFF6FF", new Color(0.94f, 0.96f, 1f));
+        
+        public static readonly Color TextDark = ParseColor("#1E293B", new Color(0.12f, 0.16f, 0.23f));
+        public static readonly Color TextMuted = ParseColor("#64748B", new Color(0.39f, 0.45f, 0.55f));
+        
+        public static readonly Color BorderColor = ParseColor("#E2E8F0", new Color(0.89f, 0.91f, 0.94f));
+        public static readonly Color ErrorColor = ParseColor("#EF4444", new Color(0.94f, 0.27f, 0.27f));
+
+        private static Color ParseColor(string hex, Color fallback)
+        {
+            return ColorUtility.TryParseHtmlString(hex, out var c) ? c : fallback;
+        }
+
+        private static readonly Dictionary<string, Sprite> spriteCache = new Dictionary<string, Sprite>();
+
+        /// <summary>
+        /// 获取或生成带有边缘抗锯齿的圆角 Sprite，带缓存机制以防内存泄漏
+        /// </summary>
+        public static Sprite GetRoundedSprite(int radius = 12, int size = 64)
+        {
+            string key = $"{radius}_{size}";
+            if (spriteCache.TryGetValue(key, out var cachedSprite) && cachedSprite != null)
+            {
+                return cachedSprite;
+            }
+
+            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            Color[] pixels = new Color[size * size];
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Max(0, Mathf.Abs(x - size / 2f) - (size / 2f - radius));
+                    float dy = Mathf.Max(0, Mathf.Abs(y - size / 2f) - (size / 2f - radius));
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+
+                    float alpha = Mathf.Clamp01(radius - dist);
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
+
+            tex.SetPixels(pixels);
+            tex.Apply();
+
+            int border = radius + 2;
+            Sprite sprite = Sprite.Create(
+                tex, 
+                new Rect(0, 0, size, size), 
+                new Vector2(0.5f, 0.5f), 
+                100, 
+                0, 
+                SpriteMeshType.FullRect, 
+                new Vector4(border, border, border, border)
+            );
+
+            spriteCache[key] = sprite;
+            return sprite;
         }
     }
 }
