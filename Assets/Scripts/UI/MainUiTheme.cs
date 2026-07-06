@@ -82,9 +82,8 @@ namespace ElectricalSim.UI
             if (text != null)
             {
                 ApplyText(text, 14, bold ? FontStyle.Bold : FontStyle.Normal, textColor, TextAnchor.MiddleCenter);
-                text.resizeTextForBestFit = true;
-                text.resizeTextMinSize = 10;
-                text.resizeTextMaxSize = 14;
+                text.resizeTextForBestFit = false;
+                text.fontSize = 15;
             }
 
             var colors = button.colors;

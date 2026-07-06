@@ -343,8 +343,8 @@ namespace ElectricalSim.UI
             {
                 label.rectTransform.anchorMin = Vector2.zero;
                 label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = new Vector2(28f, 0f);
-                label.rectTransform.offsetMax = new Vector2(-6f, 0f);
+                label.rectTransform.offsetMin = new Vector2(32f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-2f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
             }
         }
