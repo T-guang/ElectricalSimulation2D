@@ -4,6 +4,7 @@ using System.Text;
 using ElectricalSim.Core;
 using ElectricalSim.Core.Validation;
 using ElectricalSim.Rules;
+using ElectricalSim.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,6 +32,7 @@ namespace ElectricalSim.AI
         private CircuitSummaryBuilder summaryBuilder;
         private Sprite collapseHandleSprite;
         private Button collapseHandleButton;
+        private Image collapseHandleIcon;
         private Text collapseHandleLabel;
         private bool isRightPanelCollapsed;
 
@@ -136,6 +138,9 @@ namespace ElectricalSim.AI
             exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", new Color(0.85f, 0.18f, 0.16f), Color.white, 30f);
             exitPracticeButton.gameObject.SetActive(false);
             clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", new Color(0.92f, 0.95f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 34f);
+            ApplyActionButtonIcon(explainButton, "Inspector/ui_circuit_explain_20", false);
+            ApplyActionButtonIcon(checkButton, "Inspector/ui_check_circuit_20", true);
+            ApplyActionButtonIcon(clearReportButton, "Inspector/ui_clear_result_20", false);
 
             var reportRoot = CreatePanelSection("ReportScrollView", root, 0f, 1f, Color.white);
             reportScrollRect = reportRoot.gameObject.AddComponent<ScrollRect>();
@@ -237,7 +242,10 @@ namespace ElectricalSim.AI
             if (collapseHandleLabel != null)
             {
                 collapseHandleLabel.color = new Color(0.58f, 0.64f, 0.72f, 1f);
+                collapseHandleLabel.gameObject.SetActive(false);
             }
+
+            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "Sidebar/ui_sidebar_collapse_right_32", new Vector2(20f, 20f), new Color(0.58f, 0.64f, 0.72f, 1f));
         }
 
         private void ToggleRightPanelCollapsed()
@@ -325,6 +333,11 @@ namespace ElectricalSim.AI
             if (collapseHandleLabel != null)
             {
                 collapseHandleLabel.text = isRightPanelCollapsed ? "<" : ">";
+            }
+
+            if (collapseHandleIcon != null)
+            {
+                collapseHandleIcon.sprite = UiIconLibrary.Load(isRightPanelCollapsed ? "Sidebar/ui_sidebar_expand_left_32" : "Sidebar/ui_sidebar_collapse_right_32");
             }
         }
 
@@ -2782,6 +2795,24 @@ namespace ElectricalSim.AI
             text.rectTransform.offsetMin = new Vector2(8f, 0f);
             text.rectTransform.offsetMax = new Vector2(-8f, 0f);
             return button;
+        }
+
+        private static void ApplyActionButtonIcon(Button button, string iconPath, bool primary)
+        {
+            var iconColor = primary ? Color.white : new Color(0.39f, 0.45f, 0.55f, 1f);
+            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(18f, 18f), new Vector2(18f, 0f), iconColor);
+            if (icon == null || button == null)
+            {
+                return;
+            }
+
+            var text = button.GetComponentInChildren<Text>();
+            if (text != null)
+            {
+                text.rectTransform.offsetMin = new Vector2(34f, 0f);
+                text.rectTransform.offsetMax = new Vector2(-8f, 0f);
+                text.alignment = TextAnchor.MiddleCenter;
+            }
         }
 
     }

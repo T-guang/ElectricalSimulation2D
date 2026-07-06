@@ -60,6 +60,7 @@ namespace ElectricalSim.UI
         private Sprite fallbackIcon;
         private Sprite collapseHandleSprite;
         private Button collapseHandleButton;
+        private Image collapseHandleIcon;
         private Text collapseHandleLabel;
         private bool isLeftPanelCollapsed;
 
@@ -186,7 +187,10 @@ namespace ElectricalSim.UI
             if (collapseHandleLabel != null)
             {
                 collapseHandleLabel.color = new Color(0.58f, 0.64f, 0.72f, 1f);
+                collapseHandleLabel.gameObject.SetActive(false);
             }
+
+            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "Sidebar/ui_sidebar_collapse_left_32", new Vector2(20f, 20f), new Color(0.58f, 0.64f, 0.72f, 1f));
         }
 
         private void ToggleLeftPanelCollapsed()
@@ -286,6 +290,11 @@ namespace ElectricalSim.UI
             {
                 collapseHandleLabel.text = isLeftPanelCollapsed ? ">" : "<";
             }
+
+            if (collapseHandleIcon != null)
+            {
+                collapseHandleIcon.sprite = UiIconLibrary.Load(isLeftPanelCollapsed ? "Sidebar/ui_sidebar_expand_right_32" : "Sidebar/ui_sidebar_collapse_left_32");
+            }
         }
 
         private void EnsureFilterButtons(RectTransform root)
@@ -342,17 +351,67 @@ namespace ElectricalSim.UI
             image.color = new Color(0.92f, 0.95f, 0.98f, 1f);
 
             var button = rect.GetComponent<Button>() ?? rect.gameObject.AddComponent<Button>();
+            ApplyFilterIcon(rect, name);
             var labelText = rect.GetComponentInChildren<Text>();
             if (labelText != null)
             {
                 labelText.text = label;
                 labelText.color = new Color(0.16f, 0.22f, 0.32f);
+                labelText.alignment = TextAnchor.MiddleCenter;
+                labelText.rectTransform.offsetMin = new Vector2(24f, 2f);
+                labelText.rectTransform.offsetMax = new Vector2(-8f, -2f);
             }
 
             var layout = rect.GetComponent<LayoutElement>() ?? rect.gameObject.AddComponent<LayoutElement>();
             layout.preferredWidth = width;
             layout.preferredHeight = 32f;
             return button;
+        }
+
+        private void ApplyFilterIcon(RectTransform rect, string buttonName)
+        {
+            string iconPath = null;
+            if (buttonName.Contains("All"))
+            {
+                iconPath = "Sidebar/ui_sidebar_filter_all_20";
+            }
+            else if (buttonName.Contains("Household"))
+            {
+                iconPath = "Sidebar/ui_sidebar_filter_home_20";
+            }
+            else if (buttonName.Contains("Industrial"))
+            {
+                iconPath = "Sidebar/ui_sidebar_filter_industry_20";
+            }
+
+            if (string.IsNullOrWhiteSpace(iconPath))
+            {
+                return;
+            }
+
+            var sprite = UiIconLibrary.Load(iconPath);
+            if (sprite == null)
+            {
+                return;
+            }
+
+            var iconRect = rect.Find("Icon") as RectTransform;
+            if (iconRect == null)
+            {
+                iconRect = CreateRect("Icon", rect);
+                iconRect.gameObject.AddComponent<Image>();
+            }
+
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(15f, 0f);
+            iconRect.sizeDelta = new Vector2(18f, 18f);
+            var image = iconRect.GetComponent<Image>() ?? iconRect.gameObject.AddComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            image.color = Color.white;
         }
 
         private void HideLegacySearchBox()

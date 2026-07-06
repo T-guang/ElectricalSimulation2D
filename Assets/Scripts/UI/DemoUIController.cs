@@ -35,6 +35,7 @@ namespace ElectricalSim.UI
         private void Awake()
         {
             EnsureToolbarLayout();
+            EnsureMainLogo();
             EnsureBlueprintPanels();
             EnsureLocalInspectorPanel();
             BindButton(startButton, ToggleSimulation);
@@ -124,6 +125,14 @@ namespace ElectricalSim.UI
             MoveButtonToGroup(clearAllButton, leftGroup, new Vector2(82f, 44f), "清空");
             MoveButtonToGroup(lockButton, leftGroup, new Vector2(82f, 44f), "锁定");
 
+            ApplyToolbarIcon(startButton, "Toolbar/ui_toolbar_start_32", 22f);
+            ApplyToolbarIcon(undoButton, "Toolbar/ui_toolbar_undo_24", 18f);
+            ApplyToolbarIcon(redoButton, "Toolbar/ui_toolbar_redo_24", 18f);
+            ApplyToolbarIcon(quickDeleteButton, "Toolbar/ui_toolbar_delete_24", 18f);
+            ApplyToolbarIcon(clearWiresButton, "Toolbar/ui_toolbar_clear_wire_24", 18f);
+            ApplyToolbarIcon(clearAllButton, "Toolbar/ui_toolbar_clear_all_24", 18f);
+            ApplyToolbarIcon(lockButton, "Toolbar/ui_toolbar_lock_24", 18f);
+
             for (var i = 0; i < colorButtons.Count; i++)
             {
                 var button = colorButtons[i];
@@ -151,6 +160,69 @@ namespace ElectricalSim.UI
             }
         }
 
+        private void EnsureMainLogo()
+        {
+            var logoText = GameObject.Find("Logo")?.GetComponent<Text>();
+            if (logoText == null)
+            {
+                return;
+            }
+
+            var sprite = UiIconLibrary.Load("Logo/ui_logo_main_320");
+            if (sprite == null)
+            {
+                return;
+            }
+
+            var titleValue = string.IsNullOrWhiteSpace(logoText.text) ? "电工数字学生仿真系统" : logoText.text;
+            logoText.text = string.Empty;
+            logoText.raycastTarget = false;
+
+            var iconRect = logoText.transform.Find("LogoIcon") as RectTransform;
+            if (iconRect == null)
+            {
+                var iconObject = new GameObject("LogoIcon", typeof(RectTransform), typeof(Image));
+                iconObject.transform.SetParent(logoText.transform, false);
+                iconRect = iconObject.GetComponent<RectTransform>();
+            }
+
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.anchoredPosition = new Vector2(0f, 0f);
+            iconRect.sizeDelta = new Vector2(132f, 42f);
+
+            var image = iconRect.GetComponent<Image>() ?? iconRect.gameObject.AddComponent<Image>();
+            image.sprite = sprite;
+            image.preserveAspect = true;
+            image.color = Color.white;
+            image.raycastTarget = false;
+
+            var titleRect = logoText.transform.Find("LogoTitle") as RectTransform;
+            if (titleRect == null)
+            {
+                var titleObject = new GameObject("LogoTitle", typeof(RectTransform), typeof(Text));
+                titleObject.transform.SetParent(logoText.transform, false);
+                titleRect = titleObject.GetComponent<RectTransform>();
+            }
+
+            titleRect.anchorMin = Vector2.zero;
+            titleRect.anchorMax = Vector2.one;
+            titleRect.offsetMin = new Vector2(146f, 0f);
+            titleRect.offsetMax = Vector2.zero;
+
+            var titleText = titleRect.GetComponent<Text>() ?? titleRect.gameObject.AddComponent<Text>();
+            titleText.text = titleValue;
+            titleText.font = logoText.font != null ? logoText.font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            titleText.fontSize = 22;
+            titleText.fontStyle = FontStyle.Bold;
+            titleText.alignment = TextAnchor.MiddleLeft;
+            titleText.color = new Color(0.12f, 0.16f, 0.23f);
+            titleText.raycastTarget = false;
+
+            iconRect.SetAsFirstSibling();
+        }
+
         private RectTransform FindQuickToolRoot()
         {
             var candidates = new[]
@@ -173,6 +245,30 @@ namespace ElectricalSim.UI
             }
 
             return null;
+        }
+
+        private void ApplyToolbarIcon(Button button, string iconPath, float iconSize)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(iconSize, iconSize), new Vector2(18f, 0f));
+            if (icon == null)
+            {
+                return;
+            }
+
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.rectTransform.anchorMin = Vector2.zero;
+                label.rectTransform.anchorMax = Vector2.one;
+                label.rectTransform.offsetMin = new Vector2(30f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-6f, 0f);
+                label.alignment = TextAnchor.MiddleCenter;
+            }
         }
 
         private RectTransform EnsureGroup(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta, TextAnchor childAlignment, float spacing)

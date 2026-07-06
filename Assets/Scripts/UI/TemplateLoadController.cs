@@ -300,9 +300,12 @@ namespace ElectricalSim.UI
             label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(0.05f, 0.12f, 0.24f);
             label.raycastTarget = false;
+            ApplyFileButtonIcon(button, "Toolbar/ui_toolbar_load_blueprint_24", new Color(0.39f, 0.45f, 0.55f, 1f));
 
             PrepareFileButton(saveButton);
             PrepareFileButton(importButton);
+            ApplyFileButtonIcon(saveButton != null ? saveButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_save_blueprint_24", new Color(0.39f, 0.45f, 0.55f, 1f));
+            ApplyFileButtonIcon(importButton != null ? importButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_import_blueprint_24", new Color(0.39f, 0.45f, 0.55f, 1f));
             if (saveButton != null)
             {
                 saveButton.transform.SetParent(fileActionGroup, false);
@@ -372,6 +375,25 @@ namespace ElectricalSim.UI
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(138f, 48f);
+        }
+
+        private static void ApplyFileButtonIcon(Button button, string iconPath, Color iconColor)
+        {
+            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(18f, 18f), new Vector2(20f, 0f), iconColor);
+            if (icon == null || button == null)
+            {
+                return;
+            }
+
+            var label = button.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.rectTransform.anchorMin = Vector2.zero;
+                label.rectTransform.anchorMax = Vector2.one;
+                label.rectTransform.offsetMin = new Vector2(36f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-8f, 0f);
+                label.alignment = TextAnchor.MiddleCenter;
+            }
         }
 
         private void EnsureSelectionPanel()
