@@ -29,20 +29,14 @@ namespace ElectricalSim.UI
         public static readonly Color GridMajor = Hex("D7E2F0");
 
         private static Font mainFont;
-
         public static Font MainFont
         {
             get
             {
                 if (mainFont == null)
                 {
-                    mainFont = Resources.Load<Font>("Fonts/MaokenFengyaSong");
-                    if (mainFont == null)
-                    {
-                        mainFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                    }
+                    mainFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 }
-
                 return mainFont;
             }
         }

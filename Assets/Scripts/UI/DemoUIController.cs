@@ -123,6 +123,7 @@ namespace ElectricalSim.UI
             lockButton = EnsureButton(toolbar, lockButton, "InteractionLockButton", "锁定");
 
             var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(720f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleLeft, 8f);
+            var rightGroup = EnsureGroup(toolbar, "RightActionGroup", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(400f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleRight, 8f);
             var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0.53f, 0.5f), new Vector2(0.53f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(188f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleCenter, 10f);
 
             MoveButtonToGroup(startButton, leftGroup, new Vector2(120f, MainUiTheme.ToolbarButtonHeight), "开始仿真");

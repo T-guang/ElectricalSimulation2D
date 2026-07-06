@@ -17,7 +17,7 @@ namespace ElectricalSim.AI
         private const float PanelMargin = 12f;
         private const float CollapseHandleSize = 36f;
         private const float HeaderHeight = 42f;
-        private const float QuickActionsHeight = 166f;
+        private const float QuickActionsHeight = 186f;
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text titleText;
         [SerializeField] private Button explainButton;
@@ -120,7 +120,7 @@ namespace ElectricalSim.AI
             rootLayout.childForceExpandHeight = false;
 
             var header = CreatePanelSection("Header", root, HeaderHeight, 0f, MainUiTheme.SelectedBlue);
-            titleText = CreateText("Title", header, "检查助手", 18, TextAnchor.MiddleLeft);
+            titleText = CreateText("Title", header, "检查助手", 20, TextAnchor.MiddleLeft);
             titleText.fontStyle = FontStyle.Bold;
             titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
             titleText.rectTransform.offsetMax = new Vector2(-14f, 0f);
@@ -135,13 +135,13 @@ namespace ElectricalSim.AI
             actionLayout.childForceExpandWidth = true;
             actionLayout.childForceExpandHeight = false;
 
-            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 34f);
-            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", MainUiTheme.PrimaryBlue, Color.white, 34f);
-            submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", MainUiTheme.SuccessGreen, Color.white, 30f);
+            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 40f);
+            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", MainUiTheme.PrimaryBlue, Color.white, 40f);
+            submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", MainUiTheme.SuccessGreen, Color.white, 40f);
             submitPracticeButton.gameObject.SetActive(false);
-            exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", MainUiTheme.DangerRed, Color.white, 30f);
+            exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", MainUiTheme.DangerRed, Color.white, 40f);
             exitPracticeButton.gameObject.SetActive(false);
-            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 34f);
+            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 40f);
             ApplyActionButtonIcon(explainButton, "Inspector/ui_circuit_explain_20", false);
             ApplyActionButtonIcon(checkButton, "Inspector/ui_check_circuit_20", true);
             ApplyActionButtonIcon(clearReportButton, "Inspector/ui_clear_result_20", false);
@@ -2840,7 +2840,7 @@ namespace ElectricalSim.AI
             var text = button.GetComponentInChildren<Text>();
             if (text != null)
             {
-                text.rectTransform.offsetMin = new Vector2(34f, 0f);
+                text.rectTransform.offsetMin = new Vector2(40f, 0f);
                 text.rectTransform.offsetMax = new Vector2(-8f, 0f);
                 text.alignment = TextAnchor.MiddleCenter;
             }
