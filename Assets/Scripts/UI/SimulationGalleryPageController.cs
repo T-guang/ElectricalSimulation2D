@@ -125,8 +125,8 @@ namespace ElectricalSim.UI
             rect.offsetMax = new Vector2(-470f, -72f);
 
             var layout = bar.GetComponent<HorizontalLayoutGroup>();
-            layout.spacing = 10f;
-            layout.childControlWidth = false;
+            layout.spacing = 12f;
+            layout.childControlWidth = true;
             layout.childControlHeight = false;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
@@ -136,8 +136,7 @@ namespace ElectricalSim.UI
             var filters = new[] { "全部", "推荐", "家庭电路", "工业电路", "电机控制", "正反转", "星三角", "自动往返" };
             foreach (var filter in filters)
             {
-                var width = filter == "全部" || filter == "推荐" ? 100f : 127f;
-                var button = CreatePillButton(bar.transform, filter, width, 36f);
+                var button = CreatePillButton(bar.transform, filter);
                 var captured = filter;
                 button.onClick.AddListener(() =>
                 {
@@ -334,17 +333,24 @@ namespace ElectricalSim.UI
                 if (image != null)
                 {
                     image.color = active ? MainUiTheme.PrimaryBlue : Color.white;
-                    var outline = pair.Value.GetComponent<Outline>() ?? pair.Value.gameObject.AddComponent<Outline>();
-                    outline.effectColor = active ? MainUiTheme.PrimaryBlue : MainUiTheme.Hex("D2D2D2");
-                    outline.effectDistance = new Vector2(1f, -1f);
+                    var outline = pair.Value.GetComponent<Outline>();
+                    if (outline != null)
+                    {
+                        outline.effectColor = active ? MainUiTheme.PrimaryBlue : MainUiTheme.Hex("D2D2D2");
+                    }
                 }
 
-                var label = pair.Value.GetComponentInChildren<Text>();
+                var label = pair.Value.transform.Find("Text")?.GetComponent<Text>();
                 if (label != null)
                 {
                     label.color = active ? Color.white : MainUiTheme.Hex("464646");
-                    label.fontSize = 20;
                     label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+                }
+
+                var icon = pair.Value.transform.Find("Icon")?.GetComponent<Image>();
+                if (icon != null)
+                {
+                    icon.color = active ? Color.white : MainUiTheme.Hex("6B7280");
                 }
             }
         }
@@ -960,15 +966,78 @@ namespace ElectricalSim.UI
             return label;
         }
 
-        private Button CreatePillButton(Transform parent, string text, float width, float height)
+        private Button CreatePillButton(Transform parent, string text)
         {
-            var button = CreateButton(parent, text, HexColor(0xF1F5F9), HexColor(0x334155));
-            var image = button.GetComponent<Image>();
-            image.sprite = UiThemeTokens.GetRoundedSprite(15);
+            var go = CreateObject("FilterButton_" + text, parent, typeof(RectTransform), typeof(Image), typeof(Button), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter), typeof(Outline));
+            var image = go.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(16);
             image.type = Image.Type.Sliced;
-            var rect = button.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(width, height);
-            return button;
+            image.color = Color.white;
+            image.raycastTarget = true;
+
+            var outline = go.GetComponent<Outline>();
+            outline.effectColor = MainUiTheme.Hex("D2D2D2");
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            var btn = go.GetComponent<Button>();
+            var nav = btn.navigation;
+            nav.mode = Navigation.Mode.None;
+            btn.navigation = nav;
+
+            var layout = go.GetComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(16, 16, 0, 0);
+            layout.spacing = 8f;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            var fitter = go.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+            go.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 36f);
+
+            var iconGo = CreateObject("Icon", go.transform, typeof(RectTransform), typeof(Image));
+            var iconRect = iconGo.GetComponent<RectTransform>();
+            iconRect.sizeDelta = new Vector2(20f, 20f);
+            var iconImg = iconGo.GetComponent<Image>();
+            iconImg.color = MainUiTheme.Hex("6B7280");
+            
+            var spriteName = GetFilterIconName(text);
+            var sprite = Resources.Load<Sprite>("Icons/" + spriteName);
+            if (sprite != null)
+            {
+                iconImg.sprite = sprite;
+                iconImg.type = Image.Type.Simple;
+                iconImg.preserveAspect = true;
+            }
+            else
+            {
+                iconImg.sprite = UiThemeTokens.GetRoundedSprite(8);
+            }
+
+            var label = CreateText("Text", go.transform, text, 16, FontStyle.Normal, MainUiTheme.Hex("464646"));
+            label.alignment = TextAnchor.MiddleCenter;
+            
+            return btn;
+        }
+
+        private string GetFilterIconName(string filter)
+        {
+            switch (filter)
+            {
+                case "全部": return "ic_all";
+                case "推荐": return "ic_star";
+                case "家庭电路": return "ic_home";
+                case "工业电路": return "ic_industry";
+                case "电机控制": return "ic_motor";
+                case "正反转": return "ic_rotate";
+                case "星三角": return "ic_triangle";
+                case "自动往返": return "ic_arrows";
+                default: return "ic_default";
+            }
         }
 
         private Button CreateButton(Transform parent, string text, Color background, Color textColor)
