@@ -41,6 +41,8 @@ namespace ElectricalSim.UI
         private int selectedIndex;
         private int activeCategory;
         private int activeDifficulty = -1;
+        private int currentPage = 0;
+        private GameObject paginationRoot;
 
         private void ApplyTheme()
         {
@@ -96,6 +98,7 @@ namespace ElectricalSim.UI
                         {
                             btnText.font = MainUiTheme.BodyFont;
                             btnText.fontSize = 20;
+                            btnText.fontStyle = FontStyle.Bold;
                             btnText.color = Color.white;
                             btnText.resizeTextForBestFit = false;
                         }
@@ -175,35 +178,163 @@ namespace ElectricalSim.UI
             }
         }
 
+        private struct DifficultyStyle
+        {
+            public Color BackgroundColor;
+            public Color TextColor;
+            public Color BorderColor;
+            public string LabelText;
+        }
+
+        private static DifficultyStyle GetDifficultyStyle(string difficulty)
+        {
+            var style = new DifficultyStyle();
+            style.TextColor = Color.white;
+            style.LabelText = difficulty;
+
+            if (string.IsNullOrEmpty(difficulty))
+            {
+                style.BackgroundColor = MainUiTheme.Hex("22C55E");
+                style.BorderColor = MainUiTheme.Hex("22C55E");
+            }
+            else if (difficulty.Contains("\u9ad8") && !difficulty.Contains("\u4e2d"))
+            {
+                style.BackgroundColor = MainUiTheme.Hex("EF4444");
+                style.BorderColor = MainUiTheme.Hex("EF4444");
+            }
+            else if (difficulty.Contains("\u4e2d\u9ad8") || difficulty.Contains("\u8fdb\u9636"))
+            {
+                style.BackgroundColor = MainUiTheme.Hex("16A34A");
+                style.BorderColor = MainUiTheme.Hex("16A34A");
+            }
+            else if (difficulty.Contains("\u4e2d"))
+            {
+                style.BackgroundColor = MainUiTheme.Hex("F59E0B");
+                style.BorderColor = MainUiTheme.Hex("F59E0B");
+            }
+            else if (difficulty.Contains("\u521d") || difficulty.Contains("\u5165\u95e8"))
+            {
+                style.BackgroundColor = MainUiTheme.Hex("22C55E");
+                style.BorderColor = MainUiTheme.Hex("22C55E");
+            }
+            else
+            {
+                style.BackgroundColor = MainUiTheme.Hex("64748B");
+                style.BorderColor = MainUiTheme.Hex("64748B");
+            }
+            
+            return style;
+        }
+
         private static void ApplyBlueprintCardTextStyle(GameObject card)
         {
             var texts = card.GetComponentsInChildren<Text>(true);
             for (var i = 0; i < texts.Length; i++)
             {
                 var text = texts[i];
-                if (text == null)
-                {
-                    continue;
-                }
+                if (text == null) continue;
 
                 text.font = MainUiTheme.BodyFont;
                 text.resizeTextForBestFit = false;
+
                 if (IsActionLabel(text.text))
                 {
                     text.fontSize = 20;
                     text.fontStyle = FontStyle.Bold;
                     text.color = Color.white;
+                    StyleTagParent(text, MainUiTheme.PrimaryBlue, MainUiTheme.PrimaryBlue, 8, true);
                 }
                 else if (IsCategoryLabel(text.text) || IsDifficultyLabel(text.text))
                 {
-                    text.fontSize = 18;
-                    text.color = MainUiTheme.Hex("858A8D");
+                    var isDifficulty = IsDifficultyLabel(text.text);
+                    text.fontSize = 14;
+                    text.fontStyle = FontStyle.Bold;
+                    
+                    if (isDifficulty)
+                    {
+                        var style = GetDifficultyStyle(text.text);
+                        text.color = style.TextColor;
+                        StyleTagParent(text, style.BackgroundColor, style.BorderColor, 99, false);
+                    }
+                    else
+                    {
+                        text.color = MainUiTheme.Hex("2563EB");
+                        StyleTagParent(text, MainUiTheme.Hex("DBEAFE"), MainUiTheme.Hex("DBEAFE"), 99, false);
+                    }
                 }
                 else if (!string.IsNullOrWhiteSpace(text.text))
                 {
                     text.fontSize = 20;
                     text.fontStyle = FontStyle.Bold;
-                    text.color = MainUiTheme.Hex("464646");
+                    text.color = MainUiTheme.Hex("1F2937");
+                }
+            }
+            
+            var images = card.GetComponentsInChildren<Image>(true);
+            foreach (var img in images)
+            {
+                if (img.gameObject.name == "Backplate")
+                {
+                    UnityEngine.Object.DestroyImmediate(img.gameObject);
+                }
+            }
+        }
+
+        private static void StyleTagParent(Text text, Color bgColor, Color borderColor, int radius, bool keepInteractable)
+        {
+            var parent = text.transform.parent;
+            if (parent == null || parent == text.transform) return;
+
+            var img = parent.GetComponent<Image>();
+            if (img != null)
+            {
+                img.sprite = UiThemeTokens.GetRoundedSprite(radius);
+                img.type = Image.Type.Sliced;
+                img.color = bgColor;
+            }
+
+            var outline = parent.GetComponent<UnityEngine.UI.Outline>();
+            if (outline != null)
+            {
+                UnityEngine.Object.DestroyImmediate(outline);
+            }
+
+            var btn = parent.GetComponent<Button>();
+            if (btn != null)
+            {
+                if (keepInteractable)
+                {
+                    var colors = btn.colors;
+                    colors.normalColor = Color.white;
+                    colors.highlightedColor = Color.white;
+                    colors.pressedColor = new Color(0.9f, 0.9f, 0.9f);
+                    colors.selectedColor = Color.white;
+                    btn.colors = colors;
+
+                    var nav = btn.navigation;
+                    nav.mode = Navigation.Mode.None;
+                    btn.navigation = nav;
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(btn);
+                }
+            }
+
+            if (radius == 99)
+            {
+                var layout = parent.GetComponent<HorizontalLayoutGroup>();
+                if (layout == null) layout = parent.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+                layout.childAlignment = TextAnchor.MiddleCenter;
+                layout.padding = new RectOffset(12, 12, 4, 4);
+                layout.childControlHeight = false;
+                layout.childControlWidth = false;
+
+                var rect = parent.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    rect.sizeDelta = new Vector2(rect.sizeDelta.x, 26f);
                 }
             }
         }
@@ -382,7 +513,7 @@ namespace ElectricalSim.UI
                 }
             }
 
-            searchInput?.onValueChanged.AddListener(_ => ApplyFilter());
+            searchInput?.onValueChanged.AddListener(_ => { currentPage = 0; ApplyFilter(); });
             ClosePreview();
             HideReference();
             ApplyFilter();
@@ -558,11 +689,14 @@ namespace ElectricalSim.UI
             return text == "\u521d\u7ea7"
                    || text == "\u4e2d\u7ea7"
                    || text == "\u9ad8\u7ea7"
+                   || text == "\u4e2d\u9ad8\u7ea7"
                    || text == "\u5165\u95e8"
                    || text == "\u8fdb\u9636"
                    || text == "\u521d\u7ea7\u56fe\u7eb8"
                    || text == "\u4e2d\u7ea7\u56fe\u7eb8"
-                   || text == "\u9ad8\u7ea7\u56fe\u7eb8";
+                   || text == "\u9ad8\u7ea7\u56fe\u7eb8"
+                   || text == "\u4e2d\u9ad8\u7ea7\u56fe\u7eb8"
+                   || text.Contains("\u4e2d\u9ad8");
         }
 
         private void EnterConfigurationInternal()
@@ -619,44 +753,66 @@ namespace ElectricalSim.UI
         {
             activeCategory = category;
             activeDifficulty = -1;
+            currentPage = 0;
             ApplyFilter();
         }
 
         private void SetDifficulty(int difficulty)
         {
             activeDifficulty = difficulty;
+            currentPage = 0;
             ApplyFilter();
         }
 
         private void ApplyFilter()
         {
-            var visibleIndex = 0;
+            var matchIndices = new List<int>();
             for (var i = 0; i < blueprintCards.Count; i++)
             {
                 var categoryMatches = i < blueprintCategories.Count && blueprintCategories[i] == activeCategory;
                 var difficultyMatches = activeDifficulty < 0 || i < blueprintDifficulties.Count && blueprintDifficulties[i] == activeDifficulty;
                 var searchMatches = MatchesSearch(i);
-                var visible = categoryMatches && difficultyMatches && searchMatches;
-                blueprintCards[i].SetActive(visible);
-                if (!visible)
+                if (categoryMatches && difficultyMatches && searchMatches)
                 {
-                    continue;
+                    matchIndices.Add(i);
                 }
-
-                var rect = blueprintCards[i].GetComponent<RectTransform>();
-                if (rect != null)
+                else
                 {
-                    var availableWidth = cardContent != null && cardContent.rect.width > 1f
-                        ? cardContent.rect.width
-                        : Mathf.Max(960f, Screen.width - PageMargin * 2f);
-                    var columns = Mathf.Max(1, Mathf.FloorToInt((availableWidth - PageMargin + CardGap) / (CardWidth + CardGap)));
-                    var row = visibleIndex / columns;
-                    var col = visibleIndex % columns;
-                    rect.sizeDelta = new Vector2(CardWidth, CardHeight);
-                    rect.anchoredPosition = new Vector2(PageMargin + col * (CardWidth + CardGap), -PageMargin - row * (CardHeight + CardGap));
+                    if (blueprintCards[i] != null) blueprintCards[i].SetActive(false);
                 }
+            }
 
-                visibleIndex++;
+            var totalMatches = matchIndices.Count;
+            var totalPages = Mathf.Max(1, Mathf.CeilToInt(totalMatches / 8f));
+            if (currentPage >= totalPages) currentPage = totalPages - 1;
+            if (currentPage < 0) currentPage = 0;
+
+            var startIndex = currentPage * 8;
+            var endIndex = Mathf.Min(startIndex + 8, totalMatches);
+
+            var visibleIndex = 0;
+            for (var i = 0; i < matchIndices.Count; i++)
+            {
+                var cardIndex = matchIndices[i];
+                var visible = i >= startIndex && i < endIndex;
+                if (blueprintCards[cardIndex] != null) blueprintCards[cardIndex].SetActive(visible);
+
+                if (visible)
+                {
+                    var rect = blueprintCards[cardIndex] != null ? blueprintCards[cardIndex].GetComponent<RectTransform>() : null;
+                    if (rect != null)
+                    {
+                        var availableWidth = cardContent != null && cardContent.rect.width > 1f
+                            ? cardContent.rect.width
+                            : Mathf.Max(960f, Screen.width - PageMargin * 2f);
+                        var columns = Mathf.Max(1, Mathf.FloorToInt((availableWidth - PageMargin + CardGap) / (CardWidth + CardGap)));
+                        var row = visibleIndex / columns;
+                        var col = visibleIndex % columns;
+                        rect.sizeDelta = new Vector2(CardWidth, CardHeight);
+                        rect.anchoredPosition = new Vector2(PageMargin + col * (CardWidth + CardGap), -PageMargin - row * (CardHeight + CardGap));
+                    }
+                    visibleIndex++;
+                }
             }
 
             if (cardContent != null)
@@ -664,10 +820,11 @@ namespace ElectricalSim.UI
                 var availableWidth = cardContent.rect.width > 1f ? cardContent.rect.width : Mathf.Max(960f, Screen.width - PageMargin * 2f);
                 var columns = Mathf.Max(1, Mathf.FloorToInt((availableWidth - PageMargin + CardGap) / (CardWidth + CardGap)));
                 var rows = Mathf.CeilToInt(visibleIndex / (float)columns);
-                cardContent.sizeDelta = new Vector2(0f, Mathf.Max(720f, PageMargin + rows * (CardHeight + CardGap)));
+                cardContent.sizeDelta = new Vector2(0f, Mathf.Max(720f, PageMargin + rows * (CardHeight + CardGap) + 120f));
             }
 
             RefreshButtonStates();
+            BuildPaginationUI(totalPages);
         }
 
         private bool MatchesSearch(int index)
@@ -679,6 +836,90 @@ namespace ElectricalSim.UI
 
             var name = index >= 0 && index < blueprintNames.Count ? blueprintNames[index] : string.Empty;
             return name.IndexOf(searchInput.text.Trim(), System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void BuildPaginationUI(int totalPages)
+        {
+            if (paginationRoot == null)
+            {
+                paginationRoot = new GameObject("PaginationRoot", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                var rect = paginationRoot.GetComponent<RectTransform>();
+                rect.SetParent(cardContent != null ? cardContent.parent : transform, false);
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(1f, 0f);
+                rect.pivot = new Vector2(0.5f, 0f);
+                rect.anchoredPosition = new Vector2(0f, 20f);
+                rect.sizeDelta = new Vector2(0f, 40f);
+
+                var layout = paginationRoot.GetComponent<HorizontalLayoutGroup>();
+                layout.childAlignment = TextAnchor.MiddleCenter;
+                layout.spacing = 16f;
+                layout.childControlHeight = false;
+                layout.childControlWidth = false;
+            }
+
+            foreach (Transform child in paginationRoot.transform)
+            {
+                Destroy(child.gameObject);
+            }
+
+            if (totalPages <= 1) return;
+
+            var prevBtn = CreatePaginationButton("< 上一页", currentPage > 0);
+            prevBtn.onClick.AddListener(() => { currentPage--; ApplyFilter(); });
+
+            for (var i = 0; i < totalPages; i++)
+            {
+                var pageIndex = i;
+                var pageBtn = CreatePaginationButton((i + 1).ToString(), true, i == currentPage);
+                if (i != currentPage)
+                {
+                    pageBtn.onClick.AddListener(() => { currentPage = pageIndex; ApplyFilter(); });
+                }
+            }
+
+            var nextBtn = CreatePaginationButton("下一页 >", currentPage < totalPages - 1);
+            nextBtn.onClick.AddListener(() => { currentPage++; ApplyFilter(); });
+        }
+
+        private Button CreatePaginationButton(string text, bool interactable, bool isCurrent = false)
+        {
+            var go = new GameObject("PageBtn_" + text, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(paginationRoot.transform, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(text.Length > 2 ? 80f : 40f, 36f);
+
+            var img = go.GetComponent<Image>();
+            img.sprite = UiThemeTokens.GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
+            img.color = interactable ? (isCurrent ? MainUiTheme.Hex("2563EB") : Color.white) : new Color(0.96f, 0.96f, 0.96f);
+
+            if (!isCurrent)
+            {
+                var outline = go.AddComponent<Outline>();
+                outline.effectColor = interactable ? MainUiTheme.Hex("D2D2D2") : MainUiTheme.Hex("E5E5E5");
+                outline.effectDistance = new Vector2(1f, -1f);
+            }
+
+            var btn = go.GetComponent<Button>();
+            btn.interactable = interactable;
+
+            var txtGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            txtGo.transform.SetParent(go.transform, false);
+            var txtRect = txtGo.GetComponent<RectTransform>();
+            txtRect.anchorMin = Vector2.zero;
+            txtRect.anchorMax = Vector2.one;
+            txtRect.offsetMin = Vector2.zero;
+            txtRect.offsetMax = Vector2.zero;
+
+            var txt = txtGo.GetComponent<Text>();
+            txt.text = text;
+            txt.font = MainUiTheme.BodyFont;
+            txt.fontSize = 16;
+            txt.alignment = TextAnchor.MiddleCenter;
+            txt.color = interactable ? (isCurrent ? Color.white : MainUiTheme.Hex("464646")) : MainUiTheme.Hex("A0A0A0");
+
+            return btn;
         }
 
         private void RefreshButtonStates()
@@ -773,40 +1014,29 @@ namespace ElectricalSim.UI
 
         private static Color ResolveFilterFill(Button button, bool active)
         {
-            if (!active)
-            {
-                return Color.white;
-            }
-
             var text = button != null && button.GetComponentInChildren<Text>() != null ? button.GetComponentInChildren<Text>().text : string.Empty;
-            if (text.Contains("初级")) return MainUiTheme.Hex("DCFCE7");
-            if (text.Contains("中级")) return MainUiTheme.Hex("FEF3C7");
-            if (text.Contains("高级")) return MainUiTheme.Hex("FEE2E2");
-            return MainUiTheme.Hex("DBEAFE");
+            if (text.Contains("\u521d\u7ea7")) return active ? MainUiTheme.Hex("DCFCE7") : MainUiTheme.Hex("F0FDF4");
+            if (text.Contains("\u4e2d\u7ea7")) return active ? MainUiTheme.Hex("FFEDD5") : MainUiTheme.Hex("FFF7ED");
+            if (text.Contains("\u9ad8\u7ea7")) return active ? MainUiTheme.Hex("FEE2E2") : MainUiTheme.Hex("FEF2F2");
+            return active ? MainUiTheme.Hex("DBEAFE") : MainUiTheme.Hex("FFFFFF");
         }
 
         private static Color ResolveFilterBorder(Button button, bool active)
         {
-            if (!active)
-            {
-                return MainUiTheme.Hex("D2D2D2");
-            }
-
-            return ResolveFilterTextColor(button, true);
+            var text = button != null && button.GetComponentInChildren<Text>() != null ? button.GetComponentInChildren<Text>().text : string.Empty;
+            if (text.Contains("\u521d\u7ea7")) return active ? MainUiTheme.Hex("16A34A") : MainUiTheme.Hex("86EFAC");
+            if (text.Contains("\u4e2d\u7ea7")) return active ? MainUiTheme.Hex("F59E0B") : MainUiTheme.Hex("FDBA74");
+            if (text.Contains("\u9ad8\u7ea7")) return active ? MainUiTheme.Hex("EF4444") : MainUiTheme.Hex("FCA5A5");
+            return active ? MainUiTheme.Hex("2563EB") : MainUiTheme.Hex("C7D2E0");
         }
 
         private static Color ResolveFilterTextColor(Button button, bool active)
         {
-            if (!active)
-            {
-                return MainUiTheme.Hex("464646");
-            }
-
             var text = button != null && button.GetComponentInChildren<Text>() != null ? button.GetComponentInChildren<Text>().text : string.Empty;
-            if (text.Contains("初级")) return MainUiTheme.Hex("0BB148");
-            if (text.Contains("中级")) return MainUiTheme.Hex("F59E0B");
-            if (text.Contains("高级")) return MainUiTheme.Hex("EF4444");
-            return MainUiTheme.PrimaryBlue;
+            if (text.Contains("\u521d\u7ea7")) return active ? MainUiTheme.Hex("15803D") : MainUiTheme.Hex("16A34A");
+            if (text.Contains("\u4e2d\u7ea7")) return active ? MainUiTheme.Hex("C2410C") : MainUiTheme.Hex("EA580C");
+            if (text.Contains("\u9ad8\u7ea7")) return active ? MainUiTheme.Hex("DC2626") : MainUiTheme.Hex("EF4444");
+            return active ? MainUiTheme.Hex("2563EB") : MainUiTheme.Hex("4B5563");
         }
     }
 }
