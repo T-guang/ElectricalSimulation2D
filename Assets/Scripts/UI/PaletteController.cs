@@ -112,7 +112,7 @@ namespace ElectricalSim.UI
                 var textRt = textGo.GetComponent<RectTransform>();
                 textRt.anchorMin = Vector2.zero;
                 textRt.anchorMax = Vector2.one;
-                textRt.offsetMin = new Vector2(12f, 0f);
+                textRt.offsetMin = new Vector2(18f, 0f);
                 textRt.offsetMax = Vector2.zero;
             }
 
@@ -509,9 +509,27 @@ namespace ElectricalSim.UI
             panelImage.color = MainUiTheme.PanelBackground;
             panelImage.raycastTarget = true;
 
-            var outline = logPanel.GetComponent<Outline>() ?? logPanel.gameObject.AddComponent<Outline>();
-            outline.effectColor = MainUiTheme.Divider;
-            outline.effectDistance = new Vector2(1f, -1f);
+            var outline = logPanel.GetComponent<Outline>();
+            if (outline != null)
+            {
+                outline.enabled = false;
+            }
+            
+            var topBorder = logPanel.Find("TopBorder") as RectTransform;
+            if (topBorder == null)
+            {
+                var borderGo = new GameObject("TopBorder", typeof(RectTransform), typeof(Image));
+                borderGo.transform.SetParent(logPanel, false);
+                topBorder = borderGo.GetComponent<RectTransform>();
+                var borderImage = topBorder.GetComponent<Image>();
+                borderImage.color = MainUiTheme.Divider;
+                borderImage.raycastTarget = false;
+            }
+            topBorder.anchorMin = new Vector2(0f, 1f);
+            topBorder.anchorMax = new Vector2(1f, 1f);
+            topBorder.pivot = new Vector2(0.5f, 1f);
+            topBorder.anchoredPosition = new Vector2(0f, 0f);
+            topBorder.sizeDelta = new Vector2(0f, 1f);
 
             var title = logPanel.Find("ActionLogTitle") as RectTransform;
             if (title != null)

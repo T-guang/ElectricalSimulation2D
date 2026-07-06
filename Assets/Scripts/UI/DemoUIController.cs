@@ -386,11 +386,11 @@ namespace ElectricalSim.UI
 
             if (danger)
             {
-                MainUiTheme.StyleButton(button, Color.clear, MainUiTheme.DangerRed, Color.clear);
+                MainUiTheme.StyleButton(button, Color.white, MainUiTheme.DangerRed, MainUiTheme.DangerBorder);
                 return;
             }
 
-            MainUiTheme.StyleButton(button, Color.clear, MainUiTheme.DeepText, Color.clear);
+            MainUiTheme.StyleButton(button, Color.white, MainUiTheme.DeepText, MainUiTheme.Divider);
         }
 
         private RectTransform EnsureGroup(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta, TextAnchor childAlignment, float spacing)
