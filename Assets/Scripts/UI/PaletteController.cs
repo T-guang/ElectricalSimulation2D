@@ -189,7 +189,7 @@ namespace ElectricalSim.UI
                 collapseHandleLabel.gameObject.SetActive(false);
             }
 
-            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "Sidebar/ui_sidebar_collapse_left_32", new Vector2(20f, 20f), MainUiTheme.MutedText);
+            collapseHandleIcon = UiIconLibrary.EnsureCenteredIcon(handle, "ui_sidebar_collapse_left_32", new Vector2(24f, 24f), MainUiTheme.MutedText);
         }
 
         private static void EnsureTitleAccent(RectTransform title)
@@ -313,7 +313,7 @@ namespace ElectricalSim.UI
 
             if (collapseHandleIcon != null)
             {
-                collapseHandleIcon.sprite = UiIconLibrary.Load(isLeftPanelCollapsed ? "Sidebar/ui_sidebar_expand_right_32" : "Sidebar/ui_sidebar_collapse_left_32");
+                collapseHandleIcon.sprite = UiIconLibrary.Load(isLeftPanelCollapsed ? "ui_sidebar_expand_right_32" : "ui_sidebar_collapse_left_32");
             }
         }
 
@@ -366,6 +366,8 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(width, 32f);
 
             var image = rect.GetComponent<Image>() ?? rect.gameObject.AddComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(16, 32);
+            image.type = Image.Type.Sliced;
             image.color = MainUiTheme.FilterButton;
 
             var button = rect.GetComponent<Button>() ?? rect.gameObject.AddComponent<Button>();
@@ -391,15 +393,15 @@ namespace ElectricalSim.UI
             string iconPath = null;
             if (buttonName.Contains("All"))
             {
-                iconPath = "Sidebar/ui_sidebar_filter_all_20";
+                iconPath = "ui_sidebar_filter_all_20";
             }
             else if (buttonName.Contains("Household"))
             {
-                iconPath = "Sidebar/ui_sidebar_filter_home_20";
+                iconPath = "ui_sidebar_filter_home_20";
             }
             else if (buttonName.Contains("Industrial"))
             {
-                iconPath = "Sidebar/ui_sidebar_filter_industry_20";
+                iconPath = "ui_sidebar_filter_industry_20_";
             }
 
             if (string.IsNullOrWhiteSpace(iconPath))
@@ -664,6 +666,8 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(CardWidth, CardHeight);
 
             var background = rect.GetComponent<Image>() ?? rect.gameObject.AddComponent<Image>();
+            background.sprite = UiThemeTokens.GetRoundedSprite(8, 32);
+            background.type = Image.Type.Sliced;
             background.color = Color.white;
             background.raycastTarget = true;
 
@@ -1089,7 +1093,18 @@ namespace ElectricalSim.UI
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                MainUiTheme.ApplyText(label, 13, FontStyle.Normal, selected ? Color.white : MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
+                MainUiTheme.ApplyText(label, 14, FontStyle.Normal, selected ? Color.white : MainUiTheme.SecondaryText, TextAnchor.MiddleCenter);
+                label.resizeTextForBestFit = false;
+            }
+
+            var iconRect = button.transform.Find("Icon");
+            if (iconRect != null)
+            {
+                var iconImg = iconRect.GetComponent<Image>();
+                if (iconImg != null)
+                {
+                    iconImg.color = selected ? Color.white : MainUiTheme.SecondaryText;
+                }
             }
         }
 
