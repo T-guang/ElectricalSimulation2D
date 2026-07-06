@@ -116,22 +116,28 @@ namespace ElectricalSim.UI
 
         private void CreateHeader()
         {
-            var title = CreateText("EncyclopediaTitle", transform, "元器件百科", 32, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
+            var title = CreateText("EncyclopediaTitle", transform, "元器件百科", 30, FontStyle.Bold, MainUiTheme.Hex("111827"));
             title.alignment = TextAnchor.MiddleLeft;
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -30f), new Vector2(320f, 54f));
 
-            var subtitle = CreateText("EncyclopediaSubtitle", transform, "按元件类型整理用途、端子、接线方式和仿真规则，点击卡片查看详情。", 18, FontStyle.Normal, new Color(0.35f, 0.42f, 0.52f));
+            var subtitle = CreateText("EncyclopediaSubtitle", transform, "按元件类型整理用途、端子、接线方式和仿真规则，点击卡片查看详情。", 16, FontStyle.Normal, MainUiTheme.Hex("64748B"));
             subtitle.alignment = TextAnchor.MiddleLeft;
             SetRect(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(360f, -34f), new Vector2(-560f, 48f));
 
             var searchPanel = CreatePanel("SearchBox", transform, Color.white);
             SetRect(searchPanel, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-34f, -32f), new Vector2(300f, 42f));
+            var searchImage = searchPanel.GetComponent<Image>();
+            if (searchImage != null)
+            {
+                searchImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+                searchImage.type = Image.Type.Sliced;
+            }
             var outline = searchPanel.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.86f, 0.90f, 0.95f, 1f);
+            outline.effectColor = MainUiTheme.Hex("E2E8F0");
             outline.effectDistance = new Vector2(1f, -1f);
 
             searchInput = searchPanel.gameObject.AddComponent<InputField>();
-            var searchTextLabel = CreateText("Text", searchPanel, string.Empty, 15, FontStyle.Normal, new Color(0.10f, 0.15f, 0.22f));
+            var searchTextLabel = CreateText("Text", searchPanel, string.Empty, 15, FontStyle.Normal, MainUiTheme.Hex("111827"));
             searchTextLabel.alignment = TextAnchor.MiddleLeft;
             SetRect(searchTextLabel.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(-16f, 0f));
             var placeholder = CreateText("Placeholder", searchPanel, "搜索名称、端子或用途", 15, FontStyle.Normal, new Color(0.52f, 0.58f, 0.66f));
@@ -153,21 +159,33 @@ namespace ElectricalSim.UI
 
             var sidebar = CreatePanel("CategorySidebar", listViewRoot, Color.white);
             SetRect(sidebar, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(28f, -92f), new Vector2(SidebarWidth, -136f));
+            var sidebarImage = sidebar.GetComponent<Image>();
+            if (sidebarImage != null)
+            {
+                sidebarImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+                sidebarImage.type = Image.Type.Sliced;
+            }
             var sidebarOutline = sidebar.gameObject.AddComponent<Outline>();
-            sidebarOutline.effectColor = new Color(0.88f, 0.91f, 0.95f, 1f);
+            sidebarOutline.effectColor = MainUiTheme.Hex("E2E8F0");
             sidebarOutline.effectDistance = new Vector2(1f, -1f);
 
-            var sidebarTitle = CreateText("SidebarTitle", sidebar, "分类", 22, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
+            var sidebarTitle = CreateText("SidebarTitle", sidebar, "分类", 20, FontStyle.Bold, MainUiTheme.Hex("1E293B"));
             sidebarTitle.alignment = TextAnchor.MiddleLeft;
             SetRect(sidebarTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(20f, -18f), new Vector2(-40f, 40f));
 
             for (var i = 0; i < categories.Length; i++)
             {
                 var category = categories[i];
-                var buttonRect = CreatePanel("Category_" + category, sidebar, new Color(0.96f, 0.98f, 1f, 1f));
-                SetRect(buttonRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -72f - i * 48f), new Vector2(-32f, 38f));
+                var buttonRect = CreatePanel("Category_" + category, sidebar, Color.clear);
+                SetRect(buttonRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -72f - i * 40f), new Vector2(-32f, 36f));
+                var btnImage = buttonRect.GetComponent<Image>();
+                if (btnImage != null)
+                {
+                    btnImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+                    btnImage.type = Image.Type.Sliced;
+                }
                 var button = buttonRect.gameObject.AddComponent<Button>();
-                var label = CreateText("Text", buttonRect, category, 16, FontStyle.Normal, new Color(0.18f, 0.24f, 0.32f));
+                var label = CreateText("Text", buttonRect, category, 16, FontStyle.Normal, MainUiTheme.Hex("334155"));
                 label.alignment = TextAnchor.MiddleLeft;
                 SetRect(label.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(-16f, 0f));
                 var captured = category;
@@ -229,7 +247,13 @@ namespace ElectricalSim.UI
             SetRect(detailViewRoot, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             detailViewRoot.gameObject.SetActive(false);
 
-            var backButton = CreateButton("BackButton", detailViewRoot, "返回百科", new Color(0.90f, 0.94f, 1f), new Color(0.06f, 0.28f, 0.72f), 16);
+            var backButton = CreateButton("BackButton", detailViewRoot, "返回百科", MainUiTheme.Hex("EFF6FF"), MainUiTheme.Hex("2563EB"), 16);
+            var backBtnImage = backButton.GetComponent<Image>();
+            if (backBtnImage != null)
+            {
+                backBtnImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+                backBtnImage.type = Image.Type.Sliced;
+            }
             SetRect(backButton.GetComponent<RectTransform>(), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -92f), new Vector2(118f, 38f));
             backButton.onClick.AddListener(ShowListView);
 
@@ -329,15 +353,29 @@ namespace ElectricalSim.UI
             var cardLayout = card.gameObject.AddComponent<LayoutElement>();
             cardLayout.preferredWidth = CardWidth;
             cardLayout.preferredHeight = CardHeight;
+            
+            var cardImage = card.GetComponent<Image>();
+            if (cardImage != null)
+            {
+                cardImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+                cardImage.type = Image.Type.Sliced;
+            }
+
             var button = card.gameObject.AddComponent<Button>();
-            button.targetGraphic = card.GetComponent<Image>();
+            button.targetGraphic = cardImage;
             var outline = card.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.88f, 0.91f, 0.95f, 1f);
+            outline.effectColor = MainUiTheme.Hex("E2E8F0");
             outline.effectDistance = new Vector2(1f, -1f);
             button.onClick.AddListener(() => ShowDetail(entry));
 
-            var thumbnailArea = CreatePanel("ThumbnailArea", card, new Color(0.97f, 0.98f, 1f, 1f));
+            var thumbnailArea = CreatePanel("ThumbnailArea", card, MainUiTheme.Hex("F1F5F9"));
             SetRect(thumbnailArea, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(14f, 0f), new Vector2(125f, -28f));
+            var thumbImage = thumbnailArea.GetComponent<Image>();
+            if (thumbImage != null)
+            {
+                thumbImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+                thumbImage.type = Image.Type.Sliced;
+            }
             var mask = thumbnailArea.gameObject.AddComponent<Mask>();
             mask.showMaskGraphic = true;
 
@@ -345,7 +383,7 @@ namespace ElectricalSim.UI
             var imageComponent = image.gameObject.AddComponent<Image>();
             var sprite = ResolveIcon(entry.Definition);
             imageComponent.sprite = sprite != null ? sprite : GetFallbackSprite();
-            imageComponent.color = sprite != null ? Color.white : new Color(0.86f, 0.90f, 0.96f, 1f);
+            imageComponent.color = sprite != null ? Color.white : Color.clear;
             imageComponent.preserveAspect = true;
             imageComponent.raycastTarget = false;
             
@@ -364,22 +402,22 @@ namespace ElectricalSim.UI
             infoLayout.childForceExpandHeight = false;
             infoLayout.spacing = 6f;
 
-            var name = CreateText("NameText", infoArea, entry.DisplayName, 16, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
+            var name = CreateText("NameText", infoArea, entry.DisplayName, 16, FontStyle.Bold, MainUiTheme.Hex("111827"));
             name.alignment = TextAnchor.MiddleLeft;
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
             name.verticalOverflow = VerticalWrapMode.Overflow;
 
-            var category = CreateText("CategoryText", infoArea, entry.Category, 12, FontStyle.Normal, new Color(0.35f, 0.42f, 0.52f));
+            var category = CreateText("CategoryText", infoArea, entry.Category, 12, FontStyle.Normal, MainUiTheme.Hex("64748B"));
             category.alignment = TextAnchor.MiddleLeft;
             category.horizontalOverflow = HorizontalWrapMode.Wrap;
             category.verticalOverflow = VerticalWrapMode.Overflow;
 
-            var param = CreateText("ParamText", infoArea, BuildBasicSummary(entry), 12, FontStyle.Normal, new Color(0.08f, 0.32f, 0.60f));
+            var param = CreateText("ParamText", infoArea, BuildBasicSummary(entry), 12, FontStyle.Normal, MainUiTheme.Hex("2563EB"));
             param.alignment = TextAnchor.MiddleLeft;
             param.horizontalOverflow = HorizontalWrapMode.Wrap;
             param.verticalOverflow = VerticalWrapMode.Overflow;
 
-            var terminals = CreateText("TerminalText", infoArea, BuildTerminalSummary(entry.Definition, entry.Terminals), 12, FontStyle.Normal, new Color(0.18f, 0.24f, 0.32f));
+            var terminals = CreateText("TerminalText", infoArea, BuildTerminalSummary(entry.Definition, entry.Terminals), 12, FontStyle.Normal, MainUiTheme.Hex("334155"));
             terminals.alignment = TextAnchor.MiddleLeft;
             terminals.horizontalOverflow = HorizontalWrapMode.Wrap;
             terminals.verticalOverflow = VerticalWrapMode.Overflow;
@@ -430,6 +468,12 @@ namespace ElectricalSim.UI
         private void CreateDetailHeader(ComponentEncyclopediaEntry entry)
         {
             var header = CreatePanel("HeaderCard", detailContent, Color.white);
+            var headerImage = header.GetComponent<Image>();
+            if (headerImage != null)
+            {
+                headerImage.sprite = UiThemeTokens.GetRoundedSprite(12);
+                headerImage.type = Image.Type.Sliced;
+            }
             AddSoftOutline(header);
             var headerLayoutElement = header.gameObject.AddComponent<LayoutElement>();
             headerLayoutElement.preferredHeight = 258f;
@@ -444,7 +488,7 @@ namespace ElectricalSim.UI
             headerLayout.childForceExpandWidth = false;
             headerLayout.childForceExpandHeight = false;
 
-            var imageArea = CreatePanel("ImagePanel", header, new Color(0.97f, 0.98f, 1f, 1f));
+            var imageArea = CreatePanel("ImagePanel", header, MainUiTheme.Hex("F1F5F9"));
             var imageLayout = imageArea.gameObject.AddComponent<LayoutElement>();
             imageLayout.preferredWidth = 210f;
             imageLayout.preferredHeight = 210f;
@@ -453,7 +497,7 @@ namespace ElectricalSim.UI
             var image = imageArea.GetComponent<Image>();
             var sprite = ResolveIcon(entry.Definition);
             image.sprite = sprite != null ? sprite : GetFallbackSprite();
-            image.color = sprite != null ? Color.white : new Color(0.86f, 0.90f, 0.96f, 1f);
+            image.color = sprite != null ? Color.white : Color.clear;
             image.preserveAspect = true;
             image.raycastTarget = false;
 
@@ -469,7 +513,7 @@ namespace ElectricalSim.UI
             infoLayout.childForceExpandHeight = false;
             infoLayout.spacing = 6f;
 
-            var title = CreateText("NameText", infoPanel, entry.DisplayName, 24, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
+            var title = CreateText("NameText", infoPanel, entry.DisplayName, 24, FontStyle.Bold, MainUiTheme.Hex("111827"));
             title.alignment = TextAnchor.MiddleLeft;
             title.verticalOverflow = VerticalWrapMode.Overflow;
             title.gameObject.AddComponent<LayoutElement>().preferredHeight = 38f;
@@ -482,7 +526,7 @@ namespace ElectricalSim.UI
 
         private void AddDetailLine(Transform parent, string text, float preferredHeight = 24f)
         {
-            var line = CreateText("InfoLine", parent, text, 15, FontStyle.Normal, new Color(0.15f, 0.20f, 0.29f));
+            var line = CreateText("InfoLine", parent, text, 15, FontStyle.Normal, MainUiTheme.Hex("334155"));
             line.alignment = TextAnchor.UpperLeft;
             line.verticalOverflow = VerticalWrapMode.Overflow;
             line.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -493,6 +537,12 @@ namespace ElectricalSim.UI
         {
             body = string.IsNullOrWhiteSpace(body) ? "该部分内容待补充。" : body;
             var card = CreatePanel("Section_" + title, detailContent, Color.white);
+            var cardImage = card.GetComponent<Image>();
+            if (cardImage != null)
+            {
+                cardImage.sprite = UiThemeTokens.GetRoundedSprite(12);
+                cardImage.type = Image.Type.Sliced;
+            }
             AddSoftOutline(card);
 
             var cardLayoutElement = card.gameObject.AddComponent<LayoutElement>();
@@ -508,11 +558,11 @@ namespace ElectricalSim.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            var titleText = CreateText("Title", card, title, 18, FontStyle.Bold, new Color(0.07f, 0.11f, 0.18f));
+            var titleText = CreateText("Title", card, title, 18, FontStyle.Bold, MainUiTheme.Hex("1E293B"));
             titleText.alignment = TextAnchor.MiddleLeft;
             titleText.gameObject.AddComponent<LayoutElement>().preferredHeight = 28f;
 
-            var bodyText = CreateText("Body", card, body, 15, FontStyle.Normal, new Color(0.20f, 0.26f, 0.35f));
+            var bodyText = CreateText("Body", card, body, 15, FontStyle.Normal, MainUiTheme.Hex("475569"));
             bodyText.alignment = TextAnchor.UpperLeft;
             bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
             bodyText.verticalOverflow = VerticalWrapMode.Overflow;
@@ -578,12 +628,12 @@ namespace ElectricalSim.UI
                 var image = categoryButtons[i].GetComponent<Image>();
                 if (image != null)
                 {
-                    image.color = active ? new Color(0.89f, 0.94f, 1f) : new Color(0.96f, 0.98f, 1f);
+                    image.color = active ? MainUiTheme.Hex("EFF6FF") : Color.clear;
                 }
 
                 if (i < categoryLabels.Count && categoryLabels[i] != null)
                 {
-                    categoryLabels[i].color = active ? new Color(0.06f, 0.38f, 0.95f) : new Color(0.18f, 0.24f, 0.32f);
+                    categoryLabels[i].color = active ? MainUiTheme.Hex("2563EB") : MainUiTheme.Hex("334155");
                     categoryLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
                 }
             }
@@ -839,12 +889,37 @@ namespace ElectricalSim.UI
             return button;
         }
 
+        private static Font cachedUiFont;
+
+        private static Font ResolveUiFont()
+        {
+            if (cachedUiFont != null) return cachedUiFont;
+
+            cachedUiFont =
+                Resources.Load<Font>("Fonts/maoken_fengyasong") ??
+                Resources.Load<Font>("Fonts/MaokenFengyasong") ??
+                Resources.Load<Font>("Fonts/maoken") ??
+                Resources.Load<Font>("Fonts/Maoken") ??
+                Resources.Load<Font>("maoken_fengyasong") ??
+                Resources.Load<Font>("MaokenFengyasong") ??
+                Resources.Load<Font>("maoken") ??
+                Resources.Load<Font>("Maoken");
+
+            if (cachedUiFont == null)
+            {
+                Debug.LogWarning("未找到猫啃风字体资源，已回退到 Arial.ttf。请将字体放入 Assets/Resources/Fonts/ 下。");
+                cachedUiFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            }
+
+            return cachedUiFont;
+        }
+
         private static Text CreateText(string name, Transform parent, string value, int size, FontStyle style, Color color)
         {
             var text = new GameObject(name, typeof(RectTransform), typeof(Text)).GetComponent<Text>();
             text.transform.SetParent(parent, false);
             text.text = value;
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = ResolveUiFont();
             text.fontSize = size;
             text.fontStyle = style;
             text.color = color;
@@ -857,7 +932,7 @@ namespace ElectricalSim.UI
         private static void AddSoftOutline(RectTransform rect)
         {
             var outline = rect.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0.88f, 0.91f, 0.95f, 1f);
+            outline.effectColor = MainUiTheme.Hex("E2E8F0");
             outline.effectDistance = new Vector2(1f, -1f);
         }
 
