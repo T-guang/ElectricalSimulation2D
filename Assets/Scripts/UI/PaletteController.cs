@@ -32,7 +32,7 @@ namespace ElectricalSim.UI
         private const float PaletteVerticalOffset = -60f;
         private const float CollapseHandleSize = 36f;
         private const float CardWidth = 96f;
-        private const float CardHeight = 122f;
+        private const float CardHeight = 132f;
         private const float CardGapX = 10f;
         private const float CardGapY = 12f;
         private const float ContentLeft = 8f;
@@ -118,7 +118,7 @@ namespace ElectricalSim.UI
             var titleText = title.GetComponent<Text>();
             if (titleText != null)
             {
-                titleText.text = "电控池";
+                titleText.text = "电工控件池";
                 MainUiTheme.ApplyText(titleText, 18, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
                 titleText.rectTransform.offsetMin = new Vector2(12f, 0f);
             }
@@ -516,7 +516,7 @@ namespace ElectricalSim.UI
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
-                    MainUiTheme.ApplyText(titleText, 18, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+                    MainUiTheme.ApplyText(titleText, 15, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
                 }
             }
 
@@ -549,8 +549,8 @@ namespace ElectricalSim.UI
                     var text = actionLogText.GetComponent<Text>();
                     if (text != null)
                     {
-                        MainUiTheme.ApplyText(text, 14, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperLeft);
-                        text.lineSpacing = 1.25f;
+                        MainUiTheme.ApplyText(text, 12, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperLeft);
+                        text.lineSpacing = 1.3f;
                     }
                 }
             }
@@ -573,7 +573,7 @@ namespace ElectricalSim.UI
                 titleRect.sizeDelta = new Vector2(OperationLogWidth, 34f);
 
                 var title = titleRect.gameObject.AddComponent<Text>();
-                MainUiTheme.ApplyText(title, 18, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
+                MainUiTheme.ApplyText(title, 15, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
                 title.raycastTarget = false;
                 title.text = sectionDisplayNames.TryGetValue(category, out var displayName) ? displayName : category.ToString();
 

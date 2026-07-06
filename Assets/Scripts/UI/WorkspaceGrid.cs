@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace ElectricalSim.UI
@@ -6,8 +6,8 @@ namespace ElectricalSim.UI
     public sealed class WorkspaceGrid : MaskableGraphic
     {
         [SerializeField] private float spacing = 20f;
-        [SerializeField] private Color lineColor = new Color(0.918f, 0.941f, 0.969f, 1f);
-        [SerializeField] private Color majorLineColor = new Color(0.843f, 0.886f, 0.941f, 1f);
+        [SerializeField] private Color lineColor = new Color(0.918f, 0.941f, 0.969f, 1f); // EAF0F7
+        [SerializeField] private Color majorLineColor = new Color(0.843f, 0.886f, 0.941f, 1f); // D7E2F0
         [SerializeField] private int majorLineEvery = 5;
         [SerializeField] private float lineWidth = 1f;
         [SerializeField] private float majorLineWidth = 1.35f;
@@ -29,10 +29,10 @@ namespace ElectricalSim.UI
         private void ApplyDesignDefaults()
         {
             spacing = 20f;
-            lineColor = new Color(0.918f, 0.941f, 0.969f, 1f);
-            majorLineColor = new Color(0.843f, 0.886f, 0.941f, 1f);
+            lineColor = MainUiTheme.Hex("EAF0F7");
+            majorLineColor = MainUiTheme.Hex("D7E2F0");
             majorLineEvery = 5;
-            lineWidth = 1f;
+            lineWidth = 1.0f;
             majorLineWidth = 1.35f;
         }
 

@@ -17,7 +17,7 @@ namespace ElectricalSim.AI
         private const float PanelMargin = 12f;
         private const float CollapseHandleSize = 36f;
         private const float HeaderHeight = 42f;
-        private const float QuickActionsHeight = 186f;
+        private const float QuickActionsHeight = 166f;
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text titleText;
         [SerializeField] private Button explainButton;
@@ -135,13 +135,13 @@ namespace ElectricalSim.AI
             actionLayout.childForceExpandWidth = true;
             actionLayout.childForceExpandHeight = false;
 
-            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 40f);
-            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", MainUiTheme.PrimaryBlue, Color.white, 40f);
-            submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", MainUiTheme.SuccessGreen, Color.white, 40f);
+            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 36f);
+            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", MainUiTheme.PrimaryBlue, Color.white, 36f);
+            submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", MainUiTheme.SuccessGreen, Color.white, 36f);
             submitPracticeButton.gameObject.SetActive(false);
-            exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", MainUiTheme.DangerRed, Color.white, 40f);
+            exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", MainUiTheme.DangerRed, Color.white, 36f);
             exitPracticeButton.gameObject.SetActive(false);
-            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 40f);
+            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 36f);
             ApplyActionButtonIcon(explainButton, "Inspector/ui_circuit_explain_20", false);
             ApplyActionButtonIcon(checkButton, "Inspector/ui_check_circuit_20", true);
             ApplyActionButtonIcon(clearReportButton, "Inspector/ui_clear_result_20", false);
