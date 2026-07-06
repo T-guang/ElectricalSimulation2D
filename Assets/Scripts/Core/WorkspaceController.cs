@@ -651,6 +651,15 @@ namespace ElectricalSim.Core
             }
         }
 
+        public void ClearActionLog()
+        {
+            actionLogEntries.Clear();
+            if (actionLogText != null)
+            {
+                actionLogText.text = "";
+            }
+        }
+
         private void TrimActionLogEntries()
         {
             while (actionLogEntries.Count > ActionLogEntryLimit)

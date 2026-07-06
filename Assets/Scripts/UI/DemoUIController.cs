@@ -347,7 +347,10 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            var color = primary ? Color.white : (danger ? MainUiTheme.DangerRed : MainUiTheme.MutedText);
+            Color? color = null;
+            if (primary) color = Color.white;
+            if (danger) color = MainUiTheme.DangerRed;
+            
             var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(iconSize, iconSize), new Vector2(16f, 0f), color);
             if (icon == null)
             {

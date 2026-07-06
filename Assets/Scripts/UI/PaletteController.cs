@@ -103,9 +103,17 @@ namespace ElectricalSim.UI
             var title = transform.Find("PaletteTitle") as RectTransform;
             if (title == null)
             {
-                var titleGo = new GameObject("PaletteTitle", typeof(RectTransform), typeof(Text));
+                var titleGo = new GameObject("PaletteTitle", typeof(RectTransform));
                 titleGo.transform.SetParent(root, false);
                 title = titleGo.GetComponent<RectTransform>();
+
+                var textGo = new GameObject("TitleText", typeof(RectTransform), typeof(Text));
+                textGo.transform.SetParent(title, false);
+                var textRt = textGo.GetComponent<RectTransform>();
+                textRt.anchorMin = Vector2.zero;
+                textRt.anchorMax = Vector2.one;
+                textRt.offsetMin = new Vector2(12f, 0f);
+                textRt.offsetMax = Vector2.zero;
             }
 
             title.anchorMin = new Vector2(0f, 1f);
@@ -115,12 +123,12 @@ namespace ElectricalSim.UI
             title.sizeDelta = new Vector2(-PalettePadding * 2f, 38f);
             title.gameObject.SetActive(true);
             
-            var titleText = title.GetComponent<Text>();
-            if (titleText != null)
+            var titleTextGo = title.Find("TitleText");
+            if (titleTextGo != null)
             {
+                var titleText = titleTextGo.GetComponent<Text>();
                 titleText.text = "电工控件池";
-                MainUiTheme.ApplyText(titleText, 18, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
-                titleText.rectTransform.offsetMin = new Vector2(12f, 0f);
+                MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
             }
 
             EnsureTitleAccent(title);
@@ -518,6 +526,32 @@ namespace ElectricalSim.UI
                 {
                     MainUiTheme.ApplyText(titleText, 15, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft);
                 }
+
+                var clearButtonRect = title.Find("ClearButton") as RectTransform;
+                if (clearButtonRect == null)
+                {
+                    var clearGo = new GameObject("ClearButton", typeof(RectTransform), typeof(Image), typeof(Button));
+                    clearGo.transform.SetParent(title, false);
+                    clearButtonRect = clearGo.GetComponent<RectTransform>();
+                }
+
+                clearButtonRect.anchorMin = new Vector2(1f, 0.5f);
+                clearButtonRect.anchorMax = new Vector2(1f, 0.5f);
+                clearButtonRect.pivot = new Vector2(1f, 0.5f);
+                clearButtonRect.anchoredPosition = new Vector2(0f, 0f);
+                clearButtonRect.sizeDelta = new Vector2(24f, 24f);
+
+                var clearImage = clearButtonRect.GetComponent<Image>();
+                clearImage.color = Color.clear;
+                
+                var clearButton = clearButtonRect.GetComponent<Button>();
+                clearButton.onClick.RemoveAllListeners();
+                if (workspace != null)
+                {
+                    clearButton.onClick.AddListener(() => workspace.ClearActionLog());
+                }
+                
+                UiIconLibrary.EnsureButtonIcon(clearButton, "ui_toolbar_delete_24", new Vector2(18f, 18f), Vector2.zero, MainUiTheme.MutedText);
             }
 
             var status = logPanel.Find("CurrentStatus") as RectTransform;
