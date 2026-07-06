@@ -185,7 +185,7 @@ namespace ElectricalSim.UI
         {
             var scroll = CreateObject("CaseGridScrollView", parent, typeof(RectTransform), typeof(Image), typeof(ScrollRect));
             var scrollRect = scroll.GetComponent<RectTransform>();
-            Stretch(scrollRect, GalleryMargin, GalleryMargin, 136f, 32f);
+            Stretch(scrollRect, GalleryMargin, GalleryMargin, 150f, 32f);
             scroll.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
 
             gridScrollRect = scroll.GetComponent<ScrollRect>();
@@ -235,8 +235,10 @@ namespace ElectricalSim.UI
             statusRect.anchorMin = new Vector2(0f, 1f);
             statusRect.anchorMax = new Vector2(1f, 1f);
             statusRect.pivot = new Vector2(0.5f, 1f);
-            statusRect.offsetMin = new Vector2(GalleryMargin, -134f);
-            statusRect.offsetMax = new Vector2(-GalleryMargin, -112f);
+            statusRect.offsetMin = new Vector2(GalleryMargin, -140f);
+            statusRect.offsetMax = new Vector2(-GalleryMargin, -118f);
+
+            ApplyResponsiveGridLayout();
         }
 
         private void BuildDetailRoot()
@@ -300,6 +302,7 @@ namespace ElectricalSim.UI
             }
 
             ClearChildren(gridContent);
+            ApplyResponsiveGridLayout();
             RefreshFilterButtons();
 
             var filtered = entries
@@ -343,6 +346,73 @@ namespace ElectricalSim.UI
                     label.fontSize = 20;
                     label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
                 }
+            }
+        }
+
+        private void ApplyResponsiveGridLayout()
+        {
+            if (gridContent == null || gridScrollRect == null || gridScrollRect.viewport == null)
+            {
+                return;
+            }
+
+            var viewportWidth = gridScrollRect.viewport.rect.width;
+            if (viewportWidth <= 0f)
+            {
+                var rootRect = GetComponent<RectTransform>();
+                viewportWidth = rootRect != null ? Mathf.Max(0f, rootRect.rect.width - GalleryMargin * 2f) : 1400f;
+            }
+
+            var gap = GalleryCardGap;
+            int columnCount;
+
+            if (viewportWidth >= 1320f)
+            {
+                columnCount = 4;
+            }
+            else if (viewportWidth >= 960f)
+            {
+                columnCount = 3;
+            }
+            else if (viewportWidth >= 640f)
+            {
+                columnCount = 2;
+            }
+            else
+            {
+                columnCount = 1;
+            }
+
+            var cellWidth = (viewportWidth - gap * (columnCount - 1)) / columnCount;
+            cellWidth = Mathf.Clamp(cellWidth, 300f, GalleryCardWidth);
+
+            var grid = gridContent.GetComponent<GridLayoutGroup>();
+            if (grid != null)
+            {
+                grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                grid.constraintCount = columnCount;
+                grid.cellSize = new Vector2(cellWidth, GalleryCardHeight);
+                grid.spacing = new Vector2(gap, gap);
+                grid.childAlignment = TextAnchor.UpperLeft;
+                grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+                grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+                grid.padding = new RectOffset(0, 0, 0, 24);
+            }
+
+            gridContent.anchorMin = new Vector2(0f, 1f);
+            gridContent.anchorMax = new Vector2(1f, 1f);
+            gridContent.pivot = new Vector2(0f, 1f);
+            gridContent.anchoredPosition = Vector2.zero;
+            gridContent.offsetMin = new Vector2(0f, gridContent.offsetMin.y);
+            gridContent.offsetMax = new Vector2(0f, 0f);
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if (gridContent != null)
+            {
+                ApplyResponsiveGridLayout();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(gridContent);
             }
         }
 
@@ -436,18 +506,18 @@ namespace ElectricalSim.UI
             thumbRect.anchorMin = new Vector2(0f, 1f);
             thumbRect.anchorMax = new Vector2(1f, 1f);
             thumbRect.pivot = new Vector2(0.5f, 1f);
-            thumbRect.offsetMin = new Vector2(1f, -203f);
-            thumbRect.offsetMax = new Vector2(-1f, 0f);
+            thumbRect.offsetMin = new Vector2(16f, -188f);
+            thumbRect.offsetMax = new Vector2(-16f, -14f);
             var thumbImage = thumbPanel.GetComponent<Image>();
-            thumbImage.sprite = UiThemeTokens.GetRoundedSprite(15);
+            thumbImage.sprite = UiThemeTokens.GetRoundedSprite(12);
             thumbImage.type = Image.Type.Sliced;
-            thumbImage.color = MainUiTheme.Hex("F7F9FB");
+            thumbImage.color = MainUiTheme.Hex("F1F5F9");
 
             var thumbnailSprite = LoadThumbnail(entry.ThumbnailPath);
             if (thumbnailSprite != null)
             {
                 var thumbnail = CreateObject("Image", thumbPanel.transform, typeof(RectTransform), typeof(Image));
-                Stretch(thumbnail.GetComponent<RectTransform>(), 14f, 14f, 26f, 27f);
+                Stretch(thumbnail.GetComponent<RectTransform>(), 0f, 0f, 0f, 0f);
                 var thumbnailImage = thumbnail.GetComponent<Image>();
                 thumbnailImage.sprite = thumbnailSprite;
                 thumbnailImage.preserveAspect = true;
@@ -467,31 +537,34 @@ namespace ElectricalSim.UI
 
                 var placeholder = CreateText("Placeholder", thumbPanel.transform, "案例缩略图\n待补充", 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
                 placeholder.alignment = TextAnchor.MiddleCenter;
-                Stretch(placeholder.rectTransform, 14f, 14f, 26f, 27f);
+                Stretch(placeholder.rectTransform, 0f, 0f, 0f, 0f);
             }
 
             var title = CreateText("Title", card.transform, entry.Title, 20, FontStyle.Bold, MainUiTheme.Hex("464646"));
             title.alignment = TextAnchor.UpperLeft;
             title.horizontalOverflow = HorizontalWrapMode.Wrap;
+            title.verticalOverflow = VerticalWrapMode.Truncate;
             title.rectTransform.anchorMin = new Vector2(0f, 1f);
             title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.offsetMin = new Vector2(16f, -244f);
-            title.rectTransform.offsetMax = new Vector2(-16f, -206f);
+            title.rectTransform.offsetMin = new Vector2(16f, -232f);
+            title.rectTransform.offsetMax = new Vector2(-16f, -204f);
 
             var meta = CreateText("Meta", card.transform, entry.Category + " / " + entry.Difficulty + " / " + entry.SourceLabel, 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
             meta.alignment = TextAnchor.UpperLeft;
+            meta.verticalOverflow = VerticalWrapMode.Truncate;
             meta.rectTransform.anchorMin = new Vector2(0f, 1f);
             meta.rectTransform.anchorMax = new Vector2(1f, 1f);
-            meta.rectTransform.offsetMin = new Vector2(16f, -266f);
-            meta.rectTransform.offsetMax = new Vector2(-16f, -244f);
+            meta.rectTransform.offsetMin = new Vector2(16f, -254f);
+            meta.rectTransform.offsetMax = new Vector2(-16f, -234f);
 
             var tags = CreateText("Tags", card.transform, string.Join("  ", entry.Tags.Take(4).ToArray()), 16, FontStyle.Normal, MainUiTheme.PrimaryBlue);
             tags.alignment = TextAnchor.UpperLeft;
             tags.horizontalOverflow = HorizontalWrapMode.Wrap;
+            tags.verticalOverflow = VerticalWrapMode.Truncate;
             tags.rectTransform.anchorMin = new Vector2(0f, 1f);
             tags.rectTransform.anchorMax = new Vector2(1f, 1f);
-            tags.rectTransform.offsetMin = new Vector2(16f, -288f);
-            tags.rectTransform.offsetMax = new Vector2(-16f, -266f);
+            tags.rectTransform.offsetMin = new Vector2(16f, -274f);
+            tags.rectTransform.offsetMax = new Vector2(-16f, -256f);
 
             var detailButton = CreateButton(card.transform, "查看详情", MainUiTheme.Hex("F1F5F9"), MainUiTheme.Hex("464646"));
             var detailRect = detailButton.GetComponent<RectTransform>();
@@ -891,7 +964,7 @@ namespace ElectricalSim.UI
         {
             var button = CreateButton(parent, text, HexColor(0xF1F5F9), HexColor(0x334155));
             var image = button.GetComponent<Image>();
-            image.sprite = UiThemeTokens.GetRoundedSprite(16);
+            image.sprite = UiThemeTokens.GetRoundedSprite(15);
             image.type = Image.Type.Sliced;
             var rect = button.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(width, height);
@@ -902,15 +975,20 @@ namespace ElectricalSim.UI
         {
             var go = CreateObject("Button", parent, typeof(RectTransform), typeof(Image), typeof(Button));
             var image = go.GetComponent<Image>();
-            image.sprite = UiThemeTokens.GetRoundedSprite(15);
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
             image.type = Image.Type.Sliced;
             image.color = background;
             image.raycastTarget = true;
 
+            var btn = go.GetComponent<Button>();
+            var nav = btn.navigation;
+            nav.mode = Navigation.Mode.None;
+            btn.navigation = nav;
+
             var label = CreateText("Text", go.transform, text, 16, FontStyle.Normal, textColor);
             label.alignment = TextAnchor.MiddleCenter;
             Stretch(label.rectTransform, 0f, 0f, 0f, 0f);
-            return go.GetComponent<Button>();
+            return btn;
         }
 
         private InputField CreateInput(Transform parent, string placeholder, float width, float height)
@@ -918,7 +996,7 @@ namespace ElectricalSim.UI
             var go = CreateObject("SearchInput", parent, typeof(RectTransform), typeof(Image), typeof(InputField));
             go.GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
             var image = go.GetComponent<Image>();
-            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.sprite = UiThemeTokens.GetRoundedSprite(15);
             image.type = Image.Type.Sliced;
             image.color = Color.white;
 
