@@ -239,9 +239,10 @@ namespace ElectricalSim.UI
 
                 if (IsActionLabel(text.text))
                 {
-                    text.fontSize = 20;
+                    text.fontSize = 16;
                     text.fontStyle = FontStyle.Bold;
                     text.color = Color.white;
+                    StyleActionButton(text, MainUiTheme.PrimaryBlue);
                 }
                 else if (IsCategoryLabel(text.text) || IsDifficultyLabel(text.text))
                 {
@@ -268,6 +269,75 @@ namespace ElectricalSim.UI
                     text.color = MainUiTheme.Hex("1F2937");
                 }
             }
+        }
+
+        private static void StyleActionButton(Text text, Color bgColor)
+        {
+            if (text == null) return;
+
+            var parent = text.transform.parent;
+            if (parent == null || parent == text.transform) return;
+
+            for (var i = parent.childCount - 1; i >= 0; i--)
+            {
+                var child = parent.GetChild(i);
+                if (child != null && child.name == "Backplate")
+                {
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                }
+            }
+
+            var btn = parent.GetComponent<Button>();
+            if (btn != null)
+            {
+                var colors = btn.colors;
+                colors.normalColor = Color.white;
+                colors.highlightedColor = Color.white;
+                colors.pressedColor = new Color(0.9f, 0.9f, 0.9f);
+                colors.selectedColor = Color.white;
+                btn.colors = colors;
+
+                var nav = btn.navigation;
+                nav.mode = Navigation.Mode.None;
+                btn.navigation = nav;
+            }
+
+            var img = parent.GetComponent<Image>();
+            if (img == null)
+            {
+                img = parent.gameObject.AddComponent<Image>();
+            }
+
+            img.enabled = true;
+            img.sprite = UiThemeTokens.GetRoundedSprite(16);
+            img.type = Image.Type.Sliced;
+            img.color = bgColor;
+
+            var outline = parent.GetComponent<UnityEngine.UI.Outline>();
+            if (outline != null)
+            {
+                UnityEngine.Object.DestroyImmediate(outline);
+            }
+
+            var parentRect = parent.GetComponent<RectTransform>();
+            if (parentRect != null)
+            {
+                parentRect.sizeDelta = new Vector2(Mathf.Max(parentRect.sizeDelta.x, 86f), 30f);
+            }
+
+            var textRect = text.GetComponent<RectTransform>();
+            if (textRect != null)
+            {
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.offsetMin = new Vector2(16f, 0f);
+                textRect.offsetMax = new Vector2(-16f, 0f);
+            }
+
+            text.alignment = TextAnchor.MiddleCenter;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.resizeTextForBestFit = false;
         }
 
         private static void StyleTagParent(Text text, Color bgColor, Color borderColor, int radius, bool keepInteractable)
