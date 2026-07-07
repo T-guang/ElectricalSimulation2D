@@ -1212,7 +1212,15 @@ namespace ElectricalSim.AI
                     continue;
                 }
 
-                builder.AppendLine("- " + component.Definition.displayName + "当前运行。线电压：" +
+                var dirText = "运行";
+                var rotParam = component.GetParameter("rotationDirection");
+                if (rotParam != null)
+                {
+                    if (rotParam.value > 0.5f) dirText = "正转运行";
+                    else if (rotParam.value < -0.5f) dirText = "反转运行";
+                }
+
+                builder.AppendLine("- " + component.Definition.displayName + "当前" + dirText + "。线电压：" +
                     estimate.LineVoltage.ToString("0.#") + "V；额定功率：" +
                     estimate.RatedPower.ToString("0.#") + "W；效率：" +
                     estimate.Efficiency.ToString("0.##") + "；功率因数：" +

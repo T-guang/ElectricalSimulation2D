@@ -1212,12 +1212,16 @@ namespace ElectricalSim.Core
             var v = SingleReachablePowerTerminalId(motor.GetTerminal("V"));
             var w = SingleReachablePowerTerminalId(motor.GetTerminal("W"));
 
-            if (u == "L1" && v == "L2" && w == "L3")
+            if ((u == "L1" && v == "L2" && w == "L3") ||
+                (u == "L2" && v == "L3" && w == "L1") ||
+                (u == "L3" && v == "L1" && w == "L2"))
             {
                 return 1f;
             }
 
-            if (u == "L3" && v == "L2" && w == "L1")
+            if ((u == "L1" && v == "L3" && w == "L2") ||
+                (u == "L3" && v == "L2" && w == "L1") ||
+                (u == "L2" && v == "L1" && w == "L3"))
             {
                 return -1f;
             }
