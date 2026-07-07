@@ -162,29 +162,31 @@ namespace ElectricalSim.UI
             var sidebarImage = sidebar.GetComponent<Image>();
             if (sidebarImage != null)
             {
-                sidebarImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+                sidebarImage.sprite = UiThemeTokens.GetRoundedSprite(10);
                 sidebarImage.type = Image.Type.Sliced;
+                sidebarImage.color = Color.white;
             }
+            AddSoftOutline(sidebar);
 
             var sidebarTitle = CreateText("SidebarTitle", sidebar, "分类", 18, FontStyle.Bold, MainUiTheme.Hex("1E293B"), true);
             sidebarTitle.alignment = TextAnchor.MiddleLeft;
-            SetRect(sidebarTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(16f, -18f), new Vector2(-32f, 40f));
+            SetRect(sidebarTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(14f, -16f), new Vector2(-28f, 38f));
 
             for (var i = 0; i < categories.Length; i++)
             {
                 var category = categories[i];
                 var buttonRect = CreatePanel("Category_" + category, sidebar, Color.clear);
-                SetRect(buttonRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -64f - i * 36f), new Vector2(-24f, 34f));
+                SetRect(buttonRect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -70f - i * 36f), new Vector2(-24f, 32f));
                 var btnImage = buttonRect.GetComponent<Image>();
                 if (btnImage != null)
                 {
-                    btnImage.sprite = UiThemeTokens.GetRoundedSprite(6);
+                    btnImage.sprite = UiThemeTokens.GetRoundedSprite(8);
                     btnImage.type = Image.Type.Sliced;
                 }
                 var button = buttonRect.gameObject.AddComponent<Button>();
-                var label = CreateText("Text", buttonRect, category, 15, FontStyle.Normal, MainUiTheme.Hex("334155"));
+                var label = CreateText("Text", buttonRect, category, 14, FontStyle.Normal, MainUiTheme.Hex("334155"));
                 label.alignment = TextAnchor.MiddleLeft;
-                SetRect(label.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(16f, 0f), new Vector2(-16f, 0f));
+                SetRect(label.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(12f, 0f), new Vector2(-12f, 0f));
                 var captured = category;
                 button.onClick.AddListener(() =>
                 {
@@ -196,7 +198,7 @@ namespace ElectricalSim.UI
             }
 
             var scrollRoot = CreatePanel("CardScrollView", listViewRoot, new Color(1f, 1f, 1f, 0.01f));
-            StretchTo(scrollRoot, 190f, 104f, 32f, 24f);
+            StretchTo(scrollRoot, 178f, 104f, 32f, 24f);
 
             var viewport = CreatePanel("Viewport", scrollRoot, new Color(1f, 1f, 1f, 0.01f));
             StretchTo(viewport, 0f, 0f, 0f, 0f);
@@ -399,7 +401,7 @@ namespace ElectricalSim.UI
             infoLayout.childForceExpandHeight = false;
             infoLayout.spacing = 6f;
 
-            var name = CreateText("NameText", infoArea, entry.DisplayName, 17, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
+            var name = CreateText("NameText", infoArea, entry.DisplayName, 18, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
             name.alignment = TextAnchor.MiddleLeft;
             name.lineSpacing = 1.1f;
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
