@@ -353,6 +353,26 @@ namespace ElectricalSim.Editor
             wires.Add(wire);
         }
 
+        public void SetClosed(CircuitComponent component, bool closed)
+        {
+            if (component == null)
+            {
+                throw new Exception("Component is null.");
+            }
+
+            component.SetClosed(closed);
+        }
+
+        public void SetTogglable(CircuitComponent component, bool togglable)
+        {
+            if (component == null || component.Definition == null)
+            {
+                throw new Exception("Component definition is null.");
+            }
+
+            component.Definition.togglable = togglable;
+        }
+
         public CircuitValidationReport Validate()
         {
             var stopwatch = Stopwatch.StartNew();

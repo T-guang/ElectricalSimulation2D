@@ -16,6 +16,7 @@ namespace ElectricalSim.Core.Validation
             AddMotorIssues(report, components, analysisResult, phaseHelper);
             AddComponentInvariantIssues(report, components, phaseHelper);
             AddPowerSafetyIssues(report, components, wires, analysisResult);
+            AddProtectionBypassIssues(report, components, wires, analysisResult);
             AddControlCircuitStructureIssues(report, components, wires, analysisResult);
             if (phaseHelper.HasTraversalLimitExceeded)
             {
@@ -38,6 +39,30 @@ namespace ElectricalSim.Core.Validation
             }
 
             var helper = new PowerPotentialValidationHelper(components, wires, analysisResult);
+            var issues = helper.Validate();
+            for (var i = 0; i < issues.Count; i++)
+            {
+                AddIssue(report, issues[i]);
+            }
+
+            if (helper.HasTraversalLimitExceeded)
+            {
+                AddComplexTopologyIssue(report);
+            }
+        }
+
+        private static void AddProtectionBypassIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires,
+            CircuitStateResult analysisResult)
+        {
+            if (report == null)
+            {
+                return;
+            }
+
+            var helper = new ProtectionBypassValidationHelper(components, wires, analysisResult);
             var issues = helper.Validate();
             for (var i = 0; i < issues.Count; i++)
             {
