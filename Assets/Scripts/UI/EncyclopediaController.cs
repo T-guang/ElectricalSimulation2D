@@ -158,7 +158,7 @@ namespace ElectricalSim.UI
             SetRect(listViewRoot, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
 
             var sidebar = CreatePanel("CategorySidebar", listViewRoot, Color.white);
-            SetRect(sidebar, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(16f, -80f), new Vector2(SidebarWidth, -136f));
+            SetRect(sidebar, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(16f, -40f), new Vector2(SidebarWidth, -128f));
             var sidebarImage = sidebar.GetComponent<Image>();
             if (sidebarImage != null)
             {
