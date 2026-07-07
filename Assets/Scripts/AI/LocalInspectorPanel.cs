@@ -1532,10 +1532,19 @@ namespace ElectricalSim.AI
 
             var visited = new HashSet<TerminalView>();
             var queue = new Queue<TerminalView>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             visited.Add(start);
             queue.Enqueue(start);
             while (queue.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    TopologyTraversalLimits.LogTraversalBudgetExceeded("LocalInspectorPanel.AreTerminalsConnectedByWires");
+                    return false;
+                }
+
                 var current = queue.Dequeue();
                 if (!graph.TryGetValue(current, out var next))
                 {
@@ -1545,6 +1554,13 @@ namespace ElectricalSim.AI
                 for (var i = 0; i < next.Count; i++)
                 {
                     var terminal = next[i];
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        TopologyTraversalLimits.LogTraversalBudgetExceeded("LocalInspectorPanel.AreTerminalsConnectedByWires.edges");
+                        return false;
+                    }
+
                     if (terminal == target)
                     {
                         return true;

@@ -1036,11 +1036,20 @@ namespace ElectricalSim.Rules
 
             var visited = new HashSet<string>();
             var queue = new Queue<string>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             visited.Add(start);
             queue.Enqueue(start);
 
             while (queue.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    TopologyTraversalLimits.LogTraversalBudgetExceeded("CircuitRuleChecker.AreConnected");
+                    return false;
+                }
+
                 var current = queue.Dequeue();
                 if (current == end)
                 {
@@ -1049,6 +1058,13 @@ namespace ElectricalSim.Rules
 
                 foreach (var next in graph[current])
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        TopologyTraversalLimits.LogTraversalBudgetExceeded("CircuitRuleChecker.AreConnected.edges");
+                        return false;
+                    }
+
                     if (visited.Add(next))
                     {
                         queue.Enqueue(next);

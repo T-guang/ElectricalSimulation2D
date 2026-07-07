@@ -20,11 +20,13 @@ namespace ElectricalSim.Core
         private readonly Dictionary<string, string> friendlyNamesByInstanceId = new Dictionary<string, string>();
         private readonly HashSet<string> wiredTerminalKeys = new HashSet<string>();
         private readonly Dictionary<string, HashSet<string>> connectionGraph = new Dictionary<string, HashSet<string>>();
+        private bool traversalBudgetWarningLogged;
 
         public CircuitStateResult Analyze(
             IReadOnlyList<CircuitComponent> components,
             IReadOnlyList<WireView> wires)
         {
+            traversalBudgetWarningLogged = false;
             friendlyNamesByInstanceId.Clear();
             BuildFriendlyNames(components);
 
@@ -2709,6 +2711,8 @@ namespace ElectricalSim.Core
 
             var queue = new Queue<string>();
             var previous = new Dictionary<string, string>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             for (var i = 0; i < sourceKeys.Count; i++)
             {
                 var source = sourceKeys[i];
@@ -2723,6 +2727,13 @@ namespace ElectricalSim.Core
 
             while (queue.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, previous.Count, visitedEdges))
+                {
+                    LogTraversalBudgetExceeded("CircuitStateAnalyzer.FindShortestPath");
+                    return null;
+                }
+
                 var current = queue.Dequeue();
                 if (current == targetKey)
                 {
@@ -2744,6 +2755,13 @@ namespace ElectricalSim.Core
 
                 foreach (var neighbor in neighbors)
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, previous.Count, visitedEdges))
+                    {
+                        LogTraversalBudgetExceeded("CircuitStateAnalyzer.FindShortestPath.edges");
+                        return null;
+                    }
+
                     if (previous.ContainsKey(neighbor))
                     {
                         continue;
@@ -2755,6 +2773,17 @@ namespace ElectricalSim.Core
             }
 
             return null;
+        }
+
+        private void LogTraversalBudgetExceeded(string context)
+        {
+            if (traversalBudgetWarningLogged)
+            {
+                return;
+            }
+
+            traversalBudgetWarningLogged = true;
+            TopologyTraversalLimits.LogTraversalBudgetExceeded(context);
         }
 
         private string FormatPath(List<string> terminalPath)

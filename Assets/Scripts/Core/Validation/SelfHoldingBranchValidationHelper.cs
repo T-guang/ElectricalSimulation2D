@@ -38,11 +38,14 @@ namespace ElectricalSim.Core.Validation
         private readonly Dictionary<TerminalView, HashSet<TerminalView>> staticWireGraph =
             new Dictionary<TerminalView, HashSet<TerminalView>>();
 
+        public bool HasTraversalLimitExceeded { get; private set; }
+
         public bool TryEvaluateSingleContactorSelfHold(
             IReadOnlyList<CircuitComponent> components,
             IReadOnlyList<WireView> wires,
             out SelfHoldingBranchValidationResult result)
         {
+            HasTraversalLimitExceeded = false;
             BuildStaticWireGraph(components, wires);
 
             if (components == null)
@@ -151,11 +154,20 @@ namespace ElectricalSim.Core.Validation
 
             var visited = new HashSet<TerminalView>();
             var queue = new Queue<TerminalView>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             visited.Add(first);
             queue.Enqueue(first);
 
             while (queue.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    MarkTraversalLimitExceeded("SelfHoldingBranchValidationHelper.AreConnectedByStaticWires");
+                    return false;
+                }
+
                 var current = queue.Dequeue();
                 if (!staticWireGraph.TryGetValue(current, out var next))
                 {
@@ -164,6 +176,13 @@ namespace ElectricalSim.Core.Validation
 
                 foreach (var terminal in next)
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        MarkTraversalLimitExceeded("SelfHoldingBranchValidationHelper.AreConnectedByStaticWires.edges");
+                        return false;
+                    }
+
                     if (terminal == second)
                     {
                         return true;
@@ -177,6 +196,16 @@ namespace ElectricalSim.Core.Validation
             }
 
             return false;
+        }
+
+        private void MarkTraversalLimitExceeded(string context)
+        {
+            if (!HasTraversalLimitExceeded)
+            {
+                TopologyTraversalLimits.LogTraversalBudgetExceeded(context);
+            }
+
+            HasTraversalLimitExceeded = true;
         }
 
         private bool HasExternalWire(TerminalView terminal)

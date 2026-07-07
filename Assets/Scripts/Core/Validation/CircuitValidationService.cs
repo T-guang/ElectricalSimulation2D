@@ -16,6 +16,11 @@ namespace ElectricalSim.Core.Validation
             AddMotorIssues(report, components, analysisResult, phaseHelper);
             AddComponentInvariantIssues(report, components, phaseHelper);
             AddControlCircuitStructureIssues(report, components, wires, analysisResult);
+            if (phaseHelper.HasTraversalLimitExceeded)
+            {
+                AddComplexTopologyIssue(report);
+            }
+
             AddUnsupportedComponentIssues(report, components);
             return report;
         }
@@ -423,7 +428,12 @@ namespace ElectricalSim.Core.Validation
                 return;
             }
 
-            var scopes = ReversingPairScopeHelper.ResolveReliableReversingPairs(components, wires);
+            var scopes = ReversingPairScopeHelper.ResolveReliableReversingPairs(components, wires, out var traversalLimitExceeded);
+            if (traversalLimitExceeded)
+            {
+                AddComplexTopologyIssue(report);
+            }
+
             for (var i = 0; i < scopes.Count; i++)
             {
                 var scope = scopes[i];
@@ -503,7 +513,13 @@ namespace ElectricalSim.Core.Validation
             }
 
             var helper = new SelfHoldingBranchValidationHelper();
-            if (!helper.TryEvaluateSingleContactorSelfHold(components, wires, out var result) ||
+            var evaluated = helper.TryEvaluateSingleContactorSelfHold(components, wires, out var result);
+            if (helper.HasTraversalLimitExceeded)
+            {
+                AddComplexTopologyIssue(report);
+            }
+
+            if (!evaluated ||
                 result == null ||
                 !result.IsApplicable ||
                 !result.HasSelfHoldAttempt ||
@@ -569,6 +585,11 @@ namespace ElectricalSim.Core.Validation
                     relay,
                     TerminalConstants.ThermalNC95,
                     TerminalConstants.ThermalNC96);
+            }
+
+            if (scopeHelper.HasTraversalLimitExceeded)
+            {
+                AddComplexTopologyIssue(report);
             }
         }
 
@@ -775,6 +796,18 @@ namespace ElectricalSim.Core.Validation
             }
 
             report.Issues.Add(issue);
+        }
+
+        private static void AddComplexTopologyIssue(CircuitValidationReport report)
+        {
+            AddIssue(
+                report,
+                TopologyTraversalLimits.ComplexTopologyRuleId,
+                CircuitValidationSeverity.Warning,
+                CircuitValidationCategory.General,
+                TopologyTraversalLimits.ComplexTopologyTitle,
+                TopologyTraversalLimits.ComplexTopologyMessage,
+                null);
         }
 
         private static bool HasIssue(CircuitValidationReport report, string ruleId, CircuitComponent component)

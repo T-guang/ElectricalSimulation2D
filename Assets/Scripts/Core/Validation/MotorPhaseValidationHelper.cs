@@ -11,6 +11,8 @@ namespace ElectricalSim.Core.Validation
         private readonly Dictionary<TerminalView, HashSet<TerminalView>> graph = new Dictionary<TerminalView, HashSet<TerminalView>>();
         private readonly Dictionary<TerminalView, HashSet<TerminalView>> staticWireGraph = new Dictionary<TerminalView, HashSet<TerminalView>>();
 
+        public bool HasTraversalLimitExceeded { get; private set; }
+
         public MotorPhaseValidationHelper(IReadOnlyList<CircuitComponent> components, IReadOnlyList<WireView> wires)
         {
             this.components = components;
@@ -444,10 +446,19 @@ namespace ElectricalSim.Core.Validation
             }
 
             var stack = new Stack<TerminalView>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             stack.Push(start);
             visited.Add(start);
             while (stack.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    MarkTraversalLimitExceeded("MotorPhaseValidationHelper.Flood");
+                    break;
+                }
+
                 var current = stack.Pop();
                 if (!graph.TryGetValue(current, out var next))
                 {
@@ -456,6 +467,14 @@ namespace ElectricalSim.Core.Validation
 
                 foreach (var terminal in next)
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        MarkTraversalLimitExceeded("MotorPhaseValidationHelper.Flood.edges");
+                        stack.Clear();
+                        break;
+                    }
+
                     if (terminal != null && visited.Add(terminal))
                     {
                         stack.Push(terminal);
@@ -475,10 +494,19 @@ namespace ElectricalSim.Core.Validation
             }
 
             var stack = new Stack<TerminalView>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             stack.Push(start);
             visited.Add(start);
             while (stack.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    MarkTraversalLimitExceeded("MotorPhaseValidationHelper.FloodStaticWires");
+                    break;
+                }
+
                 var current = stack.Pop();
                 if (!staticWireGraph.TryGetValue(current, out var next))
                 {
@@ -487,6 +515,14 @@ namespace ElectricalSim.Core.Validation
 
                 foreach (var terminal in next)
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        MarkTraversalLimitExceeded("MotorPhaseValidationHelper.FloodStaticWires.edges");
+                        stack.Clear();
+                        break;
+                    }
+
                     if (terminal != null && visited.Add(terminal))
                     {
                         stack.Push(terminal);
@@ -506,10 +542,19 @@ namespace ElectricalSim.Core.Validation
             }
 
             var stack = new Stack<TerminalView>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             stack.Push(start);
             visited.Add(start);
             while (stack.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    MarkTraversalLimitExceeded("MotorPhaseValidationHelper.FloodWithoutSupplyTerminals");
+                    break;
+                }
+
                 var current = stack.Pop();
                 if (!graph.TryGetValue(current, out var next))
                 {
@@ -518,6 +563,14 @@ namespace ElectricalSim.Core.Validation
 
                 foreach (var terminal in next)
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        MarkTraversalLimitExceeded("MotorPhaseValidationHelper.FloodWithoutSupplyTerminals.edges");
+                        stack.Clear();
+                        break;
+                    }
+
                     if (terminal == null || IsSupplyTerminal(terminal))
                     {
                         continue;
@@ -531,6 +584,16 @@ namespace ElectricalSim.Core.Validation
             }
 
             return visited;
+        }
+
+        private void MarkTraversalLimitExceeded(string context)
+        {
+            if (!HasTraversalLimitExceeded)
+            {
+                TopologyTraversalLimits.LogTraversalBudgetExceeded(context);
+            }
+
+            HasTraversalLimitExceeded = true;
         }
 
         private void Ensure(TerminalView terminal)

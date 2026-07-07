@@ -13,6 +13,7 @@ namespace ElectricalSim.Core
         private readonly HashSet<CircuitComponent> energizedOnDelayTimers = new HashSet<CircuitComponent>();
         private readonly float simulationDeltaTime;
         private bool timerRuntimeAdvancedThisRun;
+        private bool traversalBudgetWarningLogged;
         private const int MaxContactorStabilizationIterations = 4;
         private static readonly Dictionary<int, bool> selfHoldEligibleContactors = new Dictionary<int, bool>();
 
@@ -31,6 +32,7 @@ namespace ElectricalSim.Core
 
         public string Run()
         {
+            ResetTraversalBudgetState();
             StabilizeDynamicControlDevices();
 
             var phaseRoots = GetPhaseRoots();
@@ -1050,14 +1052,30 @@ namespace ElectricalSim.Core
 
             var visited = new HashSet<TerminalView>();
             var queue = new Queue<TerminalView>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
             visited.Add(start);
             queue.Enqueue(start);
 
             while (queue.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    MarkTraversalBudgetExceeded("SimulationEngine.AreWireConnected");
+                    return false;
+                }
+
                 var current = queue.Dequeue();
                 foreach (var wire in wires)
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        MarkTraversalBudgetExceeded("SimulationEngine.AreWireConnected.wires");
+                        return false;
+                    }
+
                     if (wire == null || wire.StartTerminal == null || wire.EndTerminal == null)
                     {
                         continue;
@@ -1299,6 +1317,22 @@ namespace ElectricalSim.Core
         private bool AreConnected(TerminalView a, TerminalView b)
         {
             return a != null && b != null && Flood(new List<TerminalView> { a }).Contains(b);
+        }
+
+        private void ResetTraversalBudgetState()
+        {
+            traversalBudgetWarningLogged = false;
+        }
+
+        private void MarkTraversalBudgetExceeded(string context)
+        {
+            if (traversalBudgetWarningLogged)
+            {
+                return;
+            }
+
+            traversalBudgetWarningLogged = true;
+            TopologyTraversalLimits.LogTraversalBudgetExceeded(context);
         }
 
         private static bool IsPowerTerminal(TerminalView terminal, TerminalRole role)
@@ -1575,15 +1609,29 @@ namespace ElectricalSim.Core
         {
             var visited = new HashSet<TerminalView>();
             var queue = new Queue<TerminalView>();
+            var traversalSteps = 0;
+            var visitedEdges = 0;
 
             foreach (var root in roots)
             {
+                if (root == null)
+                {
+                    continue;
+                }
+
                 visited.Add(root);
                 queue.Enqueue(root);
             }
 
             while (queue.Count > 0)
             {
+                traversalSteps++;
+                if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                {
+                    MarkTraversalBudgetExceeded("SimulationEngine.Flood");
+                    break;
+                }
+
                 var current = queue.Dequeue();
                 if (!graph.TryGetValue(current, out var next))
                 {
@@ -1592,6 +1640,14 @@ namespace ElectricalSim.Core
 
                 foreach (var terminal in next)
                 {
+                    visitedEdges++;
+                    if (TopologyTraversalLimits.IsTraversalBudgetExceeded(traversalSteps, visited.Count, visitedEdges))
+                    {
+                        MarkTraversalBudgetExceeded("SimulationEngine.Flood.edges");
+                        queue.Clear();
+                        break;
+                    }
+
                     if (visited.Add(terminal))
                     {
                         queue.Enqueue(terminal);
