@@ -211,8 +211,8 @@ namespace ElectricalSim.UI.CommonTools
         private void AddSoftOutline(RectTransform target)
         {
             var shadow = target.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0, 0, 0, 0.04f);
-            shadow.effectDistance = new Vector2(0, -3f);
+            shadow.effectColor = new Color(15f / 255f, 23f / 255f, 42f / 255f, 0.025f);
+            shadow.effectDistance = new Vector2(0, -2f);
             
             var outline = target.gameObject.AddComponent<Outline>();
             outline.effectColor = BorderColor;
@@ -236,9 +236,9 @@ namespace ElectricalSim.UI.CommonTools
             SetRect(sidebar, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(34f, -90f), new Vector2(240f, -120f));
             AddSoftOutline(sidebar);
 
-            var title = CreateText("SidebarTitle", sidebar, "工具分类", 18, FontStyle.Bold, TextMuted);
+            var title = CreateText("SidebarTitle", sidebar, "工具分类", 18, FontStyle.Bold, TextDark);
             title.alignment = TextAnchor.MiddleLeft;
-            SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(24f, -18f), new Vector2(-48f, 30f));
+            SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(20f, -18f), new Vector2(-40f, 30f));
 
             var categoryList = CreateRect("CategoryList", sidebar);
             StretchTo(categoryList, 0, 60, 0, 0);
@@ -249,8 +249,8 @@ namespace ElectricalSim.UI.CommonTools
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
-            layout.spacing = 8f;
-            layout.padding = new RectOffset(16, 16, 10, 10);
+            layout.spacing = 4f;
+            layout.padding = new RectOffset(14, 14, 10, 10);
 
             AddToolTab(categoryList, ToolTab.Resistor, "电阻色环识别");
             AddToolTab(categoryList, ToolTab.Calculator, "回路参数估算工具");
@@ -262,8 +262,8 @@ namespace ElectricalSim.UI.CommonTools
         {
             var buttonRect = CreatePanel("ToolTab_" + tab, parent, Color.clear, 8);
             var layoutElement = buttonRect.gameObject.AddComponent<LayoutElement>();
-            layoutElement.minHeight = 48f;
-            layoutElement.preferredHeight = 48f;
+            layoutElement.minHeight = 36f;
+            layoutElement.preferredHeight = 36f;
 
             var highlight = CreatePanel("Highlight", buttonRect, PrimaryBlueLight, 8);
             StretchTo(highlight, 0f, 0f, 0f, 0f);
@@ -271,13 +271,13 @@ namespace ElectricalSim.UI.CommonTools
             tabHighlights.Add(highlight);
 
             var line = CreatePanel("Line", buttonRect, PrimaryBlue, 2);
-            SetRect(line, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(4f, 24f));
+            SetRect(line, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(2f, 0f), new Vector2(3f, 20f));
             line.gameObject.SetActive(false);
 
             var button = buttonRect.gameObject.AddComponent<Button>();
-            var text = CreateText("Text", buttonRect, label, 16, FontStyle.Normal, TextDark);
+            var text = CreateText("Text", buttonRect, label, 14, FontStyle.Normal, TextDark);
             text.alignment = TextAnchor.MiddleLeft;
-            SetRect(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(20f, 0f), new Vector2(-20f, 0f));
+            SetRect(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(18f, 0f), new Vector2(-14f, 0f));
             
             button.onClick.AddListener(() => SelectTool(tab));
             tabButtons.Add(button);
@@ -297,7 +297,7 @@ namespace ElectricalSim.UI.CommonTools
                 tabHighlights[i].gameObject.SetActive(active);
                 tabHighlights[i].parent.Find("Line").gameObject.SetActive(active);
                 tabLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
-                tabLabels[i].color = active ? PrimaryBlue : TextDark;
+                tabLabels[i].color = active ? PrimaryBlueHover : TextDark;
             }
         }
 
@@ -347,7 +347,7 @@ namespace ElectricalSim.UI.CommonTools
 
         private void BuildSegmentedControl()
         {
-            var segmentContainer = CreatePanel("SegmentContainer", resistorPanel, new Color(0.95f, 0.96f, 0.98f), 8);
+            var segmentContainer = CreatePanel("SegmentContainer", resistorPanel, MainUiTheme.Hex("F8FAFC"), 8);
             SetRect(segmentContainer, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-10f, -22f), new Vector2(180f, 40f));
 
             var fourBtn = CreateButton("Four", segmentContainer, "四色环", Color.white, PrimaryBlue, 15, 6);
@@ -357,19 +357,19 @@ namespace ElectricalSim.UI.CommonTools
 
             fourBtn.onClick.AddListener(() => {
                 SetBandMode(false);
-                fourBtn.GetComponent<Image>().sprite = GetRoundedSprite(Color.white, 6);
-                fourBtn.GetComponentInChildren<Text>().color = PrimaryBlue;
+                fourBtn.GetComponent<Image>().sprite = GetRoundedSprite(MainUiTheme.Hex("EAF2FF"), 6);
+                fourBtn.GetComponentInChildren<Text>().color = PrimaryBlueHover;
                 fourBtn.GetComponentInChildren<Text>().fontStyle = FontStyle.Bold;
-                fiveBtn.GetComponent<Image>().sprite = GetRoundedSprite(Color.clear, 6);
+                fiveBtn.GetComponent<Image>().sprite = GetRoundedSprite(Color.white, 6);
                 fiveBtn.GetComponentInChildren<Text>().color = TextMuted;
                 fiveBtn.GetComponentInChildren<Text>().fontStyle = FontStyle.Normal;
             });
             fiveBtn.onClick.AddListener(() => {
                 SetBandMode(true);
-                fiveBtn.GetComponent<Image>().sprite = GetRoundedSprite(Color.white, 6);
-                fiveBtn.GetComponentInChildren<Text>().color = PrimaryBlue;
+                fiveBtn.GetComponent<Image>().sprite = GetRoundedSprite(MainUiTheme.Hex("EAF2FF"), 6);
+                fiveBtn.GetComponentInChildren<Text>().color = PrimaryBlueHover;
                 fiveBtn.GetComponentInChildren<Text>().fontStyle = FontStyle.Bold;
-                fourBtn.GetComponent<Image>().sprite = GetRoundedSprite(Color.clear, 6);
+                fourBtn.GetComponent<Image>().sprite = GetRoundedSprite(Color.white, 6);
                 fourBtn.GetComponentInChildren<Text>().color = TextMuted;
                 fourBtn.GetComponentInChildren<Text>().fontStyle = FontStyle.Normal;
             });
@@ -448,6 +448,7 @@ namespace ElectricalSim.UI.CommonTools
                 var captured = i;
                 var button = CreateButton("BandSelector_" + i, card, "第" + (i + 1) + "环", Color.clear, TextDark, 14, 8);
                 SetRect(button.GetComponent<RectTransform>(), new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(20 + i * 90, -50), new Vector2(80, 40));
+                AddButtonOutline(button, MainUiTheme.Hex("DCEBFF"));
                 button.onClick.AddListener(() => {
                     selectedBandIndex = captured;
                     RefreshResistorTool();
@@ -470,6 +471,7 @@ namespace ElectricalSim.UI.CommonTools
             {
                 var entry = resistorColors[i];
                 var button = CreateButton("Color_" + entry.Name, card, entry.Name, entry.Color, GetReadableTextColor(entry.Color), 14, 6);
+                AddButtonOutline(button, IsLightColor(entry.Color) ? MainUiTheme.Hex("CBD5E1") : new Color(1f, 1f, 1f, 0.14f));
                 var captured = i;
                 button.onClick.AddListener(() => SetSelectedBandColor(captured));
                 colorButtons.Add(button);
@@ -498,6 +500,7 @@ namespace ElectricalSim.UI.CommonTools
         {
             var button = CreateButton("Example_" + index, parent, label, PrimaryBlueLight, PrimaryBlue, 14, 6);
             SetRect(button.GetComponent<RectTransform>(), new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(20 + index * 90, -45), new Vector2(80, 30));
+            AddButtonOutline(button, BorderColor);
             button.onClick.AddListener(() =>
             {
                 // Force switch to 4 bands
@@ -552,9 +555,10 @@ namespace ElectricalSim.UI.CommonTools
                     bandButtons[i].gameObject.SetActive(i < visibleBands);
                     var active = selectedBandIndex == i;
                     var btnImg = bandButtons[i].GetComponent<Image>();
-                    btnImg.sprite = GetRoundedSprite(active ? PrimaryBlue : PrimaryBlueLight, 8);
-                    bandLabels[i].color = active ? Color.white : PrimaryBlue;
+                    btnImg.sprite = GetRoundedSprite(active ? PrimaryBlueHover : MainUiTheme.Hex("F8FAFC"), 8);
+                    bandLabels[i].color = active ? Color.white : PrimaryBlueHover;
                     bandLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+                    AddButtonOutline(bandButtons[i], active ? PrimaryBlueHover : MainUiTheme.Hex("DCEBFF"));
                     bandLabels[i].text = "第" + (i + 1) + "环\n" + GetBandRoleName(i);
                 }
             }
@@ -574,6 +578,8 @@ namespace ElectricalSim.UI.CommonTools
                     var label = button.GetComponentInChildren<Text>();
                     label.text = GetColorButtonLabel(resistorColors[i], selectedBandIndex);
                     label.fontSize = 13;
+                    label.fontStyle = FontStyle.Normal;
+                    label.color = GetReadableTextColor(resistorColors[i].Color);
                     visibleColorIndex++;
                 }
             }
@@ -653,6 +659,23 @@ namespace ElectricalSim.UI.CommonTools
             var names = new List<string>();
             for (var i = 0; i < visibleBands; i++) names.Add(resistorColors[bandColorIndices[i]].Name);
             return string.Join("、", names.ToArray());
+        }
+
+        private void AddButtonOutline(Button button, Color color)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var outline = button.GetComponent<Outline>() ?? button.gameObject.AddComponent<Outline>();
+            outline.effectColor = color;
+            outline.effectDistance = new Vector2(1f, -1f);
+        }
+
+        private static bool IsLightColor(Color bg)
+        {
+            return (bg.r * 299f + bg.g * 587f + bg.b * 114f) / 1000f > 0.68f;
         }
 
         private Color GetReadableTextColor(Color bg)
