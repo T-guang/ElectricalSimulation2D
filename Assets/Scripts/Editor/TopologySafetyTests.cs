@@ -16,21 +16,45 @@ namespace ElectricalSim.Editor
         {
             UnityEngine.Debug.Log("==== 开始执行拓扑安全测试 ====");
             int passed = 0;
-            int total = 8;
+            int total = 9;
 
-            try { Test_KMSelfLoop(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_KMSelfLoop 失败: " + e.Message); }
-            try { Test_KMMutualLock(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_KMMutualLock 失败: " + e.Message); }
-            try { Test_SQKMLoop(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_SQKMLoop 失败: " + e.Message); }
-            try { Test_NestedLock(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_NestedLock 失败: " + e.Message); }
-            try { Test_StopButtonBypassed(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_StopButtonBypassed 失败: " + e.Message); }
-            try { Test_ThermalRelayBypassed(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_ThermalRelayBypassed 失败: " + e.Message); }
-            try { Test_SelfHoldingIncomplete(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_SelfHoldingIncomplete 失败: " + e.Message); }
-            try { Test_ReversingConflict(); passed++; } catch (Exception e) { UnityEngine.Debug.LogError("Test_ReversingConflict 失败: " + e.Message); }
+            Action<string, Action> runTest = (name, testAction) =>
+            {
+                try
+                {
+                    testAction();
+                    passed++;
+                }
+                catch (Exception e)
+                {
+                    UnityEngine.Debug.LogError($"{name} 失败: {e.Message}");
+                }
+            };
+
+            // 第一类：简单环路稳定性测试
+            runTest("Test_KMSelfLoop_Stable", Test_KMSelfLoop_Stable);
+            runTest("Test_KMMutualLock_Stable", Test_KMMutualLock_Stable);
+            runTest("Test_SQKMLoop_Stable", Test_SQKMLoop_Stable);
+            runTest("Test_NestedLock_Stable", Test_NestedLock_Stable);
+
+            // 第二类：复杂拓扑超限测试
+            runTest("Test_ComplexTopologyExceeded", Test_ComplexTopologyExceeded);
+
+            // 第三类：安全规则验证测试
+            runTest("Test_StopButtonBypassed", Test_StopButtonBypassed);
+            runTest("Test_ThermalRelayBypassed", Test_ThermalRelayBypassed);
+            runTest("Test_SelfHoldingIncomplete", Test_SelfHoldingIncomplete);
+            runTest("Test_ReversingConflict", Test_ReversingConflict);
 
             UnityEngine.Debug.Log($"==== 测试完成: {passed}/{total} 成功 ====");
         }
 
-        private static void Test_KMSelfLoop()
+        // ==========================================
+        // 第一类：简单环路稳定性测试
+        // 目标：验证正常的小规模自锁/互锁环路不会误判为复杂拓扑，能够在限定时间内安全返回。
+        // ==========================================
+
+        private static void Test_KMSelfLoop_Stable()
         {
             var factory = new CircuitTestFactory();
             var power = factory.CreateComponent("p", "AC_220V_Power", ComponentKind.PowerSource, "L1", "N");
@@ -40,11 +64,11 @@ namespace ElectricalSim.Editor
             factory.Connect(power, "L1", km, "13");
             
             var report = factory.Validate();
-            // AssertHasRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
-            UnityEngine.Debug.Log("[PASS] KMSelfLoop (Skipped assert)");
+            AssertDoesNotHaveRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
+            UnityEngine.Debug.Log("[PASS] KMSelfLoop_Stable: 简单回路安全返回，无超时");
         }
 
-        private static void Test_KMMutualLock()
+        private static void Test_KMMutualLock_Stable()
         {
             var factory = new CircuitTestFactory();
             var power = factory.CreateComponent("p", "AC_220V_Power", ComponentKind.PowerSource, "L1", "N");
@@ -56,11 +80,11 @@ namespace ElectricalSim.Editor
             factory.Connect(power, "L1", km1, "14");
 
             var report = factory.Validate();
-            // AssertHasRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
-            UnityEngine.Debug.Log("[PASS] KMMutualLock (Skipped assert)");
+            AssertDoesNotHaveRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
+            UnityEngine.Debug.Log("[PASS] KMMutualLock_Stable: 互相自锁安全返回，无超时");
         }
 
-        private static void Test_SQKMLoop()
+        private static void Test_SQKMLoop_Stable()
         {
             var factory = new CircuitTestFactory();
             var power = factory.CreateComponent("p", "AC_220V_Power", ComponentKind.PowerSource, "L1", "N");
@@ -72,11 +96,11 @@ namespace ElectricalSim.Editor
             factory.Connect(power, "L1", sq, "24");
 
             var report = factory.Validate();
-            // AssertHasRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
-            UnityEngine.Debug.Log("[PASS] SQKMLoop (Skipped assert)");
+            AssertDoesNotHaveRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
+            UnityEngine.Debug.Log("[PASS] SQKMLoop_Stable: 行程开关循环安全返回，无超时");
         }
 
-        private static void Test_NestedLock()
+        private static void Test_NestedLock_Stable()
         {
             var factory = new CircuitTestFactory();
             var power = factory.CreateComponent("p", "AC_220V_Power", ComponentKind.PowerSource, "L1", "N");
@@ -90,9 +114,48 @@ namespace ElectricalSim.Editor
             factory.Connect(power, "L1", km1, "14");
 
             var report = factory.Validate();
-            // AssertHasRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
-            UnityEngine.Debug.Log("[PASS] NestedLock (Skipped assert)");
+            AssertDoesNotHaveRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
+            UnityEngine.Debug.Log("[PASS] NestedLock_Stable: 多接触器嵌套自锁安全返回，无超时");
         }
+
+        // ==========================================
+        // 第二类：复杂拓扑超限测试
+        // 目标：在有限资源下遇到长链/庞大网络时，系统能自动触发异常保护切断搜索，防止 Editor/Game 卡死。
+        // ==========================================
+
+        private static void Test_ComplexTopologyExceeded()
+        {
+            var factory = new CircuitTestFactory();
+            var motor = factory.CreateComponent("m", "Motor_ThreePhase_380V", ComponentKind.Motor, "U", "V", "W");
+            
+            var lastTerminal = motor.GetTerminal("U");
+            for (int i = 0; i < 30; i++)
+            {
+                var dummy = factory.CreateComponent($"dummy{i}", "TerminalBlock", ComponentKind.TerminalBlock, "1", "2");
+                factory.Connect(lastTerminal.Owner, lastTerminal.TerminalId, dummy, "1");
+                factory.Connect(dummy, "1", dummy, "2");
+                lastTerminal = dummy.GetTerminal("2");
+            }
+
+            try
+            {
+                // Editor-only: 临时调低阈值，使得 30 个节点即可触发超限保护
+                TopologyTraversalLimits.SetEditorTestingLimits(20, 20, 40);
+
+                var report = factory.Validate();
+                AssertHasRuleId(report, "COMPLEX_LOOP_OR_UNSUPPORTED_TOPOLOGY");
+                UnityEngine.Debug.Log("[PASS] ComplexTopologyExceeded: 成功触发拓扑超限异常保护");
+            }
+            finally
+            {
+                // 确保一定恢复默认配置，不影响正式版
+                TopologyTraversalLimits.RestoreDefaultLimits();
+            }
+        }
+
+        // ==========================================
+        // 第三类：安全规则验证测试
+        // ==========================================
 
         private static void Test_StopButtonBypassed()
         {
@@ -115,8 +178,8 @@ namespace ElectricalSim.Editor
         {
             var factory = new CircuitTestFactory();
             var power = factory.CreateComponent("p", "AC_ThreePhase_Power", ComponentKind.PowerSource, "L1", "L2", "L3", "N");
-            var motor = factory.CreateComponent("m", "Motor_ThreePhase", ComponentKind.Motor, "U", "V", "W");
-            var fr = factory.CreateComponent("fr", "ThermalRelay", ComponentKind.Switch, "95", "96", "97", "98", "L1", "L2", "L3", "T1", "T2", "T3");
+            var motor = factory.CreateComponent("m", "Motor_ThreePhase_380V", ComponentKind.Motor, "U", "V", "W");
+            var fr = factory.CreateComponent("fr", "ThermalRelay_FR_380V", ComponentKind.Switch, "95", "96", "97", "98", "L1", "L2", "L3", "T1", "T2", "T3");
             var km = factory.CreateComponent("km", "Contactor_KM_380V", ComponentKind.ContactorCoil, "L1", "L2", "L3", "T1", "T2", "T3", "A1", "A2");
 
             factory.Connect(power, "L1", km, "L1");
@@ -137,8 +200,8 @@ namespace ElectricalSim.Editor
             factory.Connect(km, "A2", power, "N");
 
             var report = factory.Validate();
-            // AssertHasRuleId(report, "THERMAL_RELAY_CONTROL_BYPASSED");
-            UnityEngine.Debug.Log("[PASS] THERMAL_RELAY_CONTROL_BYPASSED (Skipped assert)");
+            AssertHasRuleId(report, "THERMAL_RELAY_CONTROL_BYPASSED");
+            UnityEngine.Debug.Log("[PASS] THERMAL_RELAY_CONTROL_BYPASSED");
         }
 
         private static void Test_SelfHoldingIncomplete()
@@ -165,7 +228,7 @@ namespace ElectricalSim.Editor
         {
             var factory = new CircuitTestFactory();
             var power = factory.CreateComponent("p", "AC_ThreePhase_Power", ComponentKind.PowerSource, "L1", "L2", "L3", "N");
-            var motor = factory.CreateComponent("m", "Motor_ThreePhase", ComponentKind.Motor, "U", "V", "W");
+            var motor = factory.CreateComponent("m", "Motor_ThreePhase_380V", ComponentKind.Motor, "U", "V", "W");
             var km_f = factory.CreateComponent("km_forward", "Contactor_KM_380V", ComponentKind.ContactorCoil, "L1", "L2", "L3", "T1", "T2", "T3", "A1", "A2");
             var km_r = factory.CreateComponent("km_reverse", "Contactor_KM_380V", ComponentKind.ContactorCoil, "L1", "L2", "L3", "T1", "T2", "T3", "A1", "A2");
             
@@ -177,13 +240,13 @@ namespace ElectricalSim.Editor
             factory.Connect(km_f, "T2", motor, "V");
             factory.Connect(km_f, "T3", motor, "W");
 
-            factory.Connect(power, "L1", km_r, "L3");
+            factory.Connect(power, "L1", km_r, "L1");
             factory.Connect(power, "L2", km_r, "L2");
-            factory.Connect(power, "L3", km_r, "L1");
+            factory.Connect(power, "L3", km_r, "L3");
 
-            factory.Connect(km_r, "T1", motor, "U");
+            factory.Connect(km_r, "T1", motor, "W");
             factory.Connect(km_r, "T2", motor, "V");
-            factory.Connect(km_r, "T3", motor, "W");
+            factory.Connect(km_r, "T3", motor, "U");
 
             factory.Connect(power, "L1", km_f, "A1");
             factory.Connect(power, "N", km_f, "A2");
@@ -192,17 +255,30 @@ namespace ElectricalSim.Editor
             factory.Connect(power, "N", km_r, "A2");
 
             var report = factory.Validate();
-            // AssertHasRuleId(report, "REVERSING_CONTACTOR_CONFLICT");
-            UnityEngine.Debug.Log("[PASS] REVERSING_CONTACTOR_CONFLICT (Skipped assert)");
+            AssertHasRuleId(report, "REVERSING_CONTACTOR_CONFLICT");
+            UnityEngine.Debug.Log("[PASS] REVERSING_CONTACTOR_CONFLICT");
         }
 
         private static void AssertHasRuleId(CircuitValidationReport report, string ruleId)
         {
-            foreach (var r in report.Issues)
+            if (report == null) throw new System.Exception("Report is null");
+            foreach (var issue in report.Issues)
             {
-                if (r.RuleId == ruleId) return;
+                if (issue.RuleId == ruleId) return;
             }
-            throw new Exception($"预期报告包含 RuleId: {ruleId} 但未找到！");
+            throw new System.Exception($"Assert failed: expected RuleId '{ruleId}' but not found.");
+        }
+
+        private static void AssertDoesNotHaveRuleId(CircuitValidationReport report, string ruleId)
+        {
+            if (report == null) return;
+            foreach (var issue in report.Issues)
+            {
+                if (issue.RuleId == ruleId)
+                {
+                    throw new System.Exception($"Assert failed: found unexpected RuleId '{ruleId}'.");
+                }
+            }
         }
     }
 
