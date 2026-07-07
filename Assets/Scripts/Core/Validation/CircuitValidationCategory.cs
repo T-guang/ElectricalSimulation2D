@@ -9,6 +9,9 @@ namespace ElectricalSim.Core.Validation
         Interlock,
         StarDelta,
         Protection,
+        PowerSafety,
+        GroundSafety,
+        WiringSafety,
         Parameter,
         UnsupportedComponent
     }

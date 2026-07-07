@@ -15,6 +15,7 @@ namespace ElectricalSim.Core.Validation
             var phaseHelper = new MotorPhaseValidationHelper(components, wires);
             AddMotorIssues(report, components, analysisResult, phaseHelper);
             AddComponentInvariantIssues(report, components, phaseHelper);
+            AddPowerSafetyIssues(report, components, wires, analysisResult);
             AddControlCircuitStructureIssues(report, components, wires, analysisResult);
             if (phaseHelper.HasTraversalLimitExceeded)
             {
@@ -23,6 +24,30 @@ namespace ElectricalSim.Core.Validation
 
             AddUnsupportedComponentIssues(report, components);
             return report;
+        }
+
+        private static void AddPowerSafetyIssues(
+            CircuitValidationReport report,
+            IReadOnlyList<CircuitComponent> components,
+            IReadOnlyList<WireView> wires,
+            CircuitStateResult analysisResult)
+        {
+            if (report == null)
+            {
+                return;
+            }
+
+            var helper = new PowerPotentialValidationHelper(components, wires, analysisResult);
+            var issues = helper.Validate();
+            for (var i = 0; i < issues.Count; i++)
+            {
+                AddIssue(report, issues[i]);
+            }
+
+            if (helper.HasTraversalLimitExceeded)
+            {
+                AddComplexTopologyIssue(report);
+            }
         }
 
         private static void AddMotorIssues(
@@ -793,6 +818,16 @@ namespace ElectricalSim.Core.Validation
                         issue.RelatedTerminals.Add(relatedTerminals[i]);
                     }
                 }
+            }
+
+            report.Issues.Add(issue);
+        }
+
+        private static void AddIssue(CircuitValidationReport report, CircuitValidationIssue issue)
+        {
+            if (report == null || issue == null || HasIssue(report, issue.RuleId, issue.Component))
+            {
+                return;
             }
 
             report.Issues.Add(issue);

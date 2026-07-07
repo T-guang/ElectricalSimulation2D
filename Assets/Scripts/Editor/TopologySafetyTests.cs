@@ -296,6 +296,17 @@ namespace ElectricalSim.Editor
             var def = ScriptableObject.CreateInstance<ComponentDefinition>();
             def.name = defName;
             def.kind = kind;
+            if (defName != null && defName.IndexOf("220V", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                def.ratedVoltage = 220f;
+                def.sourceVoltage = 220f;
+            }
+            else if (defName != null && defName.IndexOf("380V", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                def.ratedVoltage = 380f;
+                def.sourceLineVoltage = 380f;
+            }
+
             typeof(CircuitComponent).GetProperty("Definition").SetValue(comp, def);
 
             var terms = new List<TerminalView>();
@@ -307,8 +318,9 @@ namespace ElectricalSim.Editor
                 typeof(TerminalView).GetProperty("TerminalId").SetValue(term, id);
                 
                 var role = TerminalRole.Generic;
-                if (id == "L1" || id == "L2" || id == "L3") role = TerminalRole.Phase;
+                if (id == "L" || id == "L1" || id == "L2" || id == "L3") role = TerminalRole.Phase;
                 else if (id == "N") role = TerminalRole.Neutral;
+                else if (id == "PE") role = TerminalRole.ProtectiveEarth;
                 else if (id == "A1") role = TerminalRole.CoilA1;
                 else if (id == "A2") role = TerminalRole.CoilA2;
                 else if (id == "U" || id == "V" || id == "W") role = TerminalRole.Input;
