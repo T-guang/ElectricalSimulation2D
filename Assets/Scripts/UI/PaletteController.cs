@@ -505,6 +505,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
+            // --- Panel position & size ---
             logPanel.anchorMin = new Vector2(0f, 0f);
             logPanel.anchorMax = new Vector2(0f, 0f);
             logPanel.pivot = new Vector2(0f, 0f);
@@ -512,6 +513,7 @@ namespace ElectricalSim.UI
             logPanel.sizeDelta = new Vector2(OperationLogWidth, OperationLogHeight);
             logPanel.SetAsLastSibling();
 
+            // --- Panel background ---
             var panelImage = logPanel.GetComponent<Image>() ?? logPanel.gameObject.AddComponent<Image>();
             panelImage.enabled = true;
             panelImage.sprite = UiThemeTokens.GetRoundedSprite(10);
@@ -519,51 +521,76 @@ namespace ElectricalSim.UI
             panelImage.color = Color.white;
             panelImage.raycastTarget = true;
 
+            // --- Panel border ---
             var outline = logPanel.GetComponent<Outline>() ?? logPanel.gameObject.AddComponent<Outline>();
-            outline.effectColor = MainUiTheme.Hex("DDE5F0");
+            outline.effectColor = MainUiTheme.Hex("D1D5DB");
             outline.effectDistance = new Vector2(1f, -1f);
             outline.enabled = true;
 
+            // --- Panel shadow ---
             var shadow = logPanel.GetComponent<Shadow>() ?? logPanel.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.08f);
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.10f);
             shadow.effectDistance = new Vector2(0f, -2f);
             shadow.enabled = true;
-            
-            var titleBg = logPanel.Find("TitleBarBackground") as RectTransform;
-            if (titleBg == null)
-            {
-                var bgGo = new GameObject("TitleBarBackground", typeof(RectTransform), typeof(Image));
-                bgGo.transform.SetParent(logPanel, false);
-                bgGo.transform.SetSiblingIndex(0);
-                titleBg = bgGo.GetComponent<RectTransform>();
-                var bgImg = titleBg.GetComponent<Image>();
-                bgImg.color = MainUiTheme.Hex("F8FAFC");
-                bgImg.sprite = UiThemeTokens.GetRoundedSprite(10);
-                bgImg.type = Image.Type.Sliced;
-            }
-            titleBg.anchorMin = new Vector2(0f, 1f);
-            titleBg.anchorMax = new Vector2(1f, 1f);
-            titleBg.pivot = new Vector2(0.5f, 1f);
-            titleBg.anchoredPosition = new Vector2(0f, 0f);
-            titleBg.sizeDelta = new Vector2(0f, 40f);
 
-            var topBorder = logPanel.Find("TopBorder") as RectTransform;
-            if (topBorder == null)
+            // --- ActionLogHeader (title bar background) ---
+            var header = logPanel.Find("ActionLogHeader") as RectTransform;
+            if (header == null)
             {
-                var borderGo = new GameObject("TopBorder", typeof(RectTransform), typeof(Image));
-                borderGo.transform.SetParent(logPanel, false);
-                topBorder = borderGo.GetComponent<RectTransform>();
-                var borderImage = topBorder.GetComponent<Image>();
-                borderImage.color = MainUiTheme.Hex("E5E7EB");
-                borderImage.raycastTarget = false;
+                header = logPanel.Find("TitleBarBackground") as RectTransform;
+                if (header != null)
+                {
+                    header.gameObject.name = "ActionLogHeader";
+                }
             }
-            topBorder.anchorMin = new Vector2(0f, 1f);
-            topBorder.anchorMax = new Vector2(1f, 1f);
-            topBorder.pivot = new Vector2(0.5f, 1f);
-            topBorder.anchoredPosition = new Vector2(0f, -40f);
-            topBorder.sizeDelta = new Vector2(0f, 1f);
-            topBorder.SetAsLastSibling();
+            if (header == null)
+            {
+                var headerGo = new GameObject("ActionLogHeader", typeof(RectTransform), typeof(Image));
+                headerGo.transform.SetParent(logPanel, false);
+                header = headerGo.GetComponent<RectTransform>();
+                var headerImg = header.GetComponent<Image>();
+                headerImg.sprite = UiThemeTokens.GetRoundedSprite(10);
+                headerImg.type = Image.Type.Sliced;
+            }
+            header.anchorMin = new Vector2(0f, 1f);
+            header.anchorMax = new Vector2(1f, 1f);
+            header.pivot = new Vector2(0.5f, 1f);
+            header.anchoredPosition = new Vector2(0f, 0f);
+            header.sizeDelta = new Vector2(0f, 42f);
+            {
+                var headerImg = header.GetComponent<Image>();
+                headerImg.color = MainUiTheme.Hex("F8FAFC");
+                headerImg.raycastTarget = false;
+            }
 
+            // --- HeaderBottomLine (1px divider) ---
+            var bottomLine = logPanel.Find("HeaderBottomLine") as RectTransform;
+            if (bottomLine == null)
+            {
+                bottomLine = logPanel.Find("TopBorder") as RectTransform;
+                if (bottomLine != null)
+                {
+                    bottomLine.gameObject.name = "HeaderBottomLine";
+                }
+            }
+            if (bottomLine == null)
+            {
+                var lineGo = new GameObject("HeaderBottomLine", typeof(RectTransform), typeof(Image));
+                lineGo.transform.SetParent(logPanel, false);
+                bottomLine = lineGo.GetComponent<RectTransform>();
+            }
+            bottomLine.anchorMin = new Vector2(0f, 1f);
+            bottomLine.anchorMax = new Vector2(1f, 1f);
+            bottomLine.pivot = new Vector2(0.5f, 1f);
+            bottomLine.anchoredPosition = new Vector2(0f, -42f);
+            bottomLine.sizeDelta = new Vector2(0f, 1f);
+            {
+                var lineImage = bottomLine.GetComponent<Image>() ?? bottomLine.gameObject.AddComponent<Image>();
+                lineImage.color = MainUiTheme.Hex("E5E7EB");
+                lineImage.raycastTarget = false;
+            }
+
+            // --- ActionLogTitle ---
             var title = logPanel.Find("ActionLogTitle") as RectTransform;
             if (title != null)
             {
@@ -571,58 +598,69 @@ namespace ElectricalSim.UI
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
                 title.anchoredPosition = new Vector2(0f, 0f);
-                title.sizeDelta = new Vector2(0f, 40f);
+                title.sizeDelta = new Vector2(0f, 42f);
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
                     MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft, true);
                     titleText.text = "操作记录";
-                    titleText.rectTransform.offsetMin = new Vector2(12f, 0f);
-                    titleText.rectTransform.offsetMax = new Vector2(-40f, 0f);
+                    titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
+                    titleText.rectTransform.offsetMax = new Vector2(-52f, 0f);
                 }
-                title.SetAsLastSibling();
+            }
 
-                var clearButtonRect = title.Find("ClearButton") as RectTransform;
-                if (clearButtonRect == null)
+            // --- ClearButton (trash icon) ---
+            var clearButtonRect = logPanel.Find("ClearButton") as RectTransform;
+            if (clearButtonRect == null && title != null)
+            {
+                clearButtonRect = title.Find("ClearButton") as RectTransform;
+                if (clearButtonRect != null)
                 {
-                    var clearGo = new GameObject("ClearButton", typeof(RectTransform), typeof(Image), typeof(Button));
-                    clearGo.transform.SetParent(title, false);
-                    clearButtonRect = clearGo.GetComponent<RectTransform>();
+                    clearButtonRect.SetParent(logPanel, false);
                 }
-
-                clearButtonRect.anchorMin = new Vector2(1f, 0.5f);
-                clearButtonRect.anchorMax = new Vector2(1f, 0.5f);
-                clearButtonRect.pivot = new Vector2(1f, 0.5f);
-                clearButtonRect.anchoredPosition = new Vector2(-12f, 0f);
-                clearButtonRect.sizeDelta = new Vector2(28f, 28f);
-
+            }
+            if (clearButtonRect == null)
+            {
+                var clearGo = new GameObject("ClearButton", typeof(RectTransform), typeof(Image), typeof(Button));
+                clearGo.transform.SetParent(logPanel, false);
+                clearButtonRect = clearGo.GetComponent<RectTransform>();
+            }
+            clearButtonRect.anchorMin = new Vector2(1f, 1f);
+            clearButtonRect.anchorMax = new Vector2(1f, 1f);
+            clearButtonRect.pivot = new Vector2(1f, 1f);
+            clearButtonRect.anchoredPosition = new Vector2(-12f, -7f);
+            clearButtonRect.sizeDelta = new Vector2(28f, 28f);
+            {
                 var clearImage = clearButtonRect.GetComponent<Image>();
                 clearImage.color = Color.clear;
-                
+                clearImage.raycastTarget = true;
+
                 var clearButton = clearButtonRect.GetComponent<Button>();
                 clearButton.onClick.RemoveAllListeners();
                 if (workspace != null)
                 {
                     clearButton.onClick.AddListener(() => workspace.ClearActionLog());
                 }
-                
-                UiIconLibrary.EnsureButtonIcon(clearButton, "ui_toolbar_delete_24", new Vector2(18f, 18f), Vector2.zero, MainUiTheme.MutedText);
+
+                UiIconLibrary.EnsureCenteredIcon(clearButtonRect, "ui_toolbar_delete_24", new Vector2(20f, 20f), MainUiTheme.MutedText);
             }
 
+            // --- Hide old CurrentStatus ---
             var status = logPanel.Find("CurrentStatus") as RectTransform;
             if (status != null)
             {
-                status.gameObject.SetActive(false); // Hide the old current status to make room or rely on the text
+                status.gameObject.SetActive(false);
             }
 
+            // --- ActionLogViewport ---
             var viewport = logPanel.Find("ActionLogViewport") as RectTransform;
             if (viewport != null)
             {
                 viewport.anchorMin = Vector2.zero;
                 viewport.anchorMax = Vector2.one;
                 viewport.pivot = new Vector2(0.5f, 0.5f);
-                viewport.offsetMin = new Vector2(10f, 10f);
-                viewport.offsetMax = new Vector2(-10f, -44f);
+                viewport.offsetMin = new Vector2(12f, 10f);
+                viewport.offsetMax = new Vector2(-12f, -50f);
 
                 var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
 
@@ -639,8 +677,25 @@ namespace ElectricalSim.UI
                     {
                         MainUiTheme.ApplyText(text, 12, FontStyle.Normal, MainUiTheme.Hex("475569"), TextAnchor.UpperLeft, false);
                         text.lineSpacing = 1.4f;
+                        text.supportRichText = true;
                     }
                 }
+            }
+
+            // --- Enforce hierarchy order ---
+            header.SetAsFirstSibling();
+            if (viewport != null)
+            {
+                viewport.SetAsLastSibling();
+            }
+            bottomLine.SetAsLastSibling();
+            if (title != null)
+            {
+                title.SetAsLastSibling();
+            }
+            if (clearButtonRect != null)
+            {
+                clearButtonRect.SetAsLastSibling();
             }
         }
 
