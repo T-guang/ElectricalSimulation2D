@@ -763,6 +763,15 @@ namespace ElectricalSim.UI
             {
                 saveDialog.Initialize(saveLoadService);
             }
+
+            if (importPanel == null)
+            {
+                importPanel = ImportBlueprintPanel.Create(parent, saveLoadService);
+            }
+            else
+            {
+                importPanel.Initialize(saveLoadService);
+            }
         }
 
         private void EnsureVerticalDivider(RectTransform parent, string name, float x)
