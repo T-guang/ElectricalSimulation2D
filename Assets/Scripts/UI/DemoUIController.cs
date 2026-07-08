@@ -15,6 +15,7 @@ namespace ElectricalSim.UI
         [SerializeField] private Button clearAllButton;
         [SerializeField] private Button saveButton;
         [SerializeField] private Button loadButton;
+        [SerializeField] private Button importButton;
         [SerializeField] private SaveBlueprintDialog saveDialog;
         [SerializeField] private ImportBlueprintPanel importPanel;
         [SerializeField] private LocalInspectorPanel localInspectorPanel;
@@ -162,16 +163,31 @@ namespace ElectricalSim.UI
             
             if (saveButton != null)
             {
-                MoveButtonToGroup(saveButton, rightGroup, new Vector2(118f, 40f), "保存图纸");
+                MoveButtonToGroup(saveButton, rightGroup, new Vector2(118f, 40f), null); // null to keep original text "保存图纸"
                 StyleToolbarButton(saveButton, false, false);
                 ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 24f);
                 SetToolbarButtonSize(saveButton, 118f);
             }
-            if (loadButton != null)
+
+            if (importButton == null)
             {
-                MoveButtonToGroup(loadButton, rightGroup, new Vector2(118f, 40f), "加载图纸");
+                var importGo = GameObject.Find("ImportButton") ?? GameObject.Find("ImportBlueprintButton") ?? GameObject.Find("ImportDrawingButton") ?? GameObject.Find("导入图纸");
+                if (importGo != null) importButton = importGo.GetComponent<Button>();
+            }
+
+            if (importButton != null)
+            {
+                MoveButtonToGroup(importButton, rightGroup, new Vector2(118f, 40f), "导入图纸");
+                StyleToolbarButton(importButton, false, false);
+                ApplyToolbarIcon(importButton, "ui_toolbar_import_blueprint_24", 24f);
+                SetToolbarButtonSize(importButton, 118f);
+            }
+            else if (loadButton != null)
+            {
+                // Fallback: restore previous logic but keep original text "导入图纸" and correct icon
+                MoveButtonToGroup(loadButton, rightGroup, new Vector2(118f, 40f), null); 
                 StyleToolbarButton(loadButton, false, false);
-                ApplyToolbarIcon(loadButton, "ui_toolbar_load_blueprint_24", 24f);
+                ApplyToolbarIcon(loadButton, "ui_toolbar_import_blueprint_24", 24f);
                 SetToolbarButtonSize(loadButton, 118f);
             }
 
@@ -366,7 +382,6 @@ namespace ElectricalSim.UI
 
             Color? color = null;
             if (primary) color = Color.white;
-            else if (danger) color = MainUiTheme.Hex("DC2626");
             else color = MainUiTheme.Hex("64748B");
             
             var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(iconSize, iconSize), new Vector2(18f, 0f), color);
@@ -417,7 +432,6 @@ namespace ElectricalSim.UI
                 label.fontSize = 14;
                 label.fontStyle = primary ? FontStyle.Bold : FontStyle.Normal;
                 if (primary) label.color = Color.white;
-                else if (danger) label.color = MainUiTheme.Hex("DC2626");
                 else label.color = MainUiTheme.Hex("334155");
             }
         }
