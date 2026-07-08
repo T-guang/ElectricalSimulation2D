@@ -38,7 +38,7 @@ namespace ElectricalSim.UI
         private const float ContentLeft = 14f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
-        private const float OperationLogHeight = 240f;
+        private const float OperationLogHeight = 340f;
         private const float OperationLogMargin = 16f;
         private const float OperationLogWidth = PaletteWidth - PalettePadding * 2f;
 
@@ -693,7 +693,7 @@ namespace ElectricalSim.UI
                     clearButton.onClick.AddListener(() => workspace.ClearActionLog());
                 }
 
-                UiIconLibrary.EnsureCenteredIcon(clearButtonRect, "ui_toolbar_delete_24", new Vector2(18f, 18f), MainUiTheme.Hex("64748B"));
+                UiIconLibrary.EnsureCenteredIcon(clearButtonRect, "ui_toolbar_clear_all_24", new Vector2(18f, 18f), MainUiTheme.Hex("64748B"));
             }
 
             // --- Hide old CurrentStatus ---
