@@ -165,6 +165,8 @@ namespace ElectricalSim.UI
             var panel = CreateRect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(500f, 280f));
             var panelImage = panel.gameObject.AddComponent<Image>();
             panelImage.color = Color.white;
+            panelImage.sprite = UiThemeTokens.GetRoundedSprite(16);
+            panelImage.type = Image.Type.Sliced;
 
             var outline = panel.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(0.886f, 0.91f, 0.941f);
@@ -199,7 +201,10 @@ namespace ElectricalSim.UI
         private void BuildOverwriteConfirmPanel(RectTransform parent)
         {
             var overlay = CreateRect("OverwriteConfirmPanel", parent, new Vector2(0.5f, 0.5f), new Vector2(420f, 190f));
-            overlay.gameObject.AddComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+            var img = overlay.gameObject.AddComponent<Image>();
+            img.color = new Color(1f, 1f, 1f, 1f);
+            img.sprite = UiThemeTokens.GetRoundedSprite(16);
+            img.type = Image.Type.Sliced;
             overwriteConfirmPanel = overlay.gameObject;
 
             CreateText("Title", overlay, "覆盖确认", 20, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(24f, -20f), new Vector2(240f, 32f));
@@ -268,7 +273,10 @@ namespace ElectricalSim.UI
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
-            inputObject.GetComponent<Image>().color = new Color(0.973f, 0.98f, 0.988f);
+            var img = inputObject.GetComponent<Image>();
+            img.color = new Color(0.973f, 0.98f, 0.988f);
+            img.sprite = UiThemeTokens.GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
 
             var outline = inputObject.AddComponent<Outline>();
             outline.effectColor = new Color(0.796f, 0.835f, 0.882f);
@@ -306,7 +314,10 @@ namespace ElectricalSim.UI
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
-            buttonObject.GetComponent<Image>().color = background;
+            var img = buttonObject.GetComponent<Image>();
+            img.color = background;
+            img.sprite = UiThemeTokens.GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
 
             var label = CreateText("Text", rect, text, 15, TextAnchor.MiddleCenter, Vector2.zero, Vector2.zero, size);
             label.rectTransform.anchorMin = Vector2.zero;

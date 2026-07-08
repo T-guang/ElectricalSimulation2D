@@ -171,7 +171,10 @@ namespace ElectricalSim.UI
         private void BuildUi(RectTransform root)
         {
             var panel = CreateRect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(800f, 640f));
-            panel.gameObject.AddComponent<Image>().color = Color.white;
+            var panelImage = panel.gameObject.AddComponent<Image>();
+            panelImage.color = Color.white;
+            panelImage.sprite = UiThemeTokens.GetRoundedSprite(16);
+            panelImage.type = Image.Type.Sliced;
 
             var outline = panel.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(0.886f, 0.91f, 0.941f);
@@ -210,7 +213,10 @@ namespace ElectricalSim.UI
             scrollRectTransform.pivot = new Vector2(0f, 1f);
             scrollRectTransform.anchoredPosition = new Vector2(24f, -76f);
             scrollRectTransform.sizeDelta = new Vector2(752f, 520f);
-            scrollObject.GetComponent<Image>().color = new Color(0.945f, 0.961f, 0.976f);
+            var scrollImage = scrollObject.GetComponent<Image>();
+            scrollImage.color = new Color(0.945f, 0.961f, 0.976f);
+            scrollImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+            scrollImage.type = Image.Type.Sliced;
 
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
             viewport.transform.SetParent(scrollObject.transform, false);
@@ -280,7 +286,10 @@ namespace ElectricalSim.UI
         private void BuildConfirmDeletePanel(RectTransform parent)
         {
             var overlay = CreateRect("ConfirmDeletePanel", parent, new Vector2(0.5f, 0.5f), new Vector2(420f, 190f));
-            overlay.gameObject.AddComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+            var img = overlay.gameObject.AddComponent<Image>();
+            img.color = new Color(1f, 1f, 1f, 1f);
+            img.sprite = UiThemeTokens.GetRoundedSprite(16);
+            img.type = Image.Type.Sliced;
             confirmDeletePanel = overlay.gameObject;
 
             CreateText("Title", overlay, "删除图纸", 20, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(24f, -20f), new Vector2(240f, 32f));
@@ -360,7 +369,10 @@ namespace ElectricalSim.UI
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
-            buttonObject.GetComponent<Image>().color = background;
+            var img = buttonObject.GetComponent<Image>();
+            img.color = background;
+            img.sprite = UiThemeTokens.GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
 
             var label = CreateText("Text", rect, text, 15, TextAnchor.MiddleCenter, Vector2.zero, Vector2.zero, size);
             label.rectTransform.anchorMin = Vector2.zero;

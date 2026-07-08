@@ -120,6 +120,8 @@ namespace ElectricalSim.UI
 
             var image = panel.GetComponent<Image>();
             image.color = Color.white;
+            image.sprite = UiThemeTokens.GetRoundedSprite(16);
+            image.type = Image.Type.Sliced;
             image.raycastTarget = true;
 
             var outline = panel.GetComponent<Outline>();
@@ -222,6 +224,8 @@ namespace ElectricalSim.UI
 
             var scrollImage = scrollObject.GetComponent<Image>();
             scrollImage.color = new Color(0.945f, 0.961f, 0.976f);
+            scrollImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+            scrollImage.type = Image.Type.Sliced;
             scrollImage.raycastTarget = true;
 
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
@@ -377,7 +381,10 @@ namespace ElectricalSim.UI
         {
             var go = new GameObject("Button", typeof(RectTransform), typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
-            go.GetComponent<Image>().color = color;
+            var img = go.GetComponent<Image>();
+            img.color = color;
+            img.sprite = UiThemeTokens.GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
             var label = CreateText("Text", go.transform, text, fontSize, FontStyle.Normal, textColor);
             label.alignment = TextAnchor.MiddleCenter;
             label.rectTransform.anchorMin = Vector2.zero;

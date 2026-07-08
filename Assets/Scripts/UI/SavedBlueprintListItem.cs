@@ -22,7 +22,10 @@ namespace ElectricalSim.UI
             itemObject.transform.SetParent(parent, false);
             var rect = itemObject.GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(720f, 100f);
-            itemObject.GetComponent<Image>().color = new Color(0.973f, 0.98f, 0.988f);
+            var img = itemObject.GetComponent<Image>();
+            img.color = new Color(0.973f, 0.98f, 0.988f);
+            img.sprite = UiThemeTokens.GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
 
             var item = itemObject.GetComponent<SavedBlueprintListItem>();
             item.nameText = CreateText("NameText", rect, 18, TextAnchor.MiddleLeft, new Vector2(16f, -14f), new Vector2(400f, 28f));
@@ -101,7 +104,10 @@ namespace ElectricalSim.UI
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
-            buttonObject.GetComponent<Image>().color = background;
+            var img = buttonObject.GetComponent<Image>();
+            img.color = background;
+            img.sprite = UiThemeTokens.GetRoundedSprite(8);
+            img.type = Image.Type.Sliced;
 
             var label = CreateText("Text", rect, 14, TextAnchor.MiddleCenter, Vector2.zero, size);
             label.text = text;

@@ -8,6 +8,7 @@ namespace ElectricalSim.Core.Validation
         private const string BreakerOrFuseBypassed = "BREAKER_OR_FUSE_BYPASSED";
         private const string MotorContactorBypassed = "MOTOR_CONTACTOR_BYPASSED";
         private const string ReversingInterlockMissing = "REVERSING_INTERLOCK_MISSING";
+        private const string ThermalRelayMainCircuitBypassed = "THERMAL_RELAY_MAIN_CIRCUIT_BYPASSED";
 
         private readonly IReadOnlyList<CircuitComponent> components;
         private readonly IReadOnlyList<WireView> wires;
@@ -33,6 +34,7 @@ namespace ElectricalSim.Core.Validation
             var issues = new List<CircuitValidationIssue>();
             AddBreakerOrFuseBypassedIssues(issues);
             AddMotorContactorBypassedIssues(issues);
+            AddThermalRelayMainCircuitBypassedIssues(issues);
             AddReversingInterlockMissingIssues(issues);
             return issues;
         }
@@ -109,6 +111,48 @@ namespace ElectricalSim.Core.Validation
             }
         }
 
+        private void AddThermalRelayMainCircuitBypassedIssues(List<CircuitValidationIssue> issues)
+        {
+            if (components == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var relay = components[i];
+                if (!IsSupportedThermalRelay(relay))
+                {
+                    continue;
+                }
+
+                if (!TryFindUniqueUpstreamContactorForRelay(relay, out var upstreamContactor))
+                {
+                    continue;
+                }
+
+                if (!TryFindUniqueBypassedMotor(relay, upstreamContactor, out var motor))
+                {
+                    continue;
+                }
+
+                AddIssue(
+                    issues,
+                    ThermalRelayMainCircuitBypassed,
+                    CircuitValidationSeverity.Error,
+                    CircuitValidationCategory.Protection,
+                    "热继主回路被旁路",
+                    "检测到热继主回路可能被绕过。当前电机主回路未可靠经过热继 FR 的 L1/L2/L3 -> T1/T2/T3 保护路径，热继可能无法对电机过载起保护作用。请检查电机三相主回路是否经过热继输出端。",
+                    relay,
+                    TerminalConstants.L1,
+                    TerminalConstants.L2,
+                    TerminalConstants.L3,
+                    TerminalConstants.T1,
+                    TerminalConstants.T2,
+                    TerminalConstants.T3);
+            }
+        }
+
         private void AddReversingInterlockMissingIssues(List<CircuitValidationIssue> issues)
         {
             if (components == null)
@@ -168,6 +212,95 @@ namespace ElectricalSim.Core.Validation
             return phases.Contains(TerminalConstants.L1) &&
                 phases.Contains(TerminalConstants.L2) &&
                 phases.Contains(TerminalConstants.L3);
+        }
+
+        private bool TryFindUniqueUpstreamContactorForRelay(CircuitComponent relay, out CircuitComponent contactor)
+        {
+            contactor = null;
+            var count = 0;
+            if (components == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var candidate = components[i];
+                if (!IsSupportedContactor(candidate) ||
+                    !AreContactorOutputsConnectedToRelayInputs(candidate, relay))
+                {
+                    continue;
+                }
+
+                count++;
+                contactor = candidate;
+            }
+
+            if (count == 1)
+            {
+                return true;
+            }
+
+            contactor = null;
+            return false;
+        }
+
+        private bool TryFindUniqueBypassedMotor(CircuitComponent relay, CircuitComponent upstreamContactor, out CircuitComponent motor)
+        {
+            motor = null;
+            var count = 0;
+            if (components == null || relay == null || upstreamContactor == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < components.Count; i++)
+            {
+                var candidate = components[i];
+                if (!IsSupportedOrdinaryThreePhaseMotor(candidate) ||
+                    AreRelayOutputsConnectedToMotor(relay, candidate))
+                {
+                    continue;
+                }
+
+                if (!AreContactorOutputsConnectedToMotor(upstreamContactor, candidate) &&
+                    !IsMotorDirectlyConnectedToThreePhasePower(candidate))
+                {
+                    continue;
+                }
+
+                count++;
+                motor = candidate;
+            }
+
+            if (count == 1)
+            {
+                return true;
+            }
+
+            motor = null;
+            return false;
+        }
+
+        private bool AreContactorOutputsConnectedToRelayInputs(CircuitComponent contactor, CircuitComponent relay)
+        {
+            return AreConnectedByStaticWires(contactor.GetTerminal(TerminalConstants.T1), relay.GetTerminal(TerminalConstants.L1)) &&
+                AreConnectedByStaticWires(contactor.GetTerminal(TerminalConstants.T2), relay.GetTerminal(TerminalConstants.L2)) &&
+                AreConnectedByStaticWires(contactor.GetTerminal(TerminalConstants.T3), relay.GetTerminal(TerminalConstants.L3));
+        }
+
+        private bool AreRelayOutputsConnectedToMotor(CircuitComponent relay, CircuitComponent motor)
+        {
+            return AreConnectedByStaticWires(relay.GetTerminal(TerminalConstants.T1), motor.GetTerminal(TerminalConstants.U)) &&
+                AreConnectedByStaticWires(relay.GetTerminal(TerminalConstants.T2), motor.GetTerminal(TerminalConstants.V)) &&
+                AreConnectedByStaticWires(relay.GetTerminal(TerminalConstants.T3), motor.GetTerminal(TerminalConstants.W));
+        }
+
+        private bool AreContactorOutputsConnectedToMotor(CircuitComponent contactor, CircuitComponent motor)
+        {
+            return AreConnectedByStaticWires(contactor.GetTerminal(TerminalConstants.T1), motor.GetTerminal(TerminalConstants.U)) &&
+                AreConnectedByStaticWires(contactor.GetTerminal(TerminalConstants.T2), motor.GetTerminal(TerminalConstants.V)) &&
+                AreConnectedByStaticWires(contactor.GetTerminal(TerminalConstants.T3), motor.GetTerminal(TerminalConstants.W));
         }
 
         private void AddDirectPowerPhase(TerminalView terminal, HashSet<string> phases)
@@ -550,6 +683,22 @@ namespace ElectricalSim.Core.Validation
                 component.GetTerminal(TerminalConstants.V) != null &&
                 component.GetTerminal(TerminalConstants.W) != null &&
                 component.GetTerminal(TerminalConstants.U1) == null;
+        }
+
+        private static bool IsSupportedThermalRelay(CircuitComponent component)
+        {
+            if (component == null || component.Definition == null)
+            {
+                return false;
+            }
+
+            return string.Equals(component.Definition.name, "ThermalRelay_FR_380V", StringComparison.OrdinalIgnoreCase) &&
+                component.GetTerminal(TerminalConstants.L1) != null &&
+                component.GetTerminal(TerminalConstants.L2) != null &&
+                component.GetTerminal(TerminalConstants.L3) != null &&
+                component.GetTerminal(TerminalConstants.T1) != null &&
+                component.GetTerminal(TerminalConstants.T2) != null &&
+                component.GetTerminal(TerminalConstants.T3) != null;
         }
 
         private static bool IsSupportedContactor(CircuitComponent component)

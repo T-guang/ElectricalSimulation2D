@@ -27,6 +27,8 @@ namespace ElectricalSim.UI
 
             var image = itemObject.GetComponent<Image>();
             image.color = new Color(1f, 1f, 1f, 0.01f);
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.type = Image.Type.Sliced;
 
             var view = itemObject.GetComponent<TemplateListItem>();
             view.button = itemObject.GetComponent<Button>();
