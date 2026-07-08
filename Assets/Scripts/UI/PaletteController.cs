@@ -38,7 +38,7 @@ namespace ElectricalSim.UI
         private const float ContentLeft = 14f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
-        private const float OperationLogHeight = 180f;
+        private const float OperationLogHeight = 210f;
         private const float OperationLogMargin = 16f;
         private const float OperationLogWidth = PaletteWidth - PalettePadding * 2f;
 
@@ -479,7 +479,7 @@ namespace ElectricalSim.UI
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
             viewport.pivot = new Vector2(0.5f, 0.5f);
-            viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + OperationLogMargin + 16f);
+            viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + OperationLogMargin + 24f);
             viewport.offsetMax = new Vector2(-PalettePadding, -104f);
 
             var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
@@ -514,21 +514,39 @@ namespace ElectricalSim.UI
 
             var panelImage = logPanel.GetComponent<Image>() ?? logPanel.gameObject.AddComponent<Image>();
             panelImage.enabled = true;
-            panelImage.sprite = UiThemeTokens.GetRoundedSprite(8);
+            panelImage.sprite = UiThemeTokens.GetRoundedSprite(10);
             panelImage.type = Image.Type.Sliced;
             panelImage.color = Color.white;
             panelImage.raycastTarget = true;
 
             var outline = logPanel.GetComponent<Outline>() ?? logPanel.gameObject.AddComponent<Outline>();
-            outline.effectColor = MainUiTheme.Divider;
+            outline.effectColor = MainUiTheme.Hex("DDE5F0");
             outline.effectDistance = new Vector2(1f, -1f);
             outline.enabled = true;
 
             var shadow = logPanel.GetComponent<Shadow>() ?? logPanel.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.06f);
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.08f);
             shadow.effectDistance = new Vector2(0f, -2f);
             shadow.enabled = true;
             
+            var titleBg = logPanel.Find("TitleBarBackground") as RectTransform;
+            if (titleBg == null)
+            {
+                var bgGo = new GameObject("TitleBarBackground", typeof(RectTransform), typeof(Image));
+                bgGo.transform.SetParent(logPanel, false);
+                bgGo.transform.SetSiblingIndex(0);
+                titleBg = bgGo.GetComponent<RectTransform>();
+                var bgImg = titleBg.GetComponent<Image>();
+                bgImg.color = MainUiTheme.Hex("F8FAFC");
+                bgImg.sprite = UiThemeTokens.GetRoundedSprite(10);
+                bgImg.type = Image.Type.Sliced;
+            }
+            titleBg.anchorMin = new Vector2(0f, 1f);
+            titleBg.anchorMax = new Vector2(1f, 1f);
+            titleBg.pivot = new Vector2(0.5f, 1f);
+            titleBg.anchoredPosition = new Vector2(0f, 0f);
+            titleBg.sizeDelta = new Vector2(0f, 40f);
+
             var topBorder = logPanel.Find("TopBorder") as RectTransform;
             if (topBorder == null)
             {
@@ -536,14 +554,15 @@ namespace ElectricalSim.UI
                 borderGo.transform.SetParent(logPanel, false);
                 topBorder = borderGo.GetComponent<RectTransform>();
                 var borderImage = topBorder.GetComponent<Image>();
-                borderImage.color = MainUiTheme.Divider;
+                borderImage.color = MainUiTheme.Hex("E5E7EB");
                 borderImage.raycastTarget = false;
             }
             topBorder.anchorMin = new Vector2(0f, 1f);
             topBorder.anchorMax = new Vector2(1f, 1f);
             topBorder.pivot = new Vector2(0.5f, 1f);
-            topBorder.anchoredPosition = new Vector2(0f, -35f);
+            topBorder.anchoredPosition = new Vector2(0f, -40f);
             topBorder.sizeDelta = new Vector2(0f, 1f);
+            topBorder.SetAsLastSibling();
 
             var title = logPanel.Find("ActionLogTitle") as RectTransform;
             if (title != null)
@@ -551,13 +570,17 @@ namespace ElectricalSim.UI
                 title.anchorMin = new Vector2(0f, 1f);
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
-                title.anchoredPosition = new Vector2(0f, -4f);
-                title.sizeDelta = new Vector2(-20f, 30f);
+                title.anchoredPosition = new Vector2(0f, 0f);
+                title.sizeDelta = new Vector2(0f, 40f);
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
-                    MainUiTheme.ApplyText(titleText, 15, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft, true);
+                    MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft, true);
+                    titleText.text = "操作记录";
+                    titleText.rectTransform.offsetMin = new Vector2(12f, 0f);
+                    titleText.rectTransform.offsetMax = new Vector2(-40f, 0f);
                 }
+                title.SetAsLastSibling();
 
                 var clearButtonRect = title.Find("ClearButton") as RectTransform;
                 if (clearButtonRect == null)
@@ -570,8 +593,8 @@ namespace ElectricalSim.UI
                 clearButtonRect.anchorMin = new Vector2(1f, 0.5f);
                 clearButtonRect.anchorMax = new Vector2(1f, 0.5f);
                 clearButtonRect.pivot = new Vector2(1f, 0.5f);
-                clearButtonRect.anchoredPosition = new Vector2(0f, 0f);
-                clearButtonRect.sizeDelta = new Vector2(24f, 24f);
+                clearButtonRect.anchoredPosition = new Vector2(-12f, 0f);
+                clearButtonRect.sizeDelta = new Vector2(28f, 28f);
 
                 var clearImage = clearButtonRect.GetComponent<Image>();
                 clearImage.color = Color.clear;
@@ -589,11 +612,7 @@ namespace ElectricalSim.UI
             var status = logPanel.Find("CurrentStatus") as RectTransform;
             if (status != null)
             {
-                status.anchorMin = new Vector2(0f, 1f);
-                status.anchorMax = new Vector2(1f, 1f);
-                status.pivot = new Vector2(0.5f, 1f);
-                status.anchoredPosition = new Vector2(0f, -36f);
-                status.sizeDelta = new Vector2(-24f, 32f);
+                status.gameObject.SetActive(false); // Hide the old current status to make room or rely on the text
             }
 
             var viewport = logPanel.Find("ActionLogViewport") as RectTransform;
@@ -603,13 +622,13 @@ namespace ElectricalSim.UI
                 viewport.anchorMax = Vector2.one;
                 viewport.pivot = new Vector2(0.5f, 0.5f);
                 viewport.offsetMin = new Vector2(10f, 10f);
-                viewport.offsetMax = new Vector2(-10f, -36f);
+                viewport.offsetMax = new Vector2(-10f, -44f);
 
                 var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
 
                 var viewportImage = viewport.GetComponent<Image>() ?? viewport.gameObject.AddComponent<Image>();
-                viewportImage.enabled = false;
-                viewportImage.color = Color.clear;
+                viewportImage.enabled = true;
+                viewportImage.color = Color.white;
                 viewportImage.raycastTarget = true;
 
                 var actionLogText = viewport.Find("ActionLogText") as RectTransform;
@@ -618,8 +637,8 @@ namespace ElectricalSim.UI
                     var text = actionLogText.GetComponent<Text>();
                     if (text != null)
                     {
-                        MainUiTheme.ApplyText(text, 12, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperLeft, false);
-                        text.lineSpacing = 1.3f;
+                        MainUiTheme.ApplyText(text, 12, FontStyle.Normal, MainUiTheme.Hex("475569"), TextAnchor.UpperLeft, false);
+                        text.lineSpacing = 1.4f;
                     }
                 }
             }

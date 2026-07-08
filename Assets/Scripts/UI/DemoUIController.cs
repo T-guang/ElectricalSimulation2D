@@ -122,17 +122,17 @@ namespace ElectricalSim.UI
             quickDeleteButton = EnsureButton(toolbar, quickDeleteButton, "DeleteSelectionButton", "删除");
             lockButton = EnsureButton(toolbar, lockButton, "InteractionLockButton", "锁定");
 
-            var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(704f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleLeft, 10f);
-            var rightGroup = EnsureGroup(toolbar, "RightActionGroup", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(360f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleRight, 10f);
-            var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0.6f, 0.5f), new Vector2(0.6f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(236f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleCenter, 8f);
+            var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(790f, 60f), TextAnchor.MiddleLeft, 14f);
+            var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(830f, 0f), new Vector2(260f, 60f), TextAnchor.MiddleLeft, 14f);
+            var rightGroup = EnsureGroup(toolbar, "RightActionGroup", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(400f, 60f), TextAnchor.MiddleRight, 14f);
 
-            MoveButtonToGroup(startButton, leftGroup, new Vector2(128f, 38f), "开始仿真");
-            MoveButtonToGroup(undoButton, leftGroup, new Vector2(96f, 38f), "撤销");
-            MoveButtonToGroup(redoButton, leftGroup, new Vector2(96f, 38f), "重做");
-            MoveButtonToGroup(quickDeleteButton, leftGroup, new Vector2(96f, 38f), "删除");
-            MoveButtonToGroup(clearWiresButton, leftGroup, new Vector2(96f, 38f), "清线");
-            MoveButtonToGroup(clearAllButton, leftGroup, new Vector2(96f, 38f), "清空");
-            MoveButtonToGroup(lockButton, leftGroup, new Vector2(96f, 38f), "锁定");
+            MoveButtonToGroup(startButton, leftGroup, new Vector2(128f, 40f), "开始仿真");
+            MoveButtonToGroup(undoButton, leftGroup, new Vector2(92f, 40f), "撤销");
+            MoveButtonToGroup(redoButton, leftGroup, new Vector2(92f, 40f), "重做");
+            MoveButtonToGroup(quickDeleteButton, leftGroup, new Vector2(92f, 40f), "删除");
+            MoveButtonToGroup(clearWiresButton, leftGroup, new Vector2(92f, 40f), "清线");
+            MoveButtonToGroup(clearAllButton, leftGroup, new Vector2(92f, 40f), "清空");
+            MoveButtonToGroup(lockButton, leftGroup, new Vector2(92f, 40f), "锁定");
 
             StyleToolbarButton(startButton, true, false);
             StyleToolbarButton(undoButton, false, false);
@@ -142,35 +142,37 @@ namespace ElectricalSim.UI
             StyleToolbarButton(clearAllButton, false, true);
             StyleToolbarButton(lockButton, false, false);
 
-            SetToolbarButtonSize(startButton, 116f);
-            SetToolbarButtonSize(undoButton, 84f);
-            SetToolbarButtonSize(redoButton, 84f);
-            SetToolbarButtonSize(quickDeleteButton, 84f);
-            SetToolbarButtonSize(clearWiresButton, 84f);
-            SetToolbarButtonSize(clearAllButton, 84f);
-            SetToolbarButtonSize(lockButton, 84f);
-            SetToolbarButtonSize(saveButton, 112f);
-            SetToolbarButtonSize(loadButton, 112f);
+            SetToolbarButtonSize(startButton, 128f);
+            SetToolbarButtonSize(undoButton, 92f);
+            SetToolbarButtonSize(redoButton, 92f);
+            SetToolbarButtonSize(quickDeleteButton, 92f);
+            SetToolbarButtonSize(clearWiresButton, 92f);
+            SetToolbarButtonSize(clearAllButton, 92f);
+            SetToolbarButtonSize(lockButton, 92f);
+            SetToolbarButtonSize(saveButton, 118f);
+            SetToolbarButtonSize(loadButton, 118f);
 
-            ApplyToolbarIcon(startButton, "ui_toolbar_start_32", 20f, false, true);
-            ApplyToolbarIcon(undoButton, "ui_toolbar_undo_24", 20f);
-            ApplyToolbarIcon(redoButton, "ui_toolbar_redo_24", 20f);
-            ApplyToolbarIcon(quickDeleteButton, "ui_toolbar_delete_24", 20f, true);
-            ApplyToolbarIcon(clearWiresButton, "ui_toolbar_clear_wire_24", 20f, true);
-            ApplyToolbarIcon(clearAllButton, "ui_toolbar_clear_all_24", 20f, true);
-            ApplyToolbarIcon(lockButton, "ui_toolbar_lock_24", 20f);
+            ApplyToolbarIcon(startButton, "ui_toolbar_start_32", 24f, false, true);
+            ApplyToolbarIcon(undoButton, "ui_toolbar_undo_24", 24f);
+            ApplyToolbarIcon(redoButton, "ui_toolbar_redo_24", 24f);
+            ApplyToolbarIcon(quickDeleteButton, "ui_toolbar_delete_24", 24f, true);
+            ApplyToolbarIcon(clearWiresButton, "ui_toolbar_clear_wire_24", 24f, true);
+            ApplyToolbarIcon(clearAllButton, "ui_toolbar_clear_all_24", 24f, true);
+            ApplyToolbarIcon(lockButton, "ui_toolbar_lock_24", 24f);
             
             if (saveButton != null)
             {
-                MoveButtonToGroup(saveButton, rightGroup, new Vector2(120f, 38f), "保存图纸");
+                MoveButtonToGroup(saveButton, rightGroup, new Vector2(118f, 40f), "保存图纸");
                 StyleToolbarButton(saveButton, false, false);
-                ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 20f);
+                ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 24f);
+                SetToolbarButtonSize(saveButton, 118f);
             }
             if (loadButton != null)
             {
-                MoveButtonToGroup(loadButton, rightGroup, new Vector2(120f, 38f), "加载图纸");
+                MoveButtonToGroup(loadButton, rightGroup, new Vector2(118f, 40f), "加载图纸");
                 StyleToolbarButton(loadButton, false, false);
-                ApplyToolbarIcon(loadButton, "ui_toolbar_load_blueprint_24", 20f);
+                ApplyToolbarIcon(loadButton, "ui_toolbar_load_blueprint_24", 24f);
+                SetToolbarButtonSize(loadButton, 118f);
             }
 
             if (colorGroup.Find("WireColorLabel") == null)
@@ -202,6 +204,9 @@ namespace ElectricalSim.UI
                     img.type = Image.Type.Sliced;
                 }
             }
+
+            EnsureVerticalDivider(toolbar, "LeftToolbarDivider", 814f);
+            EnsureVerticalDivider(toolbar, "ColorToolbarDivider", 1100f);
 
             if (quickRoot != null)
             {
@@ -245,13 +250,13 @@ namespace ElectricalSim.UI
                 topBar.anchorMax = new Vector2(1f, 1f);
                 topBar.pivot = new Vector2(0.5f, 1f);
                 topBar.anchoredPosition = new Vector2(0f, -MainUiTheme.NavBarHeight);
-                topBar.sizeDelta = new Vector2(0f, MainUiTheme.ToolbarHeight);
+                topBar.sizeDelta = new Vector2(0f, 60f);
             }
 
             var workspaceRect = workspace != null ? workspace.WorkspaceRect : null;
             if (workspaceRect != null)
             {
-                workspaceRect.offsetMax = new Vector2(workspaceRect.offsetMax.x, -(MainUiTheme.NavBarHeight + MainUiTheme.ToolbarHeight));
+                workspaceRect.offsetMax = new Vector2(workspaceRect.offsetMax.x, -(MainUiTheme.NavBarHeight + 60f));
                 workspaceRect.offsetMin = new Vector2(workspaceRect.offsetMin.x, 0f);
                 var workspaceImage = workspaceRect.GetComponent<Image>() ?? workspaceRect.gameObject.AddComponent<Image>();
                 workspaceImage.color = MainUiTheme.PageBackground;
@@ -264,7 +269,7 @@ namespace ElectricalSim.UI
                 palette.anchorMax = new Vector2(0f, 1f);
                 palette.pivot = new Vector2(0f, 0.5f);
                 palette.offsetMin = new Vector2(0f, 0f);
-                palette.offsetMax = new Vector2(MainUiTheme.LeftPanelWidth, -(MainUiTheme.NavBarHeight + MainUiTheme.ToolbarHeight));
+                palette.offsetMax = new Vector2(MainUiTheme.LeftPanelWidth, -(MainUiTheme.NavBarHeight + 60f));
             }
         }
 
@@ -364,7 +369,7 @@ namespace ElectricalSim.UI
             else if (danger) color = MainUiTheme.Hex("DC2626");
             else color = MainUiTheme.Hex("64748B");
             
-            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(iconSize, iconSize), new Vector2(16f, 0f), color);
+            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(iconSize, iconSize), new Vector2(18f, 0f), color);
             if (icon == null)
             {
                 return;
@@ -375,7 +380,7 @@ namespace ElectricalSim.UI
             {
                 label.rectTransform.anchorMin = Vector2.zero;
                 label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = new Vector2(40f, 0f);
+                label.rectTransform.offsetMin = new Vector2(46f, 0f);
                 label.rectTransform.offsetMax = new Vector2(-12f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
                 label.verticalOverflow = VerticalWrapMode.Overflow;
@@ -389,12 +394,12 @@ namespace ElectricalSim.UI
             var image = button.GetComponent<Image>();
             if (image != null)
             {
-                image.sprite = UiThemeTokens.GetRoundedSprite(8);
+                image.sprite = UiThemeTokens.GetRoundedSprite(10);
                 image.type = Image.Type.Sliced;
                 
                 if (primary) image.color = MainUiTheme.Hex("2563EB");
                 else if (danger) image.color = Color.white;
-                else image.color = MainUiTheme.Hex("F8FAFC");
+                else image.color = Color.white;
             }
 
             var outline = button.GetComponent<Outline>();
@@ -402,7 +407,7 @@ namespace ElectricalSim.UI
             
             if (primary) outline.effectColor = MainUiTheme.Hex("2563EB");
             else if (danger) outline.effectColor = MainUiTheme.Hex("FCA5A5");
-            else outline.effectColor = MainUiTheme.Hex("E5E7EB");
+            else outline.effectColor = MainUiTheme.Hex("D8DEE8");
             
             outline.effectDistance = new Vector2(1f, -1f);
 
@@ -410,7 +415,7 @@ namespace ElectricalSim.UI
             if (label != null)
             {
                 label.fontSize = 14;
-                label.fontStyle = FontStyle.Bold;
+                label.fontStyle = primary ? FontStyle.Bold : FontStyle.Normal;
                 if (primary) label.color = Color.white;
                 else if (danger) label.color = MainUiTheme.Hex("DC2626");
                 else label.color = MainUiTheme.Hex("334155");
@@ -549,14 +554,14 @@ namespace ElectricalSim.UI
             var rect = button.GetComponent<RectTransform>();
             if (rect != null)
             {
-                rect.sizeDelta = new Vector2(width, 36f);
+                rect.sizeDelta = new Vector2(width, 40f);
             }
 
             var layout = button.GetComponent<LayoutElement>();
             if (layout != null)
             {
                 layout.preferredWidth = width;
-                layout.preferredHeight = 36f;
+                layout.preferredHeight = 40f;
                 layout.flexibleWidth = 0f;
                 layout.flexibleHeight = 0f;
             }
@@ -744,20 +749,27 @@ namespace ElectricalSim.UI
             {
                 saveDialog.Initialize(saveLoadService);
             }
+        }
 
-            if (importPanel == null)
+        private void EnsureVerticalDivider(RectTransform parent, string name, float x)
+        {
+            var divider = parent.Find(name) as RectTransform;
+            if (divider == null)
             {
-                importPanel = FindObjectOfType<ImportBlueprintPanel>();
+                var go = new GameObject(name, typeof(RectTransform), typeof(Image));
+                go.transform.SetParent(parent, false);
+                divider = go.GetComponent<RectTransform>();
             }
 
-            if (importPanel == null)
-            {
-                importPanel = ImportBlueprintPanel.Create(parent, saveLoadService);
-            }
-            else
-            {
-                importPanel.Initialize(saveLoadService);
-            }
+            divider.anchorMin = new Vector2(0f, 0.5f);
+            divider.anchorMax = new Vector2(0f, 0.5f);
+            divider.pivot = new Vector2(0.5f, 0.5f);
+            divider.anchoredPosition = new Vector2(x, 0f);
+            divider.sizeDelta = new Vector2(1f, 32f);
+
+            var img = divider.GetComponent<Image>();
+            img.color = MainUiTheme.Hex("E5E7EB");
+            img.raycastTarget = false;
         }
 
         private void OpenSaveDialog()
