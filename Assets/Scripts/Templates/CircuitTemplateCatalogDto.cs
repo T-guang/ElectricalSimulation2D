@@ -19,6 +19,9 @@ namespace ElectricalSim.Templates
         public string description;
         public string resourcePath;
         public string thumbnailPath;
+        public string referenceDiagramNote;
+        public string practiceVariantNote;
+        public string diagramRiskLevel;
         public int sortOrder;
     }
 }

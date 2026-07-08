@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -132,6 +133,7 @@ namespace ElectricalSim.UI
                 }
             }
 
+            ApplyReferenceDetailLayout();
             StyleModal(previewModal);
             StyleModal(referencePanel);
             StyleCloseButton(previewCloseButton);
@@ -828,10 +830,82 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            var recommendation = index >= 0 && index < blueprintRecommendations.Count ? blueprintRecommendations[index] : string.Empty;
-            referenceRecommendations.text = string.IsNullOrWhiteSpace(recommendation)
-                ? "\u63a8\u8350\u5143\u4ef6\uff1a\u6682\u65e0"
-                : "\u63a8\u8350\u5143\u4ef6\uff1a" + recommendation.Replace("|", " / ");
+            var item = index >= 0 && index < dynamicTemplates.Count ? dynamicTemplates[index] : null;
+            var description = index >= 0 && index < blueprintRecommendations.Count ? blueprintRecommendations[index] : string.Empty;
+            var noteBuilder = new StringBuilder();
+            var isBVariant = item != null && string.Equals(item.diagramRiskLevel, "B", System.StringComparison.OrdinalIgnoreCase);
+
+            if (isBVariant)
+            {
+                noteBuilder.Append("<color=#B45309><b>提示</b> 该原理图与系统练习版存在少量画法或元件布局差异，请以系统练习版说明为准。</color>");
+            }
+
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                if (noteBuilder.Length > 0)
+                {
+                    noteBuilder.Append("\n\n");
+                }
+
+                noteBuilder.Append("<b>电路说明</b>\n");
+                noteBuilder.Append(description.Replace("|", " / "));
+            }
+
+            if (item != null && !string.IsNullOrWhiteSpace(item.referenceDiagramNote))
+            {
+                if (noteBuilder.Length > 0)
+                {
+                    noteBuilder.Append("\n\n");
+                }
+
+                noteBuilder.Append("<b>原理图说明</b>\n");
+                noteBuilder.Append(item.referenceDiagramNote);
+            }
+
+            if (item != null && !string.IsNullOrWhiteSpace(item.practiceVariantNote))
+            {
+                if (noteBuilder.Length > 0)
+                {
+                    noteBuilder.Append("\n\n");
+                }
+
+                noteBuilder.Append("<b>系统练习版说明</b>\n");
+                noteBuilder.Append(item.practiceVariantNote);
+            }
+
+            referenceRecommendations.text = noteBuilder.Length == 0
+                ? "\u6682\u65e0\u56fe\u7eb8\u8bf4\u660e"
+                : noteBuilder.ToString();
+        }
+
+        private void ApplyReferenceDetailLayout()
+        {
+            if (referenceRecommendations != null)
+            {
+                referenceRecommendations.font = MainUiTheme.BodyFont;
+                referenceRecommendations.fontSize = 14;
+                referenceRecommendations.color = MainUiTheme.Hex("475569");
+                referenceRecommendations.alignment = TextAnchor.UpperLeft;
+                referenceRecommendations.supportRichText = true;
+                referenceRecommendations.horizontalOverflow = HorizontalWrapMode.Wrap;
+                referenceRecommendations.verticalOverflow = VerticalWrapMode.Overflow;
+                referenceRecommendations.resizeTextForBestFit = false;
+
+                var rect = referenceRecommendations.rectTransform;
+                rect.anchorMin = new Vector2(0.04f, 0.02f);
+                rect.anchorMax = new Vector2(0.96f, 0.24f);
+                rect.offsetMin = Vector2.zero;
+                rect.offsetMax = Vector2.zero;
+            }
+
+            if (referenceImage != null)
+            {
+                var imageRect = referenceImage.rectTransform;
+                imageRect.anchorMin = new Vector2(0.04f, 0.26f);
+                imageRect.anchorMax = new Vector2(0.96f, 0.86f);
+                imageRect.offsetMin = Vector2.zero;
+                imageRect.offsetMax = Vector2.zero;
+            }
         }
 
         private void SetCategory(int category)
