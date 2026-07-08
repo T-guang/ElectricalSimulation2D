@@ -739,7 +739,7 @@ namespace ElectricalSim.UI
                     var text = actionLogText.GetComponent<Text>();
                     if (text != null)
                     {
-                        MainUiTheme.ApplyText(text, 12, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.UpperLeft, false);
+                        MainUiTheme.ApplyText(text, 13, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.UpperLeft, false);
                         text.lineSpacing = 1.3f;
                         text.supportRichText = true;
                     }

@@ -401,23 +401,23 @@ namespace ElectricalSim.UI
             infoLayout.childForceExpandHeight = false;
             infoLayout.spacing = 6f;
 
-            var name = CreateText("NameText", infoArea, entry.DisplayName, 18, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
+            var name = CreateText("NameText", infoArea, entry.DisplayName, 20, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
             name.alignment = TextAnchor.MiddleLeft;
             name.lineSpacing = 1.1f;
             name.horizontalOverflow = HorizontalWrapMode.Wrap;
-            name.verticalOverflow = VerticalWrapMode.Truncate;
+            name.verticalOverflow = VerticalWrapMode.Overflow;
 
-            var category = CreateText("CategoryText", infoArea, entry.Category, 12, FontStyle.Normal, MainUiTheme.Hex("64748B"));
+            var category = CreateText("CategoryText", infoArea, entry.Category, 15, FontStyle.Normal, MainUiTheme.Hex("475569"));
             category.alignment = TextAnchor.MiddleLeft;
             category.horizontalOverflow = HorizontalWrapMode.Wrap;
             category.verticalOverflow = VerticalWrapMode.Overflow;
 
-            var param = CreateText("ParamText", infoArea, BuildBasicSummary(entry), 12, FontStyle.Normal, MainUiTheme.Hex("2563EB"));
+            var param = CreateText("ParamText", infoArea, BuildBasicSummary(entry), 15, FontStyle.Normal, MainUiTheme.Hex("2563EB"));
             param.alignment = TextAnchor.MiddleLeft;
             param.horizontalOverflow = HorizontalWrapMode.Wrap;
             param.verticalOverflow = VerticalWrapMode.Overflow;
 
-            var terminals = CreateText("TerminalText", infoArea, BuildTerminalSummary(entry.Definition, entry.Terminals), 12, FontStyle.Normal, MainUiTheme.Hex("334155"));
+            var terminals = CreateText("TerminalText", infoArea, BuildTerminalSummary(entry.Definition, entry.Terminals), 15, FontStyle.Normal, MainUiTheme.Hex("475569"));
             terminals.alignment = TextAnchor.MiddleLeft;
             terminals.horizontalOverflow = HorizontalWrapMode.Wrap;
             terminals.verticalOverflow = VerticalWrapMode.Overflow;
@@ -894,6 +894,7 @@ namespace ElectricalSim.UI
 
         private static Font ResolveTitleFont()
         {
+            if (MainUiTheme.TitleFont != null) return MainUiTheme.TitleFont;
             if (cachedTitleFont != null) return cachedTitleFont;
 
             cachedTitleFont =
@@ -917,6 +918,7 @@ namespace ElectricalSim.UI
 
         private static Font ResolveBodyFont()
         {
+            if (MainUiTheme.UiFont != null) return MainUiTheme.UiFont;
             if (cachedBodyFont != null) return cachedBodyFont;
 
             cachedBodyFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

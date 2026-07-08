@@ -187,7 +187,7 @@ namespace ElectricalSim.UI
 
             if (loadButton != null)
             {
-                MoveButtonToGroup(loadButton, rightGroup, new Vector2(120f, 38f), "加载图纸");
+                MoveButtonToGroup(loadButton, rightGroup, new Vector2(120f, 38f), "导入图纸");
                 StyleToolbarButton(loadButton, false, false);
                 ApplyToolbarIcon(loadButton, "ui_toolbar_import_blueprint_24", 24f);
                 SetToolbarButtonSize(loadButton, 118f);
