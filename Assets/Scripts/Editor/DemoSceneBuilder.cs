@@ -1886,6 +1886,7 @@ namespace ElectricalSim.EditorTools
             y = BuildPaletteSection(content, workspace, definitions, ComponentCategory.Measurement, "测量工具", y - 8f, sectionTitles, itemRects, itemNames, itemCategories);
             content.sizeDelta = new Vector2(0f, Mathf.Max(900f, Mathf.Abs(y) + 24f));
 
+            SetPrivate(controller, "workspace", workspace);
             SetPrivate(controller, "searchInput", searchInput);
             SetPrivate(controller, "content", content);
             SetPrivate(controller, "sectionTitles", sectionTitles);

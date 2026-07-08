@@ -63,6 +63,7 @@ namespace ElectricalSim.UI
         private Image collapseHandleIcon;
         private Text collapseHandleLabel;
         private bool isLeftPanelCollapsed;
+        private bool actionLogLayoutApplied;
 
         private void Awake()
         {
@@ -74,6 +75,19 @@ namespace ElectricalSim.UI
             AddMissingCatalogItems();
             UpgradeExistingItems();
             ApplyFilter();
+        }
+
+        private void Start()
+        {
+            if (workspace == null)
+            {
+                workspace = FindObjectOfType<WorkspaceController>();
+            }
+
+            EnsureActionLogLayout();
+            AlignActionLogToPalette();
+            EnsureViewportPosition();
+            actionLogLayoutApplied = true;
         }
 
         private void EnsureCardPaletteShell()
@@ -493,12 +507,23 @@ namespace ElectricalSim.UI
         {
             if (workspace == null)
             {
-                return;
+                workspace = FindObjectOfType<WorkspaceController>();
             }
 
-            var field = typeof(WorkspaceController).GetField("actionLogScrollRect", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var scrollRect = field?.GetValue(workspace) as ScrollRect;
-            var logPanel = scrollRect != null ? scrollRect.transform as RectTransform : null;
+            RectTransform logPanel = null;
+
+            if (workspace != null)
+            {
+                var field = typeof(WorkspaceController).GetField("actionLogScrollRect", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var scrollRect = field?.GetValue(workspace) as ScrollRect;
+                logPanel = scrollRect != null ? scrollRect.transform as RectTransform : null;
+            }
+
+            if (logPanel == null)
+            {
+                var parent = transform.parent;
+                logPanel = parent != null ? parent.Find("ActionLogPanel") as RectTransform : null;
+            }
 
             if (logPanel == null)
             {
@@ -637,6 +662,12 @@ namespace ElectricalSim.UI
 
                 var clearButton = clearButtonRect.GetComponent<Button>();
                 clearButton.onClick.RemoveAllListeners();
+
+                if (workspace == null)
+                {
+                    workspace = FindObjectOfType<WorkspaceController>();
+                }
+
                 if (workspace != null)
                 {
                     clearButton.onClick.AddListener(() => workspace.ClearActionLog());
@@ -697,6 +728,8 @@ namespace ElectricalSim.UI
             {
                 clearButtonRect.SetAsLastSibling();
             }
+
+            Debug.Log("[PaletteController] ActionLog layout applied.");
         }
 
         private void EnsureSectionTitleObjects()
