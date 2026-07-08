@@ -277,9 +277,11 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(118f, MainUiTheme.ToolbarButtonHeight);
 
             var image = buttonObject.GetComponent<Image>();
-            image.color = MainUiTheme.ToolbarButton;
+            image.sprite = UiThemeTokens.GetRoundedSprite(10);
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
             var outline = buttonObject.GetComponent<Outline>() ?? buttonObject.AddComponent<Outline>();
-            outline.effectColor = MainUiTheme.Divider;
+            outline.effectColor = MainUiTheme.Hex("D8DEE8");
             outline.effectDistance = new Vector2(1f, -1f);
 
             var button = buttonObject.GetComponent<Button>();
@@ -298,14 +300,14 @@ namespace ElectricalSim.UI
             label.rectTransform.offsetMin = Vector2.zero;
             label.rectTransform.offsetMax = Vector2.zero;
             label.text = "加载图纸";
-            MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter, false);
+            MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.MiddleCenter, false);
             label.raycastTarget = false;
-            ApplyFileButtonIcon(button, "Toolbar/ui_toolbar_load_blueprint_24", MainUiTheme.MutedText);
+            ApplyFileButtonIcon(button, "ui_toolbar_load_blueprint_24", MainUiTheme.Hex("64748B"));
 
             PrepareFileButton(saveButton);
             PrepareFileButton(importButton);
-            ApplyFileButtonIcon(saveButton != null ? saveButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_save_blueprint_24", MainUiTheme.MutedText);
-            ApplyFileButtonIcon(importButton != null ? importButton.GetComponent<Button>() : null, "Toolbar/ui_toolbar_import_blueprint_24", MainUiTheme.MutedText);
+            ApplyFileButtonIcon(saveButton != null ? saveButton.GetComponent<Button>() : null, "ui_toolbar_save_blueprint_24", MainUiTheme.Hex("64748B"));
+            ApplyFileButtonIcon(importButton != null ? importButton.GetComponent<Button>() : null, "ui_toolbar_import_blueprint_24", MainUiTheme.Hex("64748B"));
             if (saveButton != null)
             {
                 saveButton.transform.SetParent(fileActionGroup, false);
@@ -377,21 +379,23 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(118f, MainUiTheme.ToolbarButtonHeight);
 
             var image = buttonObject.GetComponent<Image>() ?? buttonObject.AddComponent<Image>();
-            image.color = MainUiTheme.ToolbarButton;
+            image.sprite = UiThemeTokens.GetRoundedSprite(10);
+            image.type = Image.Type.Sliced;
+            image.color = Color.white;
             var outline = buttonObject.GetComponent<Outline>() ?? buttonObject.AddComponent<Outline>();
-            outline.effectColor = MainUiTheme.Divider;
+            outline.effectColor = MainUiTheme.Hex("D8DEE8");
             outline.effectDistance = new Vector2(1f, -1f);
 
             var label = buttonObject.GetComponentInChildren<Text>();
             if (label != null)
             {
-                MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter, false);
+                MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.MiddleCenter, false);
             }
         }
 
         private static void ApplyFileButtonIcon(Button button, string iconPath, Color iconColor)
         {
-            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(18f, 18f), new Vector2(20f, 0f), iconColor);
+            var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(24f, 24f), new Vector2(18f, 0f), iconColor);
             if (icon == null || button == null)
             {
                 return;
@@ -402,9 +406,10 @@ namespace ElectricalSim.UI
             {
                 label.rectTransform.anchorMin = Vector2.zero;
                 label.rectTransform.anchorMax = Vector2.one;
-                label.rectTransform.offsetMin = new Vector2(32f, 0f);
-                label.rectTransform.offsetMax = new Vector2(-8f, 0f);
+                label.rectTransform.offsetMin = new Vector2(46f, 0f);
+                label.rectTransform.offsetMax = new Vector2(-12f, 0f);
                 label.alignment = TextAnchor.MiddleCenter;
+                label.verticalOverflow = VerticalWrapMode.Overflow;
             }
         }
 
