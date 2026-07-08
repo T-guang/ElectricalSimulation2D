@@ -35,7 +35,16 @@ namespace ElectricalSim.UI
             {
                 if (titleFont == null)
                 {
-                    titleFont = Resources.Load<Font>("UI/Fonts/Maoken");
+                    titleFont = Resources.Load<Font>("Fonts/maoken_fengyasong") ??
+                                Resources.Load<Font>("Fonts/MaokenFengyasong") ??
+                                Resources.Load<Font>("Fonts/MaokenFengyaSong") ??
+                                Resources.Load<Font>("Fonts/maoken") ??
+                                Resources.Load<Font>("Fonts/Maoken") ??
+                                Resources.Load<Font>("maoken_fengyasong") ??
+                                Resources.Load<Font>("MaokenFengyasong") ??
+                                Resources.Load<Font>("maoken") ??
+                                Resources.Load<Font>("Maoken") ??
+                                Resources.Load<Font>("UI/Fonts/Maoken");
                     if (titleFont == null)
                     {
                         titleFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

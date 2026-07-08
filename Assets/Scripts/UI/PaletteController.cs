@@ -38,7 +38,7 @@ namespace ElectricalSim.UI
         private const float ContentLeft = 14f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
-        private const float OperationLogHeight = 340f;
+        private const float OperationLogHeight = 390f;
         private const float OperationLogMargin = 16f;
         private const float OperationLogWidth = PaletteWidth - PalettePadding * 2f;
 
@@ -133,8 +133,8 @@ namespace ElectricalSim.UI
             title.anchorMin = new Vector2(0f, 1f);
             title.anchorMax = new Vector2(1f, 1f);
             title.pivot = new Vector2(0.5f, 1f);
-            title.anchoredPosition = new Vector2(0f, -16f);
-            title.sizeDelta = new Vector2(-PalettePadding * 2f, 38f);
+            title.anchoredPosition = new Vector2(12f, -16f);
+            title.sizeDelta = new Vector2(-PalettePadding * 2f - 12f, 38f);
             title.gameObject.SetActive(true);
             
             var titleTextGo = title.Find("TitleText");
@@ -233,7 +233,7 @@ namespace ElectricalSim.UI
             accent.anchorMin = new Vector2(0f, 0.5f);
             accent.anchorMax = new Vector2(0f, 0.5f);
             accent.pivot = new Vector2(0f, 0.5f);
-            accent.anchoredPosition = new Vector2(0f, 0f);
+            accent.anchoredPosition = new Vector2(-12f, 0f);
             accent.sizeDelta = new Vector2(4f, 18f);
 
             var image = accent.GetComponent<Image>() ?? accent.gameObject.AddComponent<Image>();
@@ -640,15 +640,13 @@ namespace ElectricalSim.UI
                 title.anchorMin = new Vector2(0f, 1f);
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
-                title.anchoredPosition = new Vector2(0f, -1f);
-                title.sizeDelta = new Vector2(0f, 36f);
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
                     MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft, true);
                     titleText.text = "操作记录";
-                    titleText.rectTransform.offsetMin = new Vector2(20f, 0f);
-                    titleText.rectTransform.offsetMax = new Vector2(-52f, 0f);
+                    titleText.rectTransform.offsetMin = new Vector2(20f, -37f);
+                    titleText.rectTransform.offsetMax = new Vector2(-52f, -1f);
                 }
             }
 
