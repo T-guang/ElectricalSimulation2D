@@ -244,7 +244,7 @@ namespace ElectricalSim.Practice
             overlayRect.offsetMax = Vector2.zero;
 
             var overlayImage = overlay.GetComponent<Image>();
-            overlayImage.color = new Color(0f, 0f, 0f, 0.45f);
+            overlayImage.color = new Color(0f, 0f, 0f, 0.42f);
             overlayImage.raycastTarget = true;
 
             var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
@@ -254,10 +254,20 @@ namespace ElectricalSim.Practice
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.anchoredPosition = Vector2.zero;
-            panelRect.sizeDelta = new Vector2(460f, 240f);
+            panelRect.sizeDelta = new Vector2(500f, 270f);
 
             var panelImage = panel.GetComponent<Image>();
+            panelImage.sprite = UiThemeTokens.GetRoundedSprite(16, 64);
+            panelImage.type = Image.Type.Sliced;
             panelImage.color = Color.white;
+
+            var outline = panel.AddComponent<Outline>();
+            outline.effectColor = MainUiTheme.Hex("E5E7EB");
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            var shadow = panel.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.05f);
+            shadow.effectDistance = new Vector2(0f, -4f);
 
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
@@ -269,12 +279,13 @@ namespace ElectricalSim.Practice
             titleText.fontSize = 20;
             titleText.fontStyle = FontStyle.Bold;
             titleText.alignment = TextAnchor.MiddleCenter;
-            titleText.color = new Color(0.2f, 0.2f, 0.2f);
+            titleText.color = MainUiTheme.Hex("111827");
             var titleRect = titleObj.GetComponent<RectTransform>();
             titleRect.anchorMin = new Vector2(0f, 1f);
             titleRect.anchorMax = new Vector2(1f, 1f);
-            titleRect.offsetMin = new Vector2(20f, -50f);
-            titleRect.offsetMax = new Vector2(-20f, -10f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.offsetMin = new Vector2(20f, -60f);
+            titleRect.offsetMax = new Vector2(-20f, -28f);
 
             var msgObj = new GameObject("Message", typeof(RectTransform), typeof(Text));
             msgObj.transform.SetParent(panel.transform, false);
@@ -282,17 +293,24 @@ namespace ElectricalSim.Practice
             var templateName = item != null && !string.IsNullOrWhiteSpace(item.templateName) ? item.templateName : "当前练习";
             msgText.text = $"进入练习会清空当前画布，并显示参考图纸“{templateName}”。是否继续？";
             msgText.font = font;
-            msgText.fontSize = 16;
+            msgText.fontSize = 15;
             msgText.alignment = TextAnchor.MiddleCenter;
-            msgText.color = new Color(0.3f, 0.3f, 0.3f);
+            msgText.color = MainUiTheme.Hex("475569");
+            msgText.lineSpacing = 1.3f;
             var msgRect = msgObj.GetComponent<RectTransform>();
             msgRect.anchorMin = new Vector2(0f, 0f);
             msgRect.anchorMax = new Vector2(1f, 1f);
-            msgRect.offsetMin = new Vector2(30f, 70f);
-            msgRect.offsetMax = new Vector2(-30f, -50f);
+            msgRect.offsetMin = new Vector2(48f, 85f);
+            msgRect.offsetMax = new Vector2(-48f, -90f);
 
-            var cancelBtn = CreateDialogButton(panel.transform, "CancelButton", "取消", new Color(0.9f, 0.9f, 0.9f), new Color(0.3f, 0.3f, 0.3f), new Vector2(-80f, 40f));
-            var confirmBtn = CreateDialogButton(panel.transform, "ConfirmButton", "开始练习", new Color(0.12f, 0.45f, 0.95f), Color.white, new Vector2(80f, 40f));
+            var cancelBtn = CreateDialogButton(panel.transform, "CancelButton", "取消", MainUiTheme.Hex("F1F5F9"), MainUiTheme.Hex("334155"), new Vector2(-74f, 48f));
+            var confirmBtn = CreateDialogButton(panel.transform, "ConfirmButton", "开始练习", MainUiTheme.Hex("2563EB"), Color.white, new Vector2(74f, 48f));
+
+            var confirmText = confirmBtn.transform.Find("Text")?.GetComponent<Text>();
+            if (confirmText != null)
+            {
+                confirmText.fontStyle = FontStyle.Bold;
+            }
 
             cancelBtn.onClick.AddListener(() => Destroy(overlay));
             confirmBtn.onClick.AddListener(() =>
@@ -308,6 +326,8 @@ namespace ElectricalSim.Practice
             buttonObj.transform.SetParent(parent, false);
 
             var buttonImage = buttonObj.GetComponent<Image>();
+            buttonImage.sprite = UiThemeTokens.GetRoundedSprite(8, 64);
+            buttonImage.type = Image.Type.Sliced;
             buttonImage.color = background;
 
             var button = buttonObj.GetComponent<Button>();
@@ -316,7 +336,8 @@ namespace ElectricalSim.Practice
             var buttonRect = buttonObj.GetComponent<RectTransform>();
             buttonRect.anchorMin = new Vector2(0.5f, 0f);
             buttonRect.anchorMax = new Vector2(0.5f, 0f);
-            buttonRect.sizeDelta = new Vector2(120f, 40f);
+            buttonRect.pivot = new Vector2(0.5f, 0.5f);
+            buttonRect.sizeDelta = new Vector2(118f, 38f);
             buttonRect.anchoredPosition = anchoredPosition;
 
             var textObj = new GameObject("Text", typeof(RectTransform), typeof(Text));
@@ -324,7 +345,7 @@ namespace ElectricalSim.Practice
             var text = textObj.GetComponent<Text>();
             text.text = label;
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 16;
+            text.fontSize = 15;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = textColor;
 
