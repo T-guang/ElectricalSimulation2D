@@ -38,9 +38,8 @@ namespace ElectricalSim.UI
         private const float ContentLeft = 14f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
-        private const float OperationLogHeight = 200f;
+        private const float OperationLogHeight = 240f;
         private const float OperationLogMargin = 16f;
-        private const float OperationLogBottomMargin = 24f;
         private const float OperationLogWidth = PaletteWidth - PalettePadding * 2f;
 
         private readonly ComponentCategory[] categoryOrder =
@@ -317,8 +316,8 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogBottomMargin);
-            logPanel.sizeDelta = new Vector2(OperationLogWidth, OperationLogHeight);
+            logPanel.anchoredPosition = new Vector2(0f, 0f);
+            logPanel.sizeDelta = new Vector2(PaletteWidth, OperationLogHeight);
         }
 
         private void AlignCollapseHandle(float width)
@@ -494,7 +493,7 @@ namespace ElectricalSim.UI
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
             viewport.pivot = new Vector2(0.5f, 0.5f);
-            viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + OperationLogBottomMargin + 16f);
+            viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + 12f);
             viewport.offsetMax = new Vector2(-PalettePadding, -104f);
 
             var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
@@ -535,29 +534,49 @@ namespace ElectricalSim.UI
             logPanel.anchorMin = new Vector2(0f, 0f);
             logPanel.anchorMax = new Vector2(0f, 0f);
             logPanel.pivot = new Vector2(0f, 0f);
-            logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogBottomMargin);
-            logPanel.sizeDelta = new Vector2(OperationLogWidth, OperationLogHeight);
+            logPanel.anchoredPosition = new Vector2(0f, 0f);
+            logPanel.sizeDelta = new Vector2(PaletteWidth, OperationLogHeight);
             logPanel.SetAsLastSibling();
 
             // --- Panel background ---
             var panelImage = logPanel.GetComponent<Image>() ?? logPanel.gameObject.AddComponent<Image>();
             panelImage.enabled = true;
-            panelImage.sprite = UiThemeTokens.GetRoundedSprite(10);
-            panelImage.type = Image.Type.Sliced;
+            panelImage.sprite = null;
             panelImage.color = Color.white;
             panelImage.raycastTarget = true;
 
             // --- Panel border ---
-            var outline = logPanel.GetComponent<Outline>() ?? logPanel.gameObject.AddComponent<Outline>();
-            outline.effectColor = MainUiTheme.Hex("D1D5DB");
-            outline.effectDistance = new Vector2(1f, -1f);
-            outline.enabled = true;
+            var outline = logPanel.GetComponent<Outline>();
+            if (outline != null)
+            {
+                outline.enabled = false;
+            }
 
             // --- Panel shadow ---
-            var shadow = logPanel.GetComponent<Shadow>() ?? logPanel.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0f, 0f, 0f, 0.10f);
-            shadow.effectDistance = new Vector2(0f, -2f);
-            shadow.enabled = true;
+            var shadow = logPanel.GetComponent<Shadow>();
+            if (shadow != null)
+            {
+                shadow.enabled = false;
+            }
+
+            // --- PanelTopBorder (1px top divider) ---
+            var topBorder = logPanel.Find("PanelTopBorder") as RectTransform;
+            if (topBorder == null)
+            {
+                var borderGo = new GameObject("PanelTopBorder", typeof(RectTransform), typeof(Image));
+                borderGo.transform.SetParent(logPanel, false);
+                topBorder = borderGo.GetComponent<RectTransform>();
+            }
+            topBorder.anchorMin = new Vector2(0f, 1f);
+            topBorder.anchorMax = new Vector2(1f, 1f);
+            topBorder.pivot = new Vector2(0.5f, 1f);
+            topBorder.anchoredPosition = new Vector2(0f, 0f);
+            topBorder.sizeDelta = new Vector2(0f, 1f);
+            {
+                var borderImage = topBorder.GetComponent<Image>();
+                borderImage.color = MainUiTheme.Hex("E2E8F0");
+                borderImage.raycastTarget = false;
+            }
 
             // --- ActionLogHeader (title bar background) ---
             var header = logPanel.Find("ActionLogHeader") as RectTransform;
@@ -574,17 +593,15 @@ namespace ElectricalSim.UI
                 var headerGo = new GameObject("ActionLogHeader", typeof(RectTransform), typeof(Image));
                 headerGo.transform.SetParent(logPanel, false);
                 header = headerGo.GetComponent<RectTransform>();
-                var headerImg = header.GetComponent<Image>();
-                headerImg.sprite = UiThemeTokens.GetRoundedSprite(10);
-                headerImg.type = Image.Type.Sliced;
             }
             header.anchorMin = new Vector2(0f, 1f);
             header.anchorMax = new Vector2(1f, 1f);
             header.pivot = new Vector2(0.5f, 1f);
-            header.anchoredPosition = new Vector2(0f, 0f);
+            header.anchoredPosition = new Vector2(0f, -1f);
             header.sizeDelta = new Vector2(0f, 36f);
             {
                 var headerImg = header.GetComponent<Image>();
+                headerImg.sprite = null;
                 headerImg.color = MainUiTheme.Hex("F8FAFC");
                 headerImg.raycastTarget = false;
             }
@@ -608,11 +625,11 @@ namespace ElectricalSim.UI
             bottomLine.anchorMin = new Vector2(0f, 1f);
             bottomLine.anchorMax = new Vector2(1f, 1f);
             bottomLine.pivot = new Vector2(0.5f, 1f);
-            bottomLine.anchoredPosition = new Vector2(0f, -36f);
+            bottomLine.anchoredPosition = new Vector2(0f, -37f);
             bottomLine.sizeDelta = new Vector2(0f, 1f);
             {
                 var lineImage = bottomLine.GetComponent<Image>() ?? bottomLine.gameObject.AddComponent<Image>();
-                lineImage.color = MainUiTheme.Hex("E5E7EB");
+                lineImage.color = MainUiTheme.Hex("E2E8F0");
                 lineImage.raycastTarget = false;
             }
 
@@ -623,14 +640,14 @@ namespace ElectricalSim.UI
                 title.anchorMin = new Vector2(0f, 1f);
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
-                title.anchoredPosition = new Vector2(0f, 0f);
+                title.anchoredPosition = new Vector2(0f, -1f);
                 title.sizeDelta = new Vector2(0f, 36f);
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
                     MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft, true);
                     titleText.text = "操作记录";
-                    titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
+                    titleText.rectTransform.offsetMin = new Vector2(20f, 0f);
                     titleText.rectTransform.offsetMax = new Vector2(-52f, 0f);
                 }
             }
@@ -654,7 +671,7 @@ namespace ElectricalSim.UI
             clearButtonRect.anchorMin = new Vector2(1f, 1f);
             clearButtonRect.anchorMax = new Vector2(1f, 1f);
             clearButtonRect.pivot = new Vector2(1f, 1f);
-            clearButtonRect.anchoredPosition = new Vector2(-10f, -4f);
+            clearButtonRect.anchoredPosition = new Vector2(-20f, -5f);
             clearButtonRect.sizeDelta = new Vector2(28f, 28f);
             {
                 var clearImage = clearButtonRect.GetComponent<Image>();
@@ -693,8 +710,8 @@ namespace ElectricalSim.UI
                 viewport.anchorMin = Vector2.zero;
                 viewport.anchorMax = Vector2.one;
                 viewport.pivot = new Vector2(0.5f, 0.5f);
-                viewport.offsetMin = new Vector2(10f, 10f);
-                viewport.offsetMax = new Vector2(-10f, -42f);
+                viewport.offsetMin = new Vector2(20f, 12f);
+                viewport.offsetMax = new Vector2(-20f, -48f);
 
                 var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
 
@@ -718,6 +735,10 @@ namespace ElectricalSim.UI
 
             // --- Enforce hierarchy order ---
             header.SetAsFirstSibling();
+            if (topBorder != null)
+            {
+                topBorder.SetAsLastSibling();
+            }
             if (viewport != null)
             {
                 viewport.SetAsLastSibling();
