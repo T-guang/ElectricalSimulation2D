@@ -122,9 +122,9 @@ namespace ElectricalSim.UI
             quickDeleteButton = EnsureButton(toolbar, quickDeleteButton, "DeleteSelectionButton", "删除");
             lockButton = EnsureButton(toolbar, lockButton, "InteractionLockButton", "锁定");
 
-            var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(860f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleLeft, 12f);
-            var rightGroup = EnsureGroup(toolbar, "RightActionGroup", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(440f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleRight, 12f);
-            var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0.53f, 0.5f), new Vector2(0.53f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleCenter, 10f);
+            var leftGroup = EnsureGroup(toolbar, "LeftActionGroup", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(24f, 0f), new Vector2(704f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleLeft, 10f);
+            var rightGroup = EnsureGroup(toolbar, "RightActionGroup", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-24f, 0f), new Vector2(360f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleRight, 10f);
+            var colorGroup = EnsureGroup(toolbar, "WireColorGroup", new Vector2(0.6f, 0.5f), new Vector2(0.6f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(236f, MainUiTheme.ToolbarHeight), TextAnchor.MiddleCenter, 8f);
 
             MoveButtonToGroup(startButton, leftGroup, new Vector2(128f, 38f), "开始仿真");
             MoveButtonToGroup(undoButton, leftGroup, new Vector2(96f, 38f), "撤销");
@@ -141,6 +141,16 @@ namespace ElectricalSim.UI
             StyleToolbarButton(clearWiresButton, false, true);
             StyleToolbarButton(clearAllButton, false, true);
             StyleToolbarButton(lockButton, false, false);
+
+            SetToolbarButtonSize(startButton, 116f);
+            SetToolbarButtonSize(undoButton, 84f);
+            SetToolbarButtonSize(redoButton, 84f);
+            SetToolbarButtonSize(quickDeleteButton, 84f);
+            SetToolbarButtonSize(clearWiresButton, 84f);
+            SetToolbarButtonSize(clearAllButton, 84f);
+            SetToolbarButtonSize(lockButton, 84f);
+            SetToolbarButtonSize(saveButton, 112f);
+            SetToolbarButtonSize(loadButton, 112f);
 
             ApplyToolbarIcon(startButton, "ui_toolbar_start_32", 20f, false, true);
             ApplyToolbarIcon(undoButton, "ui_toolbar_undo_24", 20f);
@@ -266,7 +276,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            var sprite = UiIconLibrary.Load("ui_sidebar_yalong_logo_320");
+            var sprite = UiIconLibrary.Load("Logo/ui_sidebar_yalong_logo_320") ?? UiIconLibrary.Load("ui_sidebar_yalong_logo_320");
             if (sprite == null)
             {
                 return;
@@ -287,8 +297,8 @@ namespace ElectricalSim.UI
             iconRect.anchorMin = new Vector2(0f, 0.5f);
             iconRect.anchorMax = new Vector2(0f, 0.5f);
             iconRect.pivot = new Vector2(0f, 0.5f);
-            iconRect.anchoredPosition = new Vector2(16f, 6f);
-            iconRect.sizeDelta = new Vector2(48f, 48f);
+            iconRect.anchoredPosition = new Vector2(18f, 10f);
+            iconRect.sizeDelta = new Vector2(36f, 36f);
 
             var image = iconRect.GetComponent<Image>() ?? iconRect.gameObject.AddComponent<Image>();
             image.sprite = sprite;
@@ -306,12 +316,12 @@ namespace ElectricalSim.UI
 
             titleRect.anchorMin = Vector2.zero;
             titleRect.anchorMax = Vector2.one;
-            titleRect.offsetMin = new Vector2(76f, 6f);
-            titleRect.offsetMax = new Vector2(0f, 6f);
+            titleRect.offsetMin = new Vector2(64f, 10f);
+            titleRect.offsetMax = new Vector2(0f, 10f);
 
             var titleText = titleRect.GetComponent<Text>() ?? titleRect.gameObject.AddComponent<Text>();
             titleText.text = titleValue;
-            MainUiTheme.ApplyText(titleText, 22, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft, true);
+            MainUiTheme.ApplyText(titleText, 20, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft, true);
             titleText.resizeTextForBestFit = false;
             titleText.raycastTarget = false;
 
@@ -526,6 +536,29 @@ namespace ElectricalSim.UI
                 text.resizeTextMinSize = 10;
                 text.resizeTextMaxSize = 14;
                 text.font = MainUiTheme.BodyFont;
+            }
+        }
+
+        private static void SetToolbarButtonSize(Button button, float width)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var rect = button.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                rect.sizeDelta = new Vector2(width, 36f);
+            }
+
+            var layout = button.GetComponent<LayoutElement>();
+            if (layout != null)
+            {
+                layout.preferredWidth = width;
+                layout.preferredHeight = 36f;
+                layout.flexibleWidth = 0f;
+                layout.flexibleHeight = 0f;
             }
         }
 

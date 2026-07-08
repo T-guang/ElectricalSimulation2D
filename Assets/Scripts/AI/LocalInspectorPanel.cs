@@ -17,7 +17,7 @@ namespace ElectricalSim.AI
         private const float PanelMargin = 12f;
         private const float CollapseHandleSize = 36f;
         private const float HeaderHeight = 42f;
-        private const float QuickActionsHeight = 166f;
+        private const float QuickActionsHeight = 130f;
         [SerializeField] private WorkspaceController workspace;
         [SerializeField] private Text titleText;
         [SerializeField] private Button explainButton;
@@ -2771,6 +2771,8 @@ namespace ElectricalSim.AI
             var rect = CreateRect(name, parent);
             var image = rect.gameObject.AddComponent<Image>();
             image.color = backgroundColor;
+            image.sprite = UiThemeTokens.GetRoundedSprite(8, 32);
+            image.type = Image.Type.Sliced;
             image.raycastTarget = true;
             var layout = rect.gameObject.AddComponent<LayoutElement>();
             if (preferredHeight > 0f)
@@ -2828,6 +2830,8 @@ namespace ElectricalSim.AI
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<Image>();
             image.color = backgroundColor;
+            image.sprite = UiThemeTokens.GetRoundedSprite(8, 32);
+            image.type = Image.Type.Sliced;
             var button = go.GetComponent<Button>();
             button.targetGraphic = image;
             var outline = go.AddComponent<Outline>();
@@ -2844,6 +2848,7 @@ namespace ElectricalSim.AI
             var text = CreateText("Text", go.transform, label, 14, TextAnchor.MiddleCenter);
             text.color = textColor;
             text.font = MainUiTheme.BodyFont;
+            text.fontStyle = FontStyle.Bold;
             text.resizeTextForBestFit = true;
             text.resizeTextMinSize = 10;
             text.resizeTextMaxSize = 14;
@@ -2854,11 +2859,24 @@ namespace ElectricalSim.AI
 
         private static void ApplyActionButtonIcon(Button button, string iconPath, bool primary)
         {
-            var iconColor = primary ? Color.white : MainUiTheme.MutedText;
+            var danger = button != null && button.name.Contains("ClearReport");
+            var iconColor = primary ? Color.white : danger ? MainUiTheme.DangerRed : MainUiTheme.MutedText;
             var icon = UiIconLibrary.EnsureButtonIcon(button, iconPath, new Vector2(18f, 18f), new Vector2(18f, 0f), iconColor);
             if (icon == null || button == null)
             {
                 return;
+            }
+
+            var background = button.GetComponent<Image>();
+            if (background != null && danger)
+            {
+                background.color = Color.white;
+            }
+
+            var outline = button.GetComponent<Outline>();
+            if (outline != null && danger)
+            {
+                outline.effectColor = MainUiTheme.Hex("FCA5A5");
             }
 
             var text = button.GetComponentInChildren<Text>();
@@ -2867,6 +2885,10 @@ namespace ElectricalSim.AI
                 text.rectTransform.offsetMin = new Vector2(40f, 0f);
                 text.rectTransform.offsetMax = new Vector2(-8f, 0f);
                 text.alignment = TextAnchor.MiddleCenter;
+                if (danger)
+                {
+                    text.color = MainUiTheme.DangerRed;
+                }
             }
         }
 

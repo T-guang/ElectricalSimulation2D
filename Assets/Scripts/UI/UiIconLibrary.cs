@@ -7,7 +7,32 @@ namespace ElectricalSim.UI
     {
         public static Sprite Load(string relativePath)
         {
-            return string.IsNullOrWhiteSpace(relativePath) ? null : Resources.Load<Sprite>("UI/Icons/" + relativePath);
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                return null;
+            }
+
+            var normalized = relativePath.Replace("\\", "/");
+            var candidates = new[]
+            {
+                "UIAssets/SimulationMain/" + normalized,
+                "UIAssets/SimulationMain/Toolbar/" + normalized,
+                "UIAssets/SimulationMain/Sidebar/" + normalized,
+                "UIAssets/SimulationMain/Inspector/" + normalized,
+                "UIAssets/SimulationMain/Logo/" + normalized,
+                "UI/Icons/" + normalized
+            };
+
+            for (var i = 0; i < candidates.Length; i++)
+            {
+                var sprite = Resources.Load<Sprite>(candidates[i]);
+                if (sprite != null)
+                {
+                    return sprite;
+                }
+            }
+
+            return null;
         }
 
         public static Image EnsureButtonIcon(Button button, string relativePath, Vector2 size, Vector2 anchoredPosition, Color? color = null)

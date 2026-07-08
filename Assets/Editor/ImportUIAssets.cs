@@ -8,11 +8,7 @@ public class ImportUIAssets : AssetPostprocessor
     {
         if (assetPath.Contains("UIAssets"))
         {
-            TextureImporter importer = (TextureImporter)assetImporter;
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.alphaIsTransparency = true;
-            importer.mipmapEnabled = false;
+            ApplyUiSpriteSettings((TextureImporter)assetImporter);
         }
     }
 
@@ -25,15 +21,22 @@ public class ImportUIAssets : AssetPostprocessor
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer != null && importer.textureType != TextureImporterType.Sprite)
+            if (importer != null)
             {
-                importer.textureType = TextureImporterType.Sprite;
-                importer.spriteImportMode = SpriteImportMode.Single;
-                importer.alphaIsTransparency = true;
-                importer.mipmapEnabled = false;
+                ApplyUiSpriteSettings(importer);
                 importer.SaveAndReimport();
             }
         }
         Debug.Log("Forced UIAssets import as Sprite.");
+    }
+
+    private static void ApplyUiSpriteSettings(TextureImporter importer)
+    {
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Single;
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.filterMode = FilterMode.Bilinear;
+        importer.textureCompression = TextureImporterCompression.Uncompressed;
     }
 }

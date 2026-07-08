@@ -33,7 +33,7 @@ namespace ElectricalSim.UI
         private const float CollapseHandleSize = 36f;
         private const float CardWidth = 96f;
         private const float CardHeight = 132f;
-        private const float CardGapX = 16f;
+        private const float CardGapX = 10f;
         private const float CardGapY = 12f;
         private const float ContentLeft = 14f;
         private const float SectionTitleHeight = 30f;
@@ -384,6 +384,9 @@ namespace ElectricalSim.UI
             image.sprite = UiThemeTokens.GetRoundedSprite(16, 32);
             image.type = Image.Type.Sliced;
             image.color = MainUiTheme.FilterButton;
+            var outline = rect.GetComponent<Outline>() ?? rect.gameObject.AddComponent<Outline>();
+            outline.effectColor = MainUiTheme.Hex("E2E8F0");
+            outline.effectDistance = new Vector2(1f, -1f);
 
             var button = rect.GetComponent<Button>() ?? rect.gameObject.AddComponent<Button>();
             ApplyFilterIcon(rect, name);
@@ -770,12 +773,12 @@ namespace ElectricalSim.UI
 
             var label = EnsureChildText(rect, "Label");
             label.text = definition.displayName;
-            MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperCenter, false);
+            MainUiTheme.ApplyText(label, 13, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperCenter, false);
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
             label.verticalOverflow = VerticalWrapMode.Truncate;
             label.resizeTextForBestFit = true;
             label.resizeTextMinSize = 12;
-            label.resizeTextMaxSize = 15;
+            label.resizeTextMaxSize = 13;
             label.raycastTarget = false;
 
             var labelRect = label.rectTransform;
@@ -1172,7 +1175,20 @@ namespace ElectricalSim.UI
             if (image != null)
             {
                 image.color = selected ? MainUiTheme.PrimaryBlue : MainUiTheme.FilterButton;
+                image.sprite = UiThemeTokens.GetRoundedSprite(8, 32);
+                image.type = Image.Type.Sliced;
             }
+
+            var outline = button.GetComponent<Outline>() ?? button.gameObject.AddComponent<Outline>();
+            outline.effectColor = selected ? MainUiTheme.PrimaryBlue : MainUiTheme.Hex("E2E8F0");
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            var colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = selected ? Color.white : MainUiTheme.Hex("F8FBFF");
+            colors.pressedColor = selected ? Color.white : MainUiTheme.Hex("EAF2FF");
+            colors.selectedColor = Color.white;
+            button.colors = colors;
 
             var label = button.GetComponentInChildren<Text>();
             if (label != null)

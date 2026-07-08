@@ -100,7 +100,7 @@ namespace ElectricalSim.UI
                 }
                 if (i < tabLabels.Count && tabLabels[i] != null)
                 {
-                    tabLabels[i].fontSize = 18;
+                    tabLabels[i].fontSize = 16;
                     tabLabels[i].resizeTextForBestFit = false;
                 }
             }
@@ -118,7 +118,7 @@ namespace ElectricalSim.UI
             brandRect.anchorMin = new Vector2(0f, 0.5f);
             brandRect.anchorMax = new Vector2(0f, 0.5f);
             brandRect.pivot = new Vector2(0f, 0.5f);
-            brandRect.anchoredPosition = new Vector2(24f, 7f);
+            brandRect.anchoredPosition = new Vector2(24f, 11f);
             brandRect.sizeDelta = new Vector2(390f, 44f);
 
             var layout = titleTransform.GetComponent<HorizontalLayoutGroup>() ?? titleTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -208,12 +208,12 @@ namespace ElectricalSim.UI
                 var image = tabButtons[i].GetComponent<Image>();
                 if (image != null)
                 {
-                    image.color = active ? UiThemeTokens.PrimaryLight : Color.white;
+                    image.color = active ? MainUiTheme.SelectedBlue : Color.white;
                 }
 
                 if (i < tabLabels.Count && tabLabels[i] != null)
                 {
-                    tabLabels[i].color = active ? UiThemeTokens.PrimaryBlue : UiThemeTokens.TextMuted;
+                    tabLabels[i].color = active ? MainUiTheme.PrimaryBlue : MainUiTheme.NormalText;
                     tabLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
                 }
             }
