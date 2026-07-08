@@ -54,6 +54,31 @@ namespace ElectricalSim.UI
             }
         }
 
+        private static Font uiFont;
+        public static Font UiFont
+        {
+            get
+            {
+                if (uiFont == null)
+                {
+                    var names = new[]
+                    {
+                        "Microsoft YaHei UI",
+                        "Microsoft YaHei",
+                        "Source Han Sans SC",
+                        "Noto Sans CJK SC",
+                        "Arial"
+                    };
+                    uiFont = Font.CreateDynamicFontFromOSFont(names, 16);
+                    if (uiFont == null)
+                    {
+                        uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    }
+                }
+                return uiFont;
+            }
+        }
+
         private static Font bodyFont;
         public static Font BodyFont
         {

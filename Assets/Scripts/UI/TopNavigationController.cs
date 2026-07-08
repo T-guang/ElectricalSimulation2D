@@ -100,7 +100,9 @@ namespace ElectricalSim.UI
                 }
                 if (i < tabLabels.Count && tabLabels[i] != null)
                 {
+                    tabLabels[i].font = MainUiTheme.UiFont;
                     tabLabels[i].fontSize = 16;
+                    tabLabels[i].fontStyle = FontStyle.Bold;
                     tabLabels[i].resizeTextForBestFit = false;
                 }
             }
@@ -175,9 +177,9 @@ namespace ElectricalSim.UI
             if (titleText != null)
             {
                 titleText.transform.SetAsLastSibling();
-                titleText.color = UiThemeTokens.TextDark;
-                titleText.font = MainUiTheme.TitleFont;
-                titleText.fontSize = 20;
+                titleText.color = MainUiTheme.Hex("111827");
+                titleText.font = MainUiTheme.UiFont;
+                titleText.fontSize = 18;
                 titleText.fontStyle = FontStyle.Bold;
                 titleText.alignment = TextAnchor.MiddleLeft;
                 titleText.resizeTextForBestFit = false;
@@ -213,8 +215,10 @@ namespace ElectricalSim.UI
 
                 if (i < tabLabels.Count && tabLabels[i] != null)
                 {
-                    tabLabels[i].color = active ? MainUiTheme.PrimaryBlue : MainUiTheme.NormalText;
-                    tabLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+                    tabLabels[i].font = MainUiTheme.UiFont;
+                    tabLabels[i].fontSize = 16;
+                    tabLabels[i].color = active ? MainUiTheme.Hex("2563EB") : MainUiTheme.Hex("334155");
+                    tabLabels[i].fontStyle = FontStyle.Bold;
                 }
             }
         }
@@ -309,6 +313,14 @@ namespace ElectricalSim.UI
 
             spriteCache[key] = sprite;
             return sprite;
+        }
+
+        /// <summary>
+        /// 获取标准圆角按钮的 Sprite
+        /// </summary>
+        public static Sprite GetButtonSprite()
+        {
+            return GetRoundedSprite(8, 64);
         }
     }
 }

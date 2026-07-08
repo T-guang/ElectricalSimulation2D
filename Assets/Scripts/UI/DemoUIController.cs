@@ -167,6 +167,7 @@ namespace ElectricalSim.UI
                 StyleToolbarButton(saveButton, false, false);
                 ApplyToolbarIcon(saveButton, "ui_toolbar_save_blueprint_24", 24f);
                 SetToolbarButtonSize(saveButton, 118f);
+                saveButton.GetComponent<Image>().sprite = UiThemeTokens.GetButtonSprite();
             }
 
             if (importButton == null)
@@ -181,14 +182,16 @@ namespace ElectricalSim.UI
                 StyleToolbarButton(importButton, false, false);
                 ApplyToolbarIcon(importButton, "ui_toolbar_import_blueprint_24", 24f);
                 SetToolbarButtonSize(importButton, 118f);
+                importButton.GetComponent<Image>().sprite = UiThemeTokens.GetButtonSprite();
             }
-            else if (loadButton != null)
+
+            if (loadButton != null)
             {
-                // Fallback: restore previous logic but keep original text "导入图纸" and correct icon
-                MoveButtonToGroup(loadButton, rightGroup, new Vector2(118f, 40f), null); 
+                MoveButtonToGroup(loadButton, rightGroup, new Vector2(120f, 38f), "加载图纸");
                 StyleToolbarButton(loadButton, false, false);
                 ApplyToolbarIcon(loadButton, "ui_toolbar_import_blueprint_24", 24f);
                 SetToolbarButtonSize(loadButton, 118f);
+                loadButton.GetComponent<Image>().sprite = UiThemeTokens.GetButtonSprite();
             }
 
             if (colorGroup.Find("WireColorLabel") == null)
@@ -197,8 +200,9 @@ namespace ElectricalSim.UI
                 labelGo.transform.SetParent(colorGroup, false);
                 labelGo.transform.SetAsFirstSibling();
                 var labelText = labelGo.GetComponent<Text>();
+                labelText.font = MainUiTheme.UiFont;
                 labelText.text = "导线颜色";
-                MainUiTheme.ApplyText(labelText, 14, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleCenter, false);
+                MainUiTheme.ApplyText(labelText, 14, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleCenter, false);
                 labelText.horizontalOverflow = HorizontalWrapMode.Overflow;
                 var rt = labelText.rectTransform;
                 rt.sizeDelta = new Vector2(72f, 28f);
@@ -429,10 +433,24 @@ namespace ElectricalSim.UI
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                label.fontSize = 14;
-                label.fontStyle = primary ? FontStyle.Bold : FontStyle.Normal;
-                if (primary) label.color = Color.white;
-                else label.color = MainUiTheme.Hex("334155");
+                label.font = MainUiTheme.UiFont;
+                label.fontSize = 15;
+                label.fontStyle = FontStyle.Bold;
+                label.resizeTextForBestFit = false;
+                label.rectTransform.localScale = Vector3.one;
+
+                if (primary)
+                {
+                    label.color = Color.white;
+                }
+                else if (danger)
+                {
+                    label.color = MainUiTheme.Hex("DC2626");
+                }
+                else
+                {
+                    label.color = MainUiTheme.Hex("1F2937");
+                }
             }
         }
 
