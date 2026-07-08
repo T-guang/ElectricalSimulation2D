@@ -180,7 +180,7 @@ namespace ElectricalSim.UI
             overlayRect.offsetMax = Vector2.zero;
 
             var overlayImage = overlay.GetComponent<Image>();
-            overlayImage.color = new Color(0f, 0f, 0f, 0.45f);
+            overlayImage.color = new Color(0f, 0f, 0f, 0.42f);
             overlayImage.raycastTarget = true;
 
             var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
@@ -190,40 +190,63 @@ namespace ElectricalSim.UI
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
             panelRect.anchoredPosition = Vector2.zero;
-            panelRect.sizeDelta = new Vector2(460f, 240f);
-            panel.GetComponent<Image>().color = Color.white;
+            panelRect.sizeDelta = new Vector2(500f, 270f);
 
-            var title = CreateText("Title", panel.transform, "加载标准图纸", 20, FontStyle.Bold, new Color(0.05f, 0.08f, 0.14f));
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.sprite = UiThemeTokens.GetRoundedSprite(16, 64);
+            panelImage.type = Image.Type.Sliced;
+            panelImage.color = Color.white;
+
+            var outline = panel.AddComponent<Outline>();
+            outline.effectColor = MainUiTheme.Hex("E5E7EB");
+            outline.effectDistance = new Vector2(1f, -1f);
+
+            var shadow = panel.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.05f);
+            shadow.effectDistance = new Vector2(0f, -4f);
+
+            var title = CreateText("Title", panel.transform, "加载标准图纸", 20, FontStyle.Bold, MainUiTheme.Hex("111827"));
             title.alignment = TextAnchor.MiddleCenter;
             title.rectTransform.anchorMin = new Vector2(0f, 1f);
             title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.anchoredPosition = new Vector2(0f, -28f);
-            title.rectTransform.sizeDelta = new Vector2(-40f, 32f);
+            title.rectTransform.pivot = new Vector2(0.5f, 1f);
+            title.rectTransform.offsetMin = new Vector2(20f, -60f);
+            title.rectTransform.offsetMax = new Vector2(-20f, -28f);
 
             var templateName = string.IsNullOrWhiteSpace(item.templateName) ? item.templateId : item.templateName;
-            var message = CreateText("Message", panel.transform, $"当前画布将被清空并加载标准图纸“{templateName}”，是否继续？", 16, FontStyle.Normal, new Color(0.22f, 0.27f, 0.36f));
+            var message = CreateText("Message", panel.transform, $"当前画布将被清空并加载标准图纸“{templateName}”，是否继续？", 15, FontStyle.Normal, MainUiTheme.Hex("475569"));
             message.alignment = TextAnchor.MiddleCenter;
             message.horizontalOverflow = HorizontalWrapMode.Wrap;
             message.verticalOverflow = VerticalWrapMode.Overflow;
+            message.lineSpacing = 1.3f;
             message.rectTransform.anchorMin = new Vector2(0f, 0f);
             message.rectTransform.anchorMax = new Vector2(1f, 1f);
-            message.rectTransform.offsetMin = new Vector2(42f, 74f);
-            message.rectTransform.offsetMax = new Vector2(-42f, -72f);
+            message.rectTransform.offsetMin = new Vector2(48f, 85f);
+            message.rectTransform.offsetMax = new Vector2(-48f, -90f);
 
-            var cancel = CreateButton(panel.transform, "取消", new Color(0.94f, 0.96f, 0.98f), new Color(0.1f, 0.14f, 0.22f));
+            var cancel = CreateButton(panel.transform, "取消", MainUiTheme.Hex("F1F5F9"), MainUiTheme.Hex("334155"));
             var cancelRect = cancel.GetComponent<RectTransform>();
             cancelRect.anchorMin = new Vector2(0.5f, 0f);
             cancelRect.anchorMax = new Vector2(0.5f, 0f);
-            cancelRect.anchoredPosition = new Vector2(-95f, 36f);
-            cancelRect.sizeDelta = new Vector2(130f, 42f);
+            cancelRect.pivot = new Vector2(0.5f, 0.5f);
+            cancelRect.anchoredPosition = new Vector2(-74f, 48f);
+            cancelRect.sizeDelta = new Vector2(118f, 38f);
             cancel.onClick.AddListener(() => Destroy(overlay));
 
-            var confirm = CreateButton(panel.transform, "确认加载", new Color(0.12f, 0.45f, 1f), Color.white);
+            var confirm = CreateButton(panel.transform, "确认加载", MainUiTheme.Hex("2563EB"), Color.white);
             var confirmRect = confirm.GetComponent<RectTransform>();
             confirmRect.anchorMin = new Vector2(0.5f, 0f);
             confirmRect.anchorMax = new Vector2(0.5f, 0f);
-            confirmRect.anchoredPosition = new Vector2(95f, 36f);
-            confirmRect.sizeDelta = new Vector2(130f, 42f);
+            confirmRect.pivot = new Vector2(0.5f, 0.5f);
+            confirmRect.anchoredPosition = new Vector2(74f, 48f);
+            confirmRect.sizeDelta = new Vector2(118f, 38f);
+
+            var confirmText = confirm.transform.Find("Text")?.GetComponent<Text>();
+            if (confirmText != null)
+            {
+                confirmText.fontStyle = FontStyle.Bold;
+            }
+
             confirm.onClick.AddListener(() =>
             {
                 Destroy(overlay);
@@ -277,7 +300,7 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(118f, MainUiTheme.ToolbarButtonHeight);
 
             var image = buttonObject.GetComponent<Image>();
-            image.sprite = UiThemeTokens.GetRoundedSprite(10);
+            image.sprite = UiThemeTokens.GetButtonSprite();
             image.type = Image.Type.Sliced;
             image.color = Color.white;
             var outline = buttonObject.GetComponent<Outline>() ?? buttonObject.AddComponent<Outline>();
@@ -379,7 +402,7 @@ namespace ElectricalSim.UI
             rect.sizeDelta = new Vector2(118f, MainUiTheme.ToolbarButtonHeight);
 
             var image = buttonObject.GetComponent<Image>() ?? buttonObject.AddComponent<Image>();
-            image.sprite = UiThemeTokens.GetRoundedSprite(10);
+            image.sprite = UiThemeTokens.GetButtonSprite();
             image.type = Image.Type.Sliced;
             image.color = Color.white;
             var outline = buttonObject.GetComponent<Outline>() ?? buttonObject.AddComponent<Outline>();
@@ -451,7 +474,12 @@ namespace ElectricalSim.UI
         {
             var go = new GameObject("Button", typeof(RectTransform), typeof(Image), typeof(Button));
             go.transform.SetParent(parent, false);
-            go.GetComponent<Image>().color = color;
+            
+            var image = go.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(8, 64);
+            image.type = Image.Type.Sliced;
+            image.color = color;
+            
             var label = CreateText("Text", go.transform, text, 15, FontStyle.Normal, textColor);
             label.alignment = TextAnchor.MiddleCenter;
             label.rectTransform.anchorMin = Vector2.zero;
