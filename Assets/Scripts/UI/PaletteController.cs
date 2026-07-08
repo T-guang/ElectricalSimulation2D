@@ -38,8 +38,9 @@ namespace ElectricalSim.UI
         private const float ContentLeft = 14f;
         private const float SectionTitleHeight = 30f;
         private const float SectionGap = 18f;
-        private const float OperationLogHeight = 210f;
+        private const float OperationLogHeight = 200f;
         private const float OperationLogMargin = 16f;
+        private const float OperationLogBottomMargin = 24f;
         private const float OperationLogWidth = PaletteWidth - PalettePadding * 2f;
 
         private readonly ComponentCategory[] categoryOrder =
@@ -316,7 +317,7 @@ namespace ElectricalSim.UI
                 return;
             }
 
-            logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogMargin);
+            logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogBottomMargin);
             logPanel.sizeDelta = new Vector2(OperationLogWidth, OperationLogHeight);
         }
 
@@ -493,7 +494,7 @@ namespace ElectricalSim.UI
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
             viewport.pivot = new Vector2(0.5f, 0.5f);
-            viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + OperationLogMargin + 24f);
+            viewport.offsetMin = new Vector2(PalettePadding, OperationLogHeight + OperationLogBottomMargin + 16f);
             viewport.offsetMax = new Vector2(-PalettePadding, -104f);
 
             var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
@@ -534,7 +535,7 @@ namespace ElectricalSim.UI
             logPanel.anchorMin = new Vector2(0f, 0f);
             logPanel.anchorMax = new Vector2(0f, 0f);
             logPanel.pivot = new Vector2(0f, 0f);
-            logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogMargin);
+            logPanel.anchoredPosition = new Vector2(OperationLogMargin, OperationLogBottomMargin);
             logPanel.sizeDelta = new Vector2(OperationLogWidth, OperationLogHeight);
             logPanel.SetAsLastSibling();
 
@@ -581,7 +582,7 @@ namespace ElectricalSim.UI
             header.anchorMax = new Vector2(1f, 1f);
             header.pivot = new Vector2(0.5f, 1f);
             header.anchoredPosition = new Vector2(0f, 0f);
-            header.sizeDelta = new Vector2(0f, 42f);
+            header.sizeDelta = new Vector2(0f, 36f);
             {
                 var headerImg = header.GetComponent<Image>();
                 headerImg.color = MainUiTheme.Hex("F8FAFC");
@@ -607,7 +608,7 @@ namespace ElectricalSim.UI
             bottomLine.anchorMin = new Vector2(0f, 1f);
             bottomLine.anchorMax = new Vector2(1f, 1f);
             bottomLine.pivot = new Vector2(0.5f, 1f);
-            bottomLine.anchoredPosition = new Vector2(0f, -42f);
+            bottomLine.anchoredPosition = new Vector2(0f, -36f);
             bottomLine.sizeDelta = new Vector2(0f, 1f);
             {
                 var lineImage = bottomLine.GetComponent<Image>() ?? bottomLine.gameObject.AddComponent<Image>();
@@ -623,7 +624,7 @@ namespace ElectricalSim.UI
                 title.anchorMax = new Vector2(1f, 1f);
                 title.pivot = new Vector2(0.5f, 1f);
                 title.anchoredPosition = new Vector2(0f, 0f);
-                title.sizeDelta = new Vector2(0f, 42f);
+                title.sizeDelta = new Vector2(0f, 36f);
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
@@ -653,11 +654,13 @@ namespace ElectricalSim.UI
             clearButtonRect.anchorMin = new Vector2(1f, 1f);
             clearButtonRect.anchorMax = new Vector2(1f, 1f);
             clearButtonRect.pivot = new Vector2(1f, 1f);
-            clearButtonRect.anchoredPosition = new Vector2(-12f, -7f);
+            clearButtonRect.anchoredPosition = new Vector2(-10f, -4f);
             clearButtonRect.sizeDelta = new Vector2(28f, 28f);
             {
                 var clearImage = clearButtonRect.GetComponent<Image>();
-                clearImage.color = Color.clear;
+                clearImage.sprite = UiThemeTokens.GetRoundedSprite(6, 32);
+                clearImage.type = Image.Type.Sliced;
+                clearImage.color = MainUiTheme.Hex("F8FAFC");
                 clearImage.raycastTarget = true;
 
                 var clearButton = clearButtonRect.GetComponent<Button>();
@@ -673,7 +676,7 @@ namespace ElectricalSim.UI
                     clearButton.onClick.AddListener(() => workspace.ClearActionLog());
                 }
 
-                UiIconLibrary.EnsureCenteredIcon(clearButtonRect, "ui_toolbar_delete_24", new Vector2(20f, 20f), MainUiTheme.MutedText);
+                UiIconLibrary.EnsureCenteredIcon(clearButtonRect, "ui_toolbar_delete_24", new Vector2(18f, 18f), MainUiTheme.Hex("64748B"));
             }
 
             // --- Hide old CurrentStatus ---
@@ -690,8 +693,8 @@ namespace ElectricalSim.UI
                 viewport.anchorMin = Vector2.zero;
                 viewport.anchorMax = Vector2.one;
                 viewport.pivot = new Vector2(0.5f, 0.5f);
-                viewport.offsetMin = new Vector2(12f, 10f);
-                viewport.offsetMax = new Vector2(-12f, -50f);
+                viewport.offsetMin = new Vector2(10f, 10f);
+                viewport.offsetMax = new Vector2(-10f, -42f);
 
                 var mask = viewport.GetComponent<RectMask2D>() ?? viewport.gameObject.AddComponent<RectMask2D>();
 
@@ -706,8 +709,8 @@ namespace ElectricalSim.UI
                     var text = actionLogText.GetComponent<Text>();
                     if (text != null)
                     {
-                        MainUiTheme.ApplyText(text, 12, FontStyle.Normal, MainUiTheme.Hex("475569"), TextAnchor.UpperLeft, false);
-                        text.lineSpacing = 1.4f;
+                        MainUiTheme.ApplyText(text, 12, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.UpperLeft, false);
+                        text.lineSpacing = 1.3f;
                         text.supportRichText = true;
                     }
                 }
