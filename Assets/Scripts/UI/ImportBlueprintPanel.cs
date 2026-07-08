@@ -170,20 +170,37 @@ namespace ElectricalSim.UI
 
         private void BuildUi(RectTransform root)
         {
-            var panel = CreateRect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(640f, 520f));
-            panel.gameObject.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.98f);
+            var panel = CreateRect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(800f, 640f));
+            panel.gameObject.AddComponent<Image>().color = Color.white;
 
-            CreateText("Title", panel, "导入图纸", 22, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(420f, 36f));
+            var outline = panel.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.886f, 0.91f, 0.941f);
+            outline.effectDistance = new Vector2(1, -1);
+
+            var title = CreateText("Title", panel, "导入图纸", 20, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(24f, -28f), new Vector2(200f, 32f));
+            title.fontStyle = FontStyle.Bold;
+            title.color = new Color(0.118f, 0.161f, 0.231f);
+            title.font = MainUiTheme.TitleFont;
+
+            var divider = CreateRect("Divider", panel, new Vector2(0f, 1f), new Vector2(800f, 1f));
+            divider.pivot = new Vector2(0f, 1f);
+            divider.anchoredPosition = new Vector2(0f, -56f);
+            divider.gameObject.AddComponent<Image>().color = new Color(0.898f, 0.906f, 0.922f);
             
             var externalBtnText = "从电脑导入图纸";
-            var externalButton = CreateButton(panel, "ExternalImportButton", externalBtnText, new Vector2(360f, -28f), new Vector2(150f, 36f), new Color(0.9f, 0.93f, 0.96f), new Color(0.05f, 0.45f, 0.85f));
+            var externalButton = CreateButton(panel, "ExternalImportButton", externalBtnText, new Vector2(596f, -28f), new Vector2(140f, 40f), new Color(0.937f, 0.965f, 1f), new Color(0.145f, 0.388f, 0.922f));
+            var extOutline = externalButton.gameObject.AddComponent<Outline>();
+            extOutline.effectColor = new Color(0.576f, 0.773f, 0.992f);
+            extOutline.effectDistance = new Vector2(1, -1);
+            externalButton.GetComponentInChildren<Text>().fontStyle = FontStyle.Bold;
             externalButton.onClick.AddListener(OnExternalImportClicked);
 
-            closeButton = CreateButton(panel, "CloseButton", "关闭", new Vector2(528f, -28f), new Vector2(84f, 36f), new Color(0.94f, 0.96f, 0.98f), new Color(0.05f, 0.12f, 0.24f));
+            closeButton = CreateButton(panel, "CloseButton", "×", new Vector2(752f, -28f), new Vector2(36f, 36f), new Color(0.973f, 0.98f, 0.988f), new Color(0.392f, 0.455f, 0.545f));
+            closeButton.GetComponentInChildren<Text>().fontSize = 22;
 
             emptyText = CreateText("EmptyText", panel, "暂无已保存图纸。", 16, TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(420f, 36f));
-            errorText = CreateText("ErrorText", panel, string.Empty, 14, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(28f, -468f), new Vector2(584f, 28f));
-            errorText.color = new Color(0.82f, 0.08f, 0.08f);
+            errorText = CreateText("ErrorText", panel, string.Empty, 14, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(24f, -616f), new Vector2(752f, 28f));
+            errorText.color = new Color(0.863f, 0.149f, 0.149f);
 
             var scrollObject = new GameObject("ScrollView", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
             scrollObject.transform.SetParent(panel, false);
@@ -191,9 +208,9 @@ namespace ElectricalSim.UI
             scrollRectTransform.anchorMin = new Vector2(0f, 1f);
             scrollRectTransform.anchorMax = new Vector2(0f, 1f);
             scrollRectTransform.pivot = new Vector2(0f, 1f);
-            scrollRectTransform.anchoredPosition = new Vector2(28f, -82f);
-            scrollRectTransform.sizeDelta = new Vector2(584f, 374f);
-            scrollObject.GetComponent<Image>().color = new Color(0.92f, 0.95f, 0.99f, 1f);
+            scrollRectTransform.anchoredPosition = new Vector2(24f, -76f);
+            scrollRectTransform.sizeDelta = new Vector2(752f, 520f);
+            scrollObject.GetComponent<Image>().color = new Color(0.945f, 0.961f, 0.976f);
 
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
             viewport.transform.SetParent(scrollObject.transform, false);
@@ -210,12 +227,12 @@ namespace ElectricalSim.UI
             contentRoot.anchorMin = new Vector2(0f, 1f);
             contentRoot.anchorMax = new Vector2(1f, 1f);
             contentRoot.pivot = new Vector2(0.5f, 1f);
-            contentRoot.offsetMin = new Vector2(12f, 0f);
-            contentRoot.offsetMax = new Vector2(-12f, 0f);
+            contentRoot.offsetMin = new Vector2(16f, 0f);
+            contentRoot.offsetMax = new Vector2(-16f, 0f);
 
             var layout = contentRoot.GetComponent<VerticalLayoutGroup>();
-            layout.spacing = 10f;
-            layout.padding = new RectOffset(0, 0, 12, 12);
+            layout.spacing = 16f;
+            layout.padding = new RectOffset(0, 0, 16, 16);
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = false;
@@ -325,10 +342,10 @@ namespace ElectricalSim.UI
             label.rectTransform.anchoredPosition = position;
             label.rectTransform.sizeDelta = size;
             label.text = text;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.font = MainUiTheme.BodyFont;
             label.fontSize = fontSize;
             label.alignment = alignment;
-            label.color = new Color(0.05f, 0.12f, 0.24f);
+            label.color = new Color(0.2f, 0.255f, 0.333f);
             label.raycastTarget = false;
             return label;
         }
@@ -352,6 +369,9 @@ namespace ElectricalSim.UI
             label.rectTransform.offsetMax = Vector2.zero;
             label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             label.color = textColor;
+            var nav = buttonObject.GetComponent<Button>().navigation;
+            nav.mode = Navigation.Mode.None;
+            buttonObject.GetComponent<Button>().navigation = nav;
             return buttonObject.GetComponent<Button>();
         }
     }

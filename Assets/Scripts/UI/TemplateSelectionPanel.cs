@@ -9,12 +9,12 @@ namespace ElectricalSim.UI
     {
         private const string FamilyCategory = "家庭电路";
         private const string IndustrialCategory = "工业电路";
-        private const float DialogWidth = 720f;
-        private const float DialogHeight = 580f;
-        private const float HeaderHeight = 64f;
-        private const float TabBarTop = 68f;
-        private const float TabBarHeight = 44f;
-        private const float ContentTop = 124f;
+        private const float DialogWidth = 800f;
+        private const float DialogHeight = 640f;
+        private const float HeaderHeight = 56f;
+        private const float TabBarTop = 64f;
+        private const float TabBarHeight = 40f;
+        private const float ContentTop = 116f;
 
         [SerializeField] private RectTransform dialogPanel;
         [SerializeField] private RectTransform content;
@@ -102,13 +102,13 @@ namespace ElectricalSim.UI
             rect.offsetMax = Vector2.zero;
 
             var image = blocker.GetComponent<Image>();
-            image.color = new Color(0f, 0f, 0f, 0.22f);
+            image.color = new Color(0f, 0f, 0f, 0.4f);
             image.raycastTarget = true;
         }
 
         private static RectTransform CreateDialogPanel(RectTransform parent)
         {
-            var panel = new GameObject("DialogPanel", typeof(RectTransform), typeof(Image), typeof(Shadow));
+            var panel = new GameObject("DialogPanel", typeof(RectTransform), typeof(Image), typeof(Outline));
             panel.transform.SetParent(parent, false);
 
             var rect = panel.GetComponent<RectTransform>();
@@ -122,9 +122,9 @@ namespace ElectricalSim.UI
             image.color = Color.white;
             image.raycastTarget = true;
 
-            var shadow = panel.GetComponent<Shadow>();
-            shadow.effectColor = new Color(0.08f, 0.12f, 0.18f, 0.18f);
-            shadow.effectDistance = new Vector2(0f, -8f);
+            var outline = panel.GetComponent<Outline>();
+            outline.effectColor = new Color(0.886f, 0.91f, 0.941f);
+            outline.effectDistance = new Vector2(1, -1);
 
             return rect;
         }
@@ -145,21 +145,22 @@ namespace ElectricalSim.UI
             headerImage.color = Color.white;
             headerImage.raycastTarget = false;
 
-            var title = CreateText("TitleText", header.transform, "加载标准图纸", 22, FontStyle.Bold, new Color(0.07f, 0.09f, 0.15f));
+            var title = CreateText("TitleText", header.transform, "加载标准图纸", 20, FontStyle.Bold, new Color(0.118f, 0.161f, 0.231f));
+            title.font = MainUiTheme.TitleFont;
             title.alignment = TextAnchor.MiddleLeft;
             title.rectTransform.anchorMin = Vector2.zero;
             title.rectTransform.anchorMax = Vector2.one;
             title.rectTransform.offsetMin = new Vector2(24f, 0f);
             title.rectTransform.offsetMax = new Vector2(-120f, 0f);
 
-            closeButton = CreateButton(header.transform, "关闭", new Color(0.93f, 0.95f, 0.98f), new Color(0.13f, 0.18f, 0.27f), 15);
+            closeButton = CreateButton(header.transform, "×", new Color(0.973f, 0.98f, 0.988f), new Color(0.392f, 0.455f, 0.545f), 22);
             closeButton.name = "CloseButton";
             var closeRect = closeButton.GetComponent<RectTransform>();
             closeRect.anchorMin = new Vector2(1f, 0.5f);
             closeRect.anchorMax = new Vector2(1f, 0.5f);
             closeRect.pivot = new Vector2(1f, 0.5f);
-            closeRect.anchoredPosition = new Vector2(-20f, 0f);
-            closeRect.sizeDelta = new Vector2(82f, 36f);
+            closeRect.anchoredPosition = new Vector2(-24f, 0f);
+            closeRect.sizeDelta = new Vector2(36f, 36f);
             closeButton.onClick.AddListener(Hide);
 
             var divider = new GameObject("Divider", typeof(RectTransform), typeof(Image));
@@ -184,24 +185,28 @@ namespace ElectricalSim.UI
             tabRect.offsetMin = new Vector2(24f, -(TabBarTop + TabBarHeight));
             tabRect.offsetMax = new Vector2(-24f, -TabBarTop);
 
-            familyButton = CreateButton(tabBar.transform, FamilyCategory, new Color(0.15f, 0.39f, 0.92f), Color.white, 15);
+            familyButton = CreateButton(tabBar.transform, FamilyCategory, new Color(0.145f, 0.388f, 0.922f), Color.white, 15);
             familyButton.name = "FamilyTabButton";
             var familyRect = familyButton.GetComponent<RectTransform>();
             familyRect.anchorMin = new Vector2(0f, 0.5f);
             familyRect.anchorMax = new Vector2(0f, 0.5f);
             familyRect.pivot = new Vector2(0f, 0.5f);
             familyRect.anchoredPosition = Vector2.zero;
-            familyRect.sizeDelta = new Vector2(108f, 34f);
+            familyRect.sizeDelta = new Vector2(110f, 40f);
+            familyButton.GetComponentInChildren<Text>().fontStyle = FontStyle.Bold;
             familyButton.onClick.AddListener(ShowFamilyTemplates);
 
-            industrialButton = CreateButton(tabBar.transform, IndustrialCategory, new Color(0.94f, 0.96f, 0.98f), new Color(0.20f, 0.25f, 0.33f), 15);
+            industrialButton = CreateButton(tabBar.transform, IndustrialCategory, Color.white, new Color(0.392f, 0.455f, 0.545f), 15);
             industrialButton.name = "IndustrialTabButton";
+            var indOutline = industrialButton.gameObject.AddComponent<Outline>();
+            indOutline.effectColor = new Color(0.824f, 0.824f, 0.824f);
+            indOutline.effectDistance = new Vector2(1, -1);
             var industrialRect = industrialButton.GetComponent<RectTransform>();
             industrialRect.anchorMin = new Vector2(0f, 0.5f);
             industrialRect.anchorMax = new Vector2(0f, 0.5f);
             industrialRect.pivot = new Vector2(0f, 0.5f);
-            industrialRect.anchoredPosition = new Vector2(116f, 0f);
-            industrialRect.sizeDelta = new Vector2(108f, 34f);
+            industrialRect.anchoredPosition = new Vector2(120f, 0f);
+            industrialRect.sizeDelta = new Vector2(110f, 40f);
             industrialButton.onClick.AddListener(ShowIndustrialTemplates);
         }
 
@@ -216,7 +221,7 @@ namespace ElectricalSim.UI
             scrollRectTransform.offsetMax = new Vector2(-24f, -ContentTop);
 
             var scrollImage = scrollObject.GetComponent<Image>();
-            scrollImage.color = new Color(0.97f, 0.98f, 1f, 1f);
+            scrollImage.color = new Color(0.945f, 0.961f, 0.976f);
             scrollImage.raycastTarget = true;
 
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(Mask));
@@ -340,7 +345,7 @@ namespace ElectricalSim.UI
                     var rect = item.GetComponent<RectTransform>();
                     rect.anchoredPosition = new Vector2(0f, y);
                     item.Initialize(template, HandleSelected);
-                    y -= 92f;
+                    y -= 112f;
                 }
             }
 

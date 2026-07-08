@@ -162,18 +162,35 @@ namespace ElectricalSim.UI
 
         private void BuildUi(RectTransform root)
         {
-            var panel = CreateRect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(460f, 250f));
+            var panel = CreateRect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(500f, 280f));
             var panelImage = panel.gameObject.AddComponent<Image>();
-            panelImage.color = new Color(1f, 1f, 1f, 0.98f);
+            panelImage.color = Color.white;
 
-            CreateText("Title", panel, "保存图纸", 22, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(28f, -28f), new Vector2(360f, 36f));
-            CreateText("NameLabel", panel, "图纸名称", 15, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(28f, -82f), new Vector2(120f, 30f));
-            nameInput = CreateInput(panel, new Vector2(28f, -118f), new Vector2(404f, 42f));
-            errorText = CreateText("ErrorText", panel, string.Empty, 14, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(28f, -166f), new Vector2(404f, 30f));
-            errorText.color = new Color(0.82f, 0.08f, 0.08f);
+            var outline = panel.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.886f, 0.91f, 0.941f);
+            outline.effectDistance = new Vector2(1, -1);
 
-            confirmButton = CreateButton(panel, "ConfirmButton", "确认保存", new Vector2(250f, -212f), new Vector2(88f, 36f), new Color(0.12f, 0.45f, 0.95f), Color.white);
-            cancelButton = CreateButton(panel, "CancelButton", "取消", new Vector2(348f, -212f), new Vector2(84f, 36f), new Color(0.94f, 0.96f, 0.98f), new Color(0.05f, 0.12f, 0.24f));
+            var title = CreateText("Title", panel, "保存图纸", 20, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(24f, -28f), new Vector2(360f, 32f));
+            title.fontStyle = FontStyle.Bold;
+            title.color = new Color(0.118f, 0.161f, 0.231f);
+            title.font = MainUiTheme.TitleFont;
+
+            var divider = CreateRect("Divider", panel, new Vector2(0f, 1f), new Vector2(500f, 1f));
+            divider.pivot = new Vector2(0f, 1f);
+            divider.anchoredPosition = new Vector2(0f, -56f);
+            divider.gameObject.AddComponent<Image>().color = new Color(0.898f, 0.906f, 0.922f);
+
+            CreateText("NameLabel", panel, "图纸名称", 16, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(24f, -92f), new Vector2(120f, 30f));
+            nameInput = CreateInput(panel, new Vector2(24f, -128f), new Vector2(452f, 42f));
+            
+            errorText = CreateText("ErrorText", panel, string.Empty, 14, TextAnchor.MiddleLeft, new Vector2(0f, 1f), new Vector2(24f, -174f), new Vector2(452f, 30f));
+            errorText.color = new Color(0.863f, 0.149f, 0.149f);
+
+            confirmButton = CreateButton(panel, "ConfirmButton", "确认保存", new Vector2(272f, -220f), new Vector2(104f, 36f), new Color(0.145f, 0.388f, 0.922f), Color.white);
+            cancelButton = CreateButton(panel, "CancelButton", "取消", new Vector2(388f, -220f), new Vector2(88f, 36f), Color.white, new Color(0.275f, 0.275f, 0.275f));
+            var cancelOutline = cancelButton.gameObject.AddComponent<Outline>();
+            cancelOutline.effectColor = new Color(0.824f, 0.824f, 0.824f);
+            cancelOutline.effectDistance = new Vector2(1, -1);
             
             BuildOverwriteConfirmPanel(panel);
             Initialize(saveLoadService);
@@ -233,10 +250,10 @@ namespace ElectricalSim.UI
             label.rectTransform.anchoredPosition = position;
             label.rectTransform.sizeDelta = size;
             label.text = text;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.font = MainUiTheme.BodyFont;
             label.fontSize = fontSize;
             label.alignment = alignment;
-            label.color = new Color(0.05f, 0.12f, 0.24f);
+            label.color = new Color(0.2f, 0.255f, 0.333f);
             label.raycastTarget = false;
             return label;
         }
@@ -251,7 +268,11 @@ namespace ElectricalSim.UI
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
-            inputObject.GetComponent<Image>().color = new Color(0.94f, 0.97f, 1f, 1f);
+            inputObject.GetComponent<Image>().color = new Color(0.973f, 0.98f, 0.988f);
+
+            var outline = inputObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.796f, 0.835f, 0.882f);
+            outline.effectDistance = new Vector2(1, -1);
 
             var text = CreateText("Text", rect, string.Empty, 16, TextAnchor.MiddleLeft, Vector2.zero, new Vector2(12f, 0f), new Vector2(size.x - 24f, size.y));
             text.rectTransform.anchorMin = Vector2.zero;
@@ -294,6 +315,9 @@ namespace ElectricalSim.UI
             label.rectTransform.offsetMax = Vector2.zero;
             label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             label.color = textColor;
+            var nav = buttonObject.GetComponent<Button>().navigation;
+            nav.mode = Navigation.Mode.None;
+            buttonObject.GetComponent<Button>().navigation = nav;
             return buttonObject.GetComponent<Button>();
         }
     }

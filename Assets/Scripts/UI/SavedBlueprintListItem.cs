@@ -21,15 +21,22 @@ namespace ElectricalSim.UI
             var itemObject = new GameObject("SavedBlueprintListItem", typeof(RectTransform), typeof(Image), typeof(SavedBlueprintListItem));
             itemObject.transform.SetParent(parent, false);
             var rect = itemObject.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(560f, 90f);
-            itemObject.GetComponent<Image>().color = new Color(0.96f, 0.98f, 1f, 1f);
+            rect.sizeDelta = new Vector2(720f, 100f);
+            itemObject.GetComponent<Image>().color = new Color(0.973f, 0.98f, 0.988f);
 
             var item = itemObject.GetComponent<SavedBlueprintListItem>();
-            item.nameText = CreateText("NameText", rect, 17, TextAnchor.MiddleLeft, new Vector2(16f, -10f), new Vector2(320f, 28f));
-            item.timeText = CreateText("TimeText", rect, 13, TextAnchor.MiddleLeft, new Vector2(16f, -40f), new Vector2(280f, 22f));
-            item.fileText = CreateText("FileText", rect, 12, TextAnchor.MiddleLeft, new Vector2(16f, -64f), new Vector2(330f, 20f));
-            item.importButton = CreateButton(rect, "ImportButton", "导入", new Vector2(374f, -24f), new Vector2(76f, 36f), new Color(0.16f, 0.45f, 0.96f), Color.white);
-            item.deleteButton = CreateButton(rect, "DeleteButton", "删除", new Vector2(462f, -24f), new Vector2(76f, 36f), new Color(1f, 0.94f, 0.94f), new Color(0.9f, 0.12f, 0.08f));
+            item.nameText = CreateText("NameText", rect, 18, TextAnchor.MiddleLeft, new Vector2(16f, -14f), new Vector2(400f, 28f));
+            item.nameText.fontStyle = FontStyle.Bold;
+            item.nameText.color = new Color(0.2f, 0.255f, 0.333f);
+            
+            item.timeText = CreateText("TimeText", rect, 14, TextAnchor.MiddleLeft, new Vector2(16f, -44f), new Vector2(400f, 24f));
+            item.timeText.color = new Color(0.392f, 0.455f, 0.545f);
+            
+            item.fileText = CreateText("FileText", rect, 14, TextAnchor.MiddleLeft, new Vector2(16f, -70f), new Vector2(400f, 24f));
+            item.fileText.color = new Color(0.392f, 0.455f, 0.545f);
+
+            item.importButton = CreateButton(rect, "ImportButton", "导入", new Vector2(508f, -30f), new Vector2(90f, 40f), new Color(0.145f, 0.388f, 0.922f), Color.white);
+            item.deleteButton = CreateButton(rect, "DeleteButton", "删除", new Vector2(614f, -30f), new Vector2(90f, 40f), new Color(0.996f, 0.886f, 0.886f), new Color(0.863f, 0.149f, 0.149f));
             item.importButton.onClick.AddListener(item.HandleImportClick);
             item.deleteButton.onClick.AddListener(item.HandleDeleteClick);
             return item;
@@ -76,10 +83,10 @@ namespace ElectricalSim.UI
             label.rectTransform.pivot = new Vector2(0f, 1f);
             label.rectTransform.anchoredPosition = position;
             label.rectTransform.sizeDelta = size;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.font = MainUiTheme.BodyFont;
             label.fontSize = fontSize;
             label.alignment = alignment;
-            label.color = new Color(0.05f, 0.12f, 0.24f);
+            label.color = new Color(0.2f, 0.255f, 0.333f);
             label.raycastTarget = false;
             return label;
         }
@@ -104,6 +111,9 @@ namespace ElectricalSim.UI
             label.rectTransform.offsetMax = Vector2.zero;
             label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             label.color = textColor;
+            var nav = buttonObject.GetComponent<Button>().navigation;
+            nav.mode = Navigation.Mode.None;
+            buttonObject.GetComponent<Button>().navigation = nav;
             return buttonObject.GetComponent<Button>();
         }
     }
