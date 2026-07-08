@@ -93,7 +93,8 @@ namespace ElectricalSim.UI
             headerRect.offsetMin = new Vector2(GalleryMargin, -60f);
             headerRect.offsetMax = new Vector2(-GalleryMargin, 0f);
 
-            var title = CreateText("Title", header.transform, "仿真广场", 24, FontStyle.Bold, MainUiTheme.Hex("727272"));
+            var title = CreateText("Title", header.transform, "仿真广场", 28, FontStyle.Bold, MainUiTheme.Hex("111827"));
+            title.font = MainUiTheme.TitleFont;
             title.alignment = TextAnchor.MiddleLeft;
             Stretch(title.rectTransform, 0f, 0f, 0f, 0f);
 

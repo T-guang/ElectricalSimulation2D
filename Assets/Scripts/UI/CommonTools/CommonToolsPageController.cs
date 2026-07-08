@@ -221,8 +221,11 @@ namespace ElectricalSim.UI.CommonTools
 
         private void BuildHeader()
         {
-            var title = CreateText("ToolsTitle", transform, "常用工具", 28, FontStyle.Bold, TextDark);
+            var title = CreateText("ToolsTitle", transform, "常用工具", 32, FontStyle.Bold, MainUiTheme.Hex("111827"));
+            title.font = MainUiTheme.TitleFont;
             title.alignment = TextAnchor.MiddleLeft;
+            title.horizontalOverflow = HorizontalWrapMode.Overflow;
+            title.verticalOverflow = VerticalWrapMode.Overflow;
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -30f), new Vector2(260f, 40f));
 
             var desc = CreateText("ToolsDescription", transform, "系统内置的辅助计算与基础教学工具库，方便您在接线练习时进行参数推演和规范查询。", 16, FontStyle.Normal, TextMuted);

@@ -137,12 +137,24 @@ namespace ElectricalSim.UI
             title.sizeDelta = new Vector2(-PalettePadding * 2f - 12f, 38f);
             title.gameObject.SetActive(true);
             
-            var titleTextGo = title.Find("TitleText");
-            if (titleTextGo != null)
+            var titleText = title.GetComponent<Text>();
+            if (titleText == null)
             {
-                var titleText = titleTextGo.GetComponent<Text>();
+                var titleTextGo = title.Find("TitleText");
+                if (titleTextGo != null)
+                {
+                    titleText = titleTextGo.GetComponent<Text>();
+                }
+            }
+
+            if (titleText != null)
+            {
                 titleText.text = "电工控件池";
-                MainUiTheme.ApplyText(titleText, 18, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft, true);
+                titleText.font = MainUiTheme.TitleFont;
+                titleText.fontSize = 22;
+                titleText.fontStyle = FontStyle.Bold;
+                titleText.color = MainUiTheme.Hex("111827");
+                titleText.alignment = TextAnchor.MiddleLeft;
             }
 
             EnsureTitleAccent(title);
@@ -408,7 +420,10 @@ namespace ElectricalSim.UI
             if (labelText != null)
             {
                 labelText.text = label;
-                MainUiTheme.ApplyText(labelText, 13, FontStyle.Normal, MainUiTheme.SecondaryText, TextAnchor.MiddleCenter, false);
+                labelText.font = MainUiTheme.UiFont;
+                labelText.fontSize = 14;
+                labelText.fontStyle = FontStyle.Bold;
+                labelText.color = MainUiTheme.SecondaryText;
                 labelText.alignment = TextAnchor.MiddleCenter;
                 labelText.rectTransform.offsetMin = new Vector2(24f, 2f);
                 labelText.rectTransform.offsetMax = new Vector2(-8f, -2f);
@@ -1322,7 +1337,11 @@ namespace ElectricalSim.UI
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                MainUiTheme.ApplyText(label, 13, FontStyle.Normal, selected ? Color.white : MainUiTheme.SecondaryText, TextAnchor.MiddleCenter, false);
+                label.font = MainUiTheme.UiFont;
+                label.fontSize = 14;
+                label.fontStyle = FontStyle.Bold;
+                label.color = selected ? Color.white : MainUiTheme.SecondaryText;
+                label.alignment = TextAnchor.MiddleCenter;
                 label.resizeTextForBestFit = false;
             }
 

@@ -119,36 +119,43 @@ namespace ElectricalSim.AI
             rootLayout.childForceExpandWidth = true;
             rootLayout.childForceExpandHeight = false;
 
-            var header = CreatePanelSection("Header", root, HeaderHeight, 0f, MainUiTheme.SelectedBlue);
+            var header = CreatePanelSection("Header", root, 48f, 0f, MainUiTheme.Hex("EAF2FF"));
             titleText = CreateText("Title", header, "检查助手", 16, TextAnchor.MiddleLeft, true, FontStyle.Bold);
             titleText.fontStyle = FontStyle.Bold;
+            titleText.fontSize = 17;
             titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
             titleText.rectTransform.offsetMax = new Vector2(-14f, 0f);
+            var headerOutline = header.gameObject.AddComponent<Outline>();
+            headerOutline.effectColor = MainUiTheme.Hex("BFDBFE");
+            headerOutline.effectDistance = new Vector2(1f, -1f);
 
-            var quickActions = CreatePanelSection("QuickActions", root, QuickActionsHeight, 0f, MainUiTheme.PanelBackground);
+            var quickActions = CreatePanelSection("QuickActions", root, -1f, 0f, Color.clear);
             var actionLayout = quickActions.gameObject.AddComponent<VerticalLayoutGroup>();
-            actionLayout.padding = new RectOffset(0, 0, 0, 0);
-            actionLayout.spacing = 7f;
+            actionLayout.padding = new RectOffset(0, 0, 12, 0); // 顶部按钮区下方留 12 px 间距
+            actionLayout.spacing = 8f;
             actionLayout.childAlignment = TextAnchor.UpperCenter;
             actionLayout.childControlWidth = true;
             actionLayout.childControlHeight = true;
             actionLayout.childForceExpandWidth = true;
             actionLayout.childForceExpandHeight = false;
 
-            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 36f);
-            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", MainUiTheme.PrimaryBlue, Color.white, 36f);
+            explainButton = CreateButton("ExplainCircuitButton", quickActions, "当前电路解释", MainUiTheme.Hex("F1F5F9"), MainUiTheme.Hex("334155"), 36f);
+            checkButton = CreateButton("CheckCircuitButton", quickActions, "检查当前电路", MainUiTheme.Hex("2563EB"), Color.white, 36f);
             submitPracticeButton = CreateButton("SubmitPracticeButton", quickActions, "提交练习检测", MainUiTheme.SuccessGreen, Color.white, 36f);
             submitPracticeButton.gameObject.SetActive(false);
             exitPracticeButton = CreateButton("ExitPracticeButton", quickActions, "退出练习", MainUiTheme.DangerRed, Color.white, 36f);
             exitPracticeButton.gameObject.SetActive(false);
-            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", MainUiTheme.FilterButton, MainUiTheme.SecondaryText, 36f);
+            clearReportButton = CreateButton("ClearReportButton", quickActions, "清空结果", MainUiTheme.Hex("FEF2F2"), MainUiTheme.Hex("DC2626"), 36f);
+            var clearReportOutline = clearReportButton.GetComponent<Outline>();
+            if (clearReportOutline != null) clearReportOutline.effectColor = MainUiTheme.Hex("FCA5A5");
+
             ApplyActionButtonIcon(explainButton, "Inspector/ui_circuit_explain_20", false);
             ApplyActionButtonIcon(checkButton, "Inspector/ui_check_circuit_20", true);
             ApplyActionButtonIcon(clearReportButton, "Inspector/ui_clear_result_20", false);
 
-            var reportRoot = CreatePanelSection("ReportScrollView", root, 0f, 1f, MainUiTheme.PanelBackground);
+            var reportRoot = CreatePanelSection("ReportScrollView", root, 0f, 1f, Color.white);
             var reportOutline = reportRoot.gameObject.AddComponent<Outline>();
-            reportOutline.effectColor = MainUiTheme.Divider;
+            reportOutline.effectColor = MainUiTheme.Hex("E5E7EB");
             reportOutline.effectDistance = new Vector2(1f, -1f);
             reportScrollRect = reportRoot.gameObject.AddComponent<ScrollRect>();
             reportScrollRect.horizontal = false;

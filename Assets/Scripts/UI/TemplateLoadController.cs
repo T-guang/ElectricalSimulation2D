@@ -323,7 +323,12 @@ namespace ElectricalSim.UI
             label.rectTransform.offsetMin = Vector2.zero;
             label.rectTransform.offsetMax = Vector2.zero;
             label.text = "加载图纸";
-            MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.MiddleCenter, false);
+            label.font = MainUiTheme.UiFont;
+            label.fontSize = 15;
+            label.fontStyle = FontStyle.Bold;
+            label.color = MainUiTheme.Hex("1F2937");
+            label.alignment = TextAnchor.MiddleCenter;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
             label.raycastTarget = false;
             ApplyFileButtonIcon(button, "ui_toolbar_load_blueprint_24", MainUiTheme.Hex("64748B"));
 
@@ -412,7 +417,12 @@ namespace ElectricalSim.UI
             var label = buttonObject.GetComponentInChildren<Text>();
             if (label != null)
             {
-                MainUiTheme.ApplyText(label, 14, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.MiddleCenter, false);
+                label.font = MainUiTheme.UiFont;
+                label.fontSize = 15;
+                label.fontStyle = FontStyle.Bold;
+                label.color = MainUiTheme.Hex("1F2937");
+                label.alignment = TextAnchor.MiddleCenter;
+                label.verticalOverflow = VerticalWrapMode.Overflow;
             }
         }
 

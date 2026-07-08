@@ -42,7 +42,8 @@ namespace ElectricalSim.UI
 
             bg.color = UiThemeTokens.Background;
 
-            var title = CreateText("ProfileTitle", root, "系统信息", 32, FontStyle.Bold, UiThemeTokens.TextDark, TextAnchor.MiddleLeft);
+            var title = CreateText("ProfileTitle", root, "系统信息", 36, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft);
+            title.font = MainUiTheme.TitleFont;
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(44f, -34f), new Vector2(-88f, 52f));
 
             var subtitle = CreateText("ProfileSubtitle", root, "当前为单机本地模式，数据保存在本机。", 18, FontStyle.Normal, UiThemeTokens.TextMuted, TextAnchor.MiddleLeft);

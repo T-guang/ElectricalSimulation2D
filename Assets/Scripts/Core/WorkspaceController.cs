@@ -769,43 +769,32 @@ namespace ElectricalSim.Core
 
         private void HandleCanvasZoom()
         {
-            if (canvasContent == null || workspaceRect == null)
-            {
-                return;
-            }
-
+            if (canvasContent == null) return;
             var scroll = Input.mouseScrollDelta.y;
-            if (Mathf.Abs(scroll) < 0.01f)
-            {
-                return;
-            }
+            if (Mathf.Abs(scroll) < 0.01f) return;
 
-            if (!RectTransformUtility.RectangleContainsScreenPoint(workspaceRect, Input.mousePosition, null))
-            {
-                return;
-            }
-
-            if (IsPointerInsideActionLog())
-            {
-                return;
-            }
-
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(workspaceRect, Input.mousePosition, null, out var mouseInWorkspace))
+            // Only block zoom if mouse is on the far left (Palette area) or top (Toolbar)
+            if (Input.mousePosition.x < 300f || Input.mousePosition.y > Screen.height - 60f)
             {
                 return;
             }
 
             var oldZoom = canvasZoom;
             var nextZoom = Mathf.Clamp(canvasZoom + scroll * zoomStep, minCanvasZoom, maxCanvasZoom);
+            
             if (Mathf.Approximately(oldZoom, nextZoom))
             {
                 return;
             }
 
-            var contentPointUnderMouse = (mouseInWorkspace - canvasContent.anchoredPosition) / oldZoom;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasContent, Input.mousePosition, null, out var contentPointUnderMouse);
+
             canvasZoom = nextZoom;
             canvasContent.localScale = Vector3.one * canvasZoom;
-            SetCanvasPan(mouseInWorkspace - contentPointUnderMouse * canvasZoom);
+
+            var newContentPointUnderMouse = contentPointUnderMouse * (nextZoom / oldZoom);
+            var offset = newContentPointUnderMouse - contentPointUnderMouse;
+            SetCanvasPan(canvasContent.anchoredPosition - offset * oldZoom);
         }
 
         public void ResetView()
