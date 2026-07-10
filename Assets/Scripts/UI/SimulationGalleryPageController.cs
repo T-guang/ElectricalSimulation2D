@@ -26,7 +26,6 @@ namespace ElectricalSim.UI
         private readonly List<GalleryEntry> entries = new List<GalleryEntry>();
         private readonly Dictionary<string, Button> filterButtons = new Dictionary<string, Button>();
 
-        private Font font;
         private GameObject listRoot;
         private GameObject detailRoot;
         private RectTransform gridContent;
@@ -39,7 +38,6 @@ namespace ElectricalSim.UI
 
         private void Awake()
         {
-            font = MainUiTheme.BodyFont != null ? MainUiTheme.BodyFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             EnsureRootRect();
             BuildPage();
             LoadEntries();
@@ -93,9 +91,8 @@ namespace ElectricalSim.UI
             headerRect.offsetMin = new Vector2(GalleryMargin, -60f);
             headerRect.offsetMax = new Vector2(-GalleryMargin, 0f);
 
-            var title = CreateText("Title", header.transform, "仿真广场", 28, FontStyle.Bold, MainUiTheme.Hex("111827"));
-            title.font = MainUiTheme.TitleFont;
-            title.alignment = TextAnchor.MiddleLeft;
+            var title = CreateText("Title", header.transform, "仿真广场", 24, FontStyle.Normal, MainUiTheme.Hex("111827"));
+            MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.PageTitle);
             Stretch(title.rectTransform, 0f, 0f, 0f, 0f);
 
             var description = CreateText(
@@ -224,12 +221,14 @@ namespace ElectricalSim.UI
             gridScrollRect.viewport = viewportRect;
             gridScrollRect.content = gridContent;
 
-            emptyHint = CreateText("EmptyHint", scroll.transform, "未找到匹配案例\n\n请尝试更换关键词，或切换到“全部”分类查看本地案例。", 16, FontStyle.Normal, TextSecondary);
+            emptyHint = CreateText("EmptyHint", scroll.transform, "未找到匹配案例\n\n请尝试更换关键词，或切换到“全部”分类查看本地案例。", 14, FontStyle.Normal, MainUiTheme.Hex("64748B"));
+            MainUiTheme.ApplyTextRole(emptyHint, MainUiTheme.UiTextRole.SearchInputText);
             emptyHint.alignment = TextAnchor.MiddleCenter;
             Stretch(emptyHint.rectTransform, 0f, 0f, 0f, 0f);
             emptyHint.gameObject.SetActive(false);
 
-            statusText = CreateText("StatusText", parent, string.Empty, 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
+            statusText = CreateText("StatusText", parent, string.Empty, 15, FontStyle.Normal, MainUiTheme.Hex("64748B"));
+            MainUiTheme.ApplyTextRole(statusText, MainUiTheme.UiTextRole.StatusText);
             statusText.alignment = TextAnchor.MiddleLeft;
             var statusRect = statusText.rectTransform;
             statusRect.anchorMin = new Vector2(0f, 1f);
@@ -345,7 +344,9 @@ namespace ElectricalSim.UI
                 if (label != null)
                 {
                     label.color = active ? Color.white : MainUiTheme.Hex("464646");
-                    label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
+                    MainUiTheme.ApplyTextRole(label, active
+                        ? MainUiTheme.UiTextRole.ContentFilterTextSelected
+                        : MainUiTheme.UiTextRole.ContentFilterText);
                 }
 
                 var icon = pair.Value.transform.Find("Icon")?.GetComponent<Image>();
@@ -513,7 +514,7 @@ namespace ElectricalSim.UI
             thumbRect.anchorMin = new Vector2(0f, 1f);
             thumbRect.anchorMax = new Vector2(1f, 1f);
             thumbRect.pivot = new Vector2(0.5f, 1f);
-            thumbRect.offsetMin = new Vector2(16f, -188f);
+            thumbRect.offsetMin = new Vector2(16f, -164f);
             thumbRect.offsetMax = new Vector2(-16f, -14f);
             var thumbImage = thumbPanel.GetComponent<Image>();
             thumbImage.sprite = UiThemeTokens.GetRoundedSprite(12);
@@ -547,48 +548,46 @@ namespace ElectricalSim.UI
                 Stretch(placeholder.rectTransform, 0f, 0f, 0f, 0f);
             }
 
-            var title = CreateText("Title", card.transform, entry.Title, 20, FontStyle.Bold, MainUiTheme.Hex("464646"));
-            title.alignment = TextAnchor.UpperLeft;
-            title.horizontalOverflow = HorizontalWrapMode.Wrap;
-            title.verticalOverflow = VerticalWrapMode.Truncate;
+            var title = CreateText("Title", card.transform, entry.Title, 20, FontStyle.Normal, MainUiTheme.Hex("1F2937"));
+            MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.ContentCardTitle);
             title.rectTransform.anchorMin = new Vector2(0f, 1f);
             title.rectTransform.anchorMax = new Vector2(1f, 1f);
-            title.rectTransform.offsetMin = new Vector2(16f, -232f);
-            title.rectTransform.offsetMax = new Vector2(-16f, -204f);
+            title.rectTransform.offsetMin = new Vector2(16f, -228f);
+            title.rectTransform.offsetMax = new Vector2(-16f, -180f);
 
-            var meta = CreateText("Meta", card.transform, entry.Category + " / " + entry.Difficulty + " / " + entry.SourceLabel, 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
-            meta.alignment = TextAnchor.UpperLeft;
-            meta.verticalOverflow = VerticalWrapMode.Truncate;
-            meta.rectTransform.anchorMin = new Vector2(0f, 1f);
-            meta.rectTransform.anchorMax = new Vector2(1f, 1f);
-            meta.rectTransform.offsetMin = new Vector2(16f, -254f);
-            meta.rectTransform.offsetMax = new Vector2(-16f, -234f);
+            var metaRow = CreateObject("MetaRow", card.transform, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+            metaRow.GetComponent<RectTransform>().anchorMin = new Vector2(0f, 1f);
+            metaRow.GetComponent<RectTransform>().anchorMax = new Vector2(1f, 1f);
+            metaRow.GetComponent<RectTransform>().offsetMin = new Vector2(16f, -254f);
+            metaRow.GetComponent<RectTransform>().offsetMax = new Vector2(-16f, -230f);
+            var metaLayout = metaRow.GetComponent<HorizontalLayoutGroup>();
+            metaLayout.spacing = 8f;
+            metaLayout.childAlignment = TextAnchor.MiddleLeft;
+            metaLayout.childControlWidth = true;
+            metaLayout.childControlHeight = true;
+            metaLayout.childForceExpandWidth = false;
+            metaLayout.childForceExpandHeight = false;
 
-            var tags = CreateText("Tags", card.transform, string.Join("  ", entry.Tags.Take(4).ToArray()), 16, FontStyle.Normal, MainUiTheme.PrimaryBlue);
-            tags.alignment = TextAnchor.UpperLeft;
-            tags.horizontalOverflow = HorizontalWrapMode.Wrap;
-            tags.verticalOverflow = VerticalWrapMode.Truncate;
-            tags.rectTransform.anchorMin = new Vector2(0f, 1f);
-            tags.rectTransform.anchorMax = new Vector2(1f, 1f);
-            tags.rectTransform.offsetMin = new Vector2(16f, -274f);
-            tags.rectTransform.offsetMax = new Vector2(-16f, -256f);
+            CreateMetadataPill(metaRow.transform, "Category", entry.Category, MainUiTheme.Hex("DBEAFE"), MainUiTheme.PrimaryBlue, 78f, MainUiTheme.UiTextRole.MetaText);
+            CreateMetadataPill(metaRow.transform, "Difficulty", entry.Difficulty, GetDifficultyPillColor(entry.Difficulty), Color.white, 64f, MainUiTheme.UiTextRole.MetaTextBold);
+            CreateMetadataSource(metaRow.transform, entry.SourceLabel);
 
-            var detailButton = CreateButton(card.transform, "查看详情", MainUiTheme.Hex("F1F5F9"), MainUiTheme.Hex("464646"));
+            var detailButton = CreateButton(card.transform, "查看详情", MainUiTheme.Hex("F1F5F9"), MainUiTheme.Hex("464646"), MainUiTheme.UiTextRole.GalleryCardActionButton);
             var detailRect = detailButton.GetComponent<RectTransform>();
             detailRect.anchorMin = new Vector2(0f, 0f);
             detailRect.anchorMax = new Vector2(0f, 0f);
             detailRect.pivot = new Vector2(0f, 0f);
-            detailRect.anchoredPosition = new Vector2(16f, 14f);
-            detailRect.sizeDelta = new Vector2(129f, 31f);
+            detailRect.anchoredPosition = new Vector2(16f, 12f);
+            detailRect.sizeDelta = new Vector2(129f, 34f);
             detailButton.onClick.AddListener(() => ShowDetail(entry));
 
-            var loadButton = CreateButton(card.transform, "加载案例", MainUiTheme.PrimaryBlue, Color.white);
+            var loadButton = CreateButton(card.transform, "加载案例", MainUiTheme.PrimaryBlue, Color.white, MainUiTheme.UiTextRole.GalleryCardActionButton);
             var loadRect = loadButton.GetComponent<RectTransform>();
             loadRect.anchorMin = new Vector2(1f, 0f);
             loadRect.anchorMax = new Vector2(1f, 0f);
             loadRect.pivot = new Vector2(1f, 0f);
-            loadRect.anchoredPosition = new Vector2(-16f, 14f);
-            loadRect.sizeDelta = new Vector2(129f, 31f);
+            loadRect.anchoredPosition = new Vector2(-16f, 12f);
+            loadRect.sizeDelta = new Vector2(129f, 34f);
             loadButton.onClick.AddListener(() => LoadEntry(entry));
         }
 
@@ -607,6 +606,7 @@ namespace ElectricalSim.UI
             topRect.offsetMax = new Vector2(-DetailMargin, 0f);
 
             var backButton = CreateButton(topBar.transform, "返回广场", MainUiTheme.Hex("F1F5F9"), MainUiTheme.Hex("464646"));
+            MainUiTheme.ApplyTextRole(backButton.GetComponentInChildren<Text>(), MainUiTheme.UiTextRole.CardActionButton);
             var backRect = backButton.GetComponent<RectTransform>();
             backRect.anchorMin = new Vector2(0f, 0.5f);
             backRect.anchorMax = new Vector2(0f, 0.5f);
@@ -619,14 +619,15 @@ namespace ElectricalSim.UI
                 listRoot.SetActive(true);
             });
 
-            var title = CreateText("Title", topBar.transform, entry.Title, 24, FontStyle.Bold, MainUiTheme.Hex("727272"));
-            title.alignment = TextAnchor.MiddleLeft;
+            var title = CreateText("Title", topBar.transform, entry.Title, 22, FontStyle.Normal, MainUiTheme.Hex("727272"));
+            MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.DetailTitle);
             title.rectTransform.anchorMin = new Vector2(0f, 0f);
             title.rectTransform.anchorMax = new Vector2(1f, 1f);
             title.rectTransform.offsetMin = new Vector2(140f, 0f);
             title.rectTransform.offsetMax = new Vector2(-180f, 0f);
 
             var loadButton = CreateButton(topBar.transform, "加载到画布", MainUiTheme.PrimaryBlue, Color.white);
+            MainUiTheme.ApplyTextRole(loadButton.GetComponentInChildren<Text>(), MainUiTheme.UiTextRole.CardActionButton);
             var loadRect = loadButton.GetComponent<RectTransform>();
             loadRect.anchorMin = new Vector2(1f, 0.5f);
             loadRect.anchorMax = new Vector2(1f, 0.5f);
@@ -682,17 +683,27 @@ namespace ElectricalSim.UI
 
         private void CreateHeaderCard(Transform parent, GalleryEntry entry)
         {
-            var card = CreateSectionCard(parent);
+            var card = CreateSectionCard(parent, 230f);
             var layout = card.GetComponent<HorizontalLayoutGroup>();
             layout.padding = new RectOffset(20, 20, 18, 18);
             layout.spacing = 24f;
-            layout.childControlWidth = false;
+            layout.childControlWidth = true;
             layout.childForceExpandWidth = false;
 
             var imagePanel = CreateObject("ImagePanel", card.transform, typeof(RectTransform), typeof(Image));
             var imageRect = imagePanel.GetComponent<RectTransform>();
-            imageRect.sizeDelta = new Vector2(186f, 161f);
-            imagePanel.GetComponent<Image>().color = MainUiTheme.Hex("F1F5F9");
+            imageRect.sizeDelta = new Vector2(320f, 190f);
+            var imageLayout = imagePanel.AddComponent<LayoutElement>();
+            imageLayout.minWidth = 320f;
+            imageLayout.preferredWidth = 320f;
+            imageLayout.flexibleWidth = 0f;
+            imageLayout.minHeight = 190f;
+            imageLayout.preferredHeight = 190f;
+            imageLayout.flexibleHeight = 0f;
+            var headerImage = imagePanel.GetComponent<Image>();
+            headerImage.sprite = UiThemeTokens.GetRoundedSprite(12);
+            headerImage.type = Image.Type.Sliced;
+            headerImage.color = MainUiTheme.Hex("F1F5F9");
             var sprite = LoadThumbnail(entry.ThumbnailPath);
             if (sprite != null)
             {
@@ -705,25 +716,27 @@ namespace ElectricalSim.UI
             }
             else
             {
-                var placeholder = CreateText("Placeholder", imagePanel.transform, "案例缩略图待补充", 16, FontStyle.Bold, MainUiTheme.Hex("B1B7BE"));
+                var placeholder = CreateText("Placeholder", imagePanel.transform, "案例缩略图\n待补充", 14, FontStyle.Normal, MainUiTheme.Hex("94A3B8"));
                 placeholder.alignment = TextAnchor.MiddleCenter;
                 Stretch(placeholder.rectTransform, 0f, 0f, 0f, 0f);
             }
 
             var infoPanel = CreateObject("InfoPanel", card.transform, typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
-            infoPanel.GetComponent<LayoutElement>().flexibleWidth = 1f;
+            var infoElement = infoPanel.GetComponent<LayoutElement>();
+            infoElement.minWidth = 0f;
+            infoElement.preferredWidth = 0f;
+            infoElement.flexibleWidth = 1f;
             var infoLayout = infoPanel.GetComponent<VerticalLayoutGroup>();
-            infoLayout.spacing = 6f;
+            infoLayout.spacing = 7f;
             infoLayout.childControlWidth = true;
             infoLayout.childControlHeight = true;
             infoLayout.childForceExpandWidth = true;
             infoLayout.childForceExpandHeight = false;
 
-            CreateFlowText(infoPanel.transform, entry.Title, 24, FontStyle.Bold, MainUiTheme.Hex("464646"));
-            CreateFlowText(infoPanel.transform, "类型：" + entry.Category, 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
-            CreateFlowText(infoPanel.transform, "难度：" + entry.Difficulty, 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
-            CreateFlowText(infoPanel.transform, "来源：" + entry.SourceLabel, 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
-            CreateFlowText(infoPanel.transform, "标签：" + string.Join("、", entry.Tags.ToArray()), 16, FontStyle.Normal, MainUiTheme.PrimaryBlue);
+            CreateFlowText(infoPanel.transform, entry.Title, MainUiTheme.UiTextRole.DetailHeaderTitle, MainUiTheme.Hex("1F2937"));
+            CreateFlowText(infoPanel.transform, "类型：" + entry.Category + "    难度：" + entry.Difficulty + "    来源：" + entry.SourceLabel, MainUiTheme.UiTextRole.DetailMetaText, MainUiTheme.Hex("64748B"));
+            CreateFlowText(infoPanel.transform, "标签：" + string.Join("、", entry.Tags.ToArray()), MainUiTheme.UiTextRole.DetailMetaText, MainUiTheme.PrimaryBlue);
+            CreateFlowText(infoPanel.transform, GetShortDescription(entry.Description), MainUiTheme.UiTextRole.DetailBody, MainUiTheme.Hex("475569"));
         }
 
         private void CreateSection(Transform parent, string title, string body)
@@ -748,11 +761,11 @@ namespace ElectricalSim.UI
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             card.GetComponent<LayoutElement>().minHeight = 79f;
 
-            CreateFlowText(card.transform, title, 20, FontStyle.Bold, MainUiTheme.Hex("464646"));
-            CreateFlowText(card.transform, string.IsNullOrWhiteSpace(body) ? "该部分内容待补充。" : body, 16, FontStyle.Normal, MainUiTheme.Hex("B1B7BE"));
+            CreateFlowText(card.transform, title, MainUiTheme.UiTextRole.DetailSectionTitle, MainUiTheme.Hex("1F2937"));
+            CreateFlowText(card.transform, string.IsNullOrWhiteSpace(body) ? "该部分内容待补充。" : body, MainUiTheme.UiTextRole.DetailBody, MainUiTheme.Hex("475569"));
         }
 
-        private GameObject CreateSectionCard(Transform parent)
+        private GameObject CreateSectionCard(Transform parent, float minHeight = 196f)
         {
             var card = CreateObject("SectionCard", parent, typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter), typeof(LayoutElement), typeof(UnityEngine.UI.Shadow));
             var image = card.GetComponent<Image>();
@@ -768,8 +781,47 @@ namespace ElectricalSim.UI
             var fitter = card.GetComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            card.GetComponent<LayoutElement>().minHeight = 196f;
+            card.GetComponent<LayoutElement>().minHeight = minHeight;
             return card;
+        }
+
+        private void CreateMetadataPill(Transform parent, string name, string text, Color background, Color textColor, float width, MainUiTheme.UiTextRole textRole)
+        {
+            var pill = CreateObject(name, parent, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            var image = pill.GetComponent<Image>();
+            image.sprite = UiThemeTokens.GetRoundedSprite(8);
+            image.type = Image.Type.Sliced;
+            image.color = background;
+
+            var element = pill.GetComponent<LayoutElement>();
+            element.minWidth = width;
+            element.preferredWidth = width;
+            element.flexibleWidth = 0f;
+            element.minHeight = 22f;
+            element.preferredHeight = 22f;
+            element.flexibleHeight = 0f;
+
+            var label = CreateText("Text", pill.transform, text, 12, FontStyle.Normal, textColor);
+            MainUiTheme.ApplyTextRole(label, textRole);
+            label.alignment = TextAnchor.MiddleCenter;
+            Stretch(label.rectTransform, 6f, 6f, 0f, 0f);
+        }
+
+        private void CreateMetadataSource(Transform parent, string sourceLabel)
+        {
+            var source = CreateObject("Source", parent, typeof(RectTransform), typeof(LayoutElement));
+            var element = source.GetComponent<LayoutElement>();
+            element.minWidth = 0f;
+            element.preferredWidth = 120f;
+            element.flexibleWidth = 1f;
+            element.minHeight = 22f;
+            element.preferredHeight = 22f;
+            element.flexibleHeight = 0f;
+
+            var label = CreateText("Text", source.transform, "来源：" + sourceLabel, 12, FontStyle.Normal, MainUiTheme.Hex("64748B"));
+            MainUiTheme.ApplyTextRole(label, MainUiTheme.UiTextRole.MetaText);
+            label.alignment = TextAnchor.MiddleLeft;
+            Stretch(label.rectTransform, 0f, 0f, 0f, 0f);
         }
 
         private void LoadEntry(GalleryEntry entry)
@@ -923,6 +975,27 @@ namespace ElectricalSim.UI
             return 0;
         }
 
+        private static Color GetDifficultyPillColor(string difficulty)
+        {
+            if (Contains(difficulty, "中高级")) return MainUiTheme.Hex("15803D");
+            if (Contains(difficulty, "高级")) return MainUiTheme.Hex("EF4444");
+            if (Contains(difficulty, "中级")) return MainUiTheme.Hex("F59E0B");
+            return MainUiTheme.Hex("16A34A");
+        }
+
+        private static string GetShortDescription(string description)
+        {
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                return string.Empty;
+            }
+
+            return description
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim())
+                .FirstOrDefault(line => !string.IsNullOrWhiteSpace(line)) ?? string.Empty;
+        }
+
         private static bool Contains(string source, string keyword)
         {
             return !string.IsNullOrWhiteSpace(source)
@@ -951,13 +1024,20 @@ namespace ElectricalSim.UI
             var go = CreateObject(name, parent, typeof(RectTransform), typeof(Text));
             var label = go.GetComponent<Text>();
             label.text = text;
-            label.font = font;
+            label.font = style == FontStyle.Bold ? MainUiTheme.UiFontBold : MainUiTheme.UiFont;
             label.fontSize = size;
-            label.fontStyle = style;
+            label.fontStyle = FontStyle.Normal;
             label.color = color;
             label.raycastTarget = false;
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
             label.verticalOverflow = VerticalWrapMode.Overflow;
+            return label;
+        }
+
+        private Text CreateFlowText(Transform parent, string text, MainUiTheme.UiTextRole role, Color color)
+        {
+            var label = CreateText("Text", parent, text, 14, FontStyle.Normal, color);
+            MainUiTheme.ApplyTextRole(label, role);
             return label;
         }
 
@@ -986,8 +1066,8 @@ namespace ElectricalSim.UI
             btn.navigation = nav;
 
             var layout = go.GetComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(16, 16, 0, 0);
-            layout.spacing = 8f;
+            layout.padding = new RectOffset(10, 10, 0, 0);
+            layout.spacing = 6f;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = false;
@@ -1015,7 +1095,7 @@ namespace ElectricalSim.UI
             }
 
             var label = CreateText("Text", go.transform, text, 16, FontStyle.Normal, MainUiTheme.Hex("464646"));
-            label.alignment = TextAnchor.MiddleCenter;
+            MainUiTheme.ApplyTextRole(label, MainUiTheme.UiTextRole.ContentFilterText);
             
             return btn;
         }
@@ -1037,7 +1117,7 @@ namespace ElectricalSim.UI
             return string.IsNullOrEmpty(path) ? null : Resources.Load<Sprite>(path);
         }
 
-        private Button CreateButton(Transform parent, string text, Color background, Color textColor)
+        private Button CreateButton(Transform parent, string text, Color background, Color textColor, MainUiTheme.UiTextRole textRole = MainUiTheme.UiTextRole.CardActionButton)
         {
             var go = CreateObject("Button", parent, typeof(RectTransform), typeof(Image), typeof(Button));
             var image = go.GetComponent<Image>();
@@ -1052,7 +1132,7 @@ namespace ElectricalSim.UI
             btn.navigation = nav;
 
             var label = CreateText("Text", go.transform, text, 16, FontStyle.Normal, textColor);
-            label.alignment = TextAnchor.MiddleCenter;
+            MainUiTheme.ApplyTextRole(label, textRole);
             Stretch(label.rectTransform, 0f, 0f, 0f, 0f);
             return btn;
         }
@@ -1067,10 +1147,10 @@ namespace ElectricalSim.UI
             image.color = Color.white;
 
             var text = CreateText("Text", go.transform, string.Empty, 14, FontStyle.Normal, TextPrimary);
-            text.alignment = TextAnchor.MiddleLeft;
+            MainUiTheme.ApplyTextRole(text, MainUiTheme.UiTextRole.SearchInputText);
 
             var hint = CreateText("Placeholder", go.transform, placeholder, 14, FontStyle.Normal, HexColor(0x94A3B8));
-            hint.alignment = TextAnchor.MiddleLeft;
+            MainUiTheme.ApplyTextRole(hint, MainUiTheme.UiTextRole.SearchInputText);
 
             var iconSprite = Resources.Load<Sprite>("UIAssets/Common/ui_common_search_24");
             if (iconSprite != null)
@@ -1113,6 +1193,7 @@ namespace ElectricalSim.UI
             image.color = Color.white;
 
             var label = CreateText("Label", go.transform, string.Empty, 14, FontStyle.Normal, TextPrimary);
+            MainUiTheme.ApplyTextRole(label, MainUiTheme.UiTextRole.SearchInputText);
             Stretch(label.rectTransform, 12f, 28f, 0f, 0f);
             label.alignment = TextAnchor.MiddleLeft;
 
@@ -1201,7 +1282,7 @@ namespace ElectricalSim.UI
             checkmark.rectTransform.offsetMax = new Vector2(28f, 0f);
 
             var itemLabel = CreateText("Item Label", item.transform, "Option", 13, FontStyle.Normal, TextPrimary);
-            itemLabel.alignment = TextAnchor.MiddleLeft;
+            MainUiTheme.ApplyTextRole(itemLabel, MainUiTheme.UiTextRole.SearchInputText);
             Stretch(itemLabel.rectTransform, 32f, 8f, 0f, 0f);
 
             toggle.targetGraphic = itemBackground.GetComponent<Image>();

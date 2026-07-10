@@ -26,7 +26,27 @@ namespace ElectricalSim.UI
             InspectorTitle,
             InspectorButton,
             InspectorCardTitle,
-            InspectorBody
+            InspectorBody,
+            PageTitle,
+            ContentFilterText,
+            ContentFilterTextSelected,
+            SearchInputText,
+            StatusText,
+            ContentCardTitle,
+            MetaText,
+            MetaTextBold,
+            TagText,
+            CardActionButton,
+            GalleryCardActionButton,
+            DetailTitle,
+            DetailHeaderTitle,
+            DetailSectionTitle,
+            DetailBody,
+            DetailMetaText,
+            InfoCardTitle,
+            InfoCardBody,
+            InfoCaption,
+            PageSubtitle
         }
 
         public const float NavBarHeight = 72f;
@@ -125,6 +145,35 @@ namespace ElectricalSim.UI
             }
         }
 
+        private static Font denseUiFont;
+        public static Font DenseUiFont
+        {
+            get
+            {
+                if (denseUiFont == null)
+                {
+                    var windowsFontNames = new[] { "Microsoft YaHei UI", "Microsoft YaHei" };
+                    denseUiFont = Font.CreateDynamicFontFromOSFont(windowsFontNames, 16);
+                    if (denseUiFont == null)
+                    {
+                        denseUiFont = Resources.Load<Font>("Fonts/SourceHanSansSC") ??
+                                      Resources.Load<Font>("Fonts/Source Han Sans SC") ??
+                                      Resources.Load<Font>("Fonts/NotoSansCJKSC") ??
+                                      Resources.Load<Font>("Fonts/Noto Sans CJK SC");
+                    }
+                    if (denseUiFont == null)
+                    {
+                        denseUiFont = UiFont;
+                    }
+                    if (denseUiFont == null)
+                    {
+                        denseUiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    }
+                }
+                return denseUiFont;
+            }
+        }
+
         private static Font bodyFont;
         public static Font BodyFont
         {
@@ -180,67 +229,67 @@ namespace ElectricalSim.UI
             {
                 case UiTextRole.BrandTitle:
                     font = TitleFont;
-                    fontSize = 19;
+                    fontSize = 22;
                     fontStyle = FontStyle.Bold;
                     alignment = TextAnchor.MiddleLeft;
                     break;
                 case UiTextRole.NavText:
                     font = UiFont;
-                    fontSize = 15;
+                    fontSize = 18;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
                 case UiTextRole.NavTextSelected:
                     font = UiFontBold;
-                    fontSize = 15;
+                    fontSize = 18;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
                 case UiTextRole.ToolbarPrimaryButton:
                     font = UiFontBold;
-                    fontSize = 14;
+                    fontSize = 17;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
                 case UiTextRole.ToolbarButton:
-                    font = UiFont;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 16;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
                 case UiTextRole.ToolbarDangerButton:
                     font = UiFontBold;
-                    fontSize = 13;
+                    fontSize = 16;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
                 case UiTextRole.ToolbarLabel:
-                    font = UiFont;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 16;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleLeft;
                     break;
                 case UiTextRole.ToolbarFileButton:
-                    font = UiFont;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 16;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
                 case UiTextRole.DeveloperToolButton:
-                    font = UiFont;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 16;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
                 case UiTextRole.SectionTitle:
                     font = UiFontBold;
-                    fontSize = 17;
+                    fontSize = 22;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleLeft;
                     break;
                 case UiTextRole.SubsectionTitle:
                     font = UiFontBold;
-                    fontSize = 14;
+                    fontSize = 17;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleLeft;
                     break;
@@ -255,40 +304,40 @@ namespace ElectricalSim.UI
                     fontStyle = FontStyle.Normal;
                     break;
                 case UiTextRole.PaletteCardTitle:
-                    font = UiFont;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 15;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     horizontalOverflow = HorizontalWrapMode.Wrap;
                     verticalOverflow = VerticalWrapMode.Truncate;
                     resizeTextForBestFit = true;
-                    resizeTextMinSize = 12;
-                    resizeTextMaxSize = 13;
+                    resizeTextMinSize = 14;
+                    resizeTextMaxSize = 15;
                     break;
                 case UiTextRole.LogTitle:
                     font = UiFontBold;
-                    fontSize = 16;
+                    fontSize = 19;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleLeft;
                     break;
                 case UiTextRole.LogBody:
-                    font = UiFont;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 15;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.UpperLeft;
-                    lineSpacing = 1.25f;
+                    lineSpacing = 1.3f;
                     horizontalOverflow = HorizontalWrapMode.Wrap;
                     verticalOverflow = VerticalWrapMode.Overflow;
                     break;
                 case UiTextRole.InspectorTitle:
                     font = UiFontBold;
-                    fontSize = 16;
+                    fontSize = 18;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleLeft;
                     break;
                 case UiTextRole.InspectorButton:
-                    font = UiFontBold;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 15;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.MiddleCenter;
                     break;
@@ -299,13 +348,149 @@ namespace ElectricalSim.UI
                     alignment = TextAnchor.UpperLeft;
                     break;
                 case UiTextRole.InspectorBody:
-                    font = UiFont;
-                    fontSize = 13;
+                    font = DenseUiFont;
+                    fontSize = 15;
                     fontStyle = FontStyle.Normal;
                     alignment = TextAnchor.UpperLeft;
                     lineSpacing = 1.3f;
                     horizontalOverflow = HorizontalWrapMode.Wrap;
                     verticalOverflow = VerticalWrapMode.Overflow;
+                    break;
+                case UiTextRole.PageTitle:
+                    font = TitleFont;
+                    fontSize = 30;
+                    fontStyle = FontStyle.Bold;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.ContentFilterText:
+                    font = UiFont;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.ContentFilterTextSelected:
+                    font = UiFontBold;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.SearchInputText:
+                    font = UiFont;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.StatusText:
+                    font = UiFont;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    break;
+                case UiTextRole.ContentCardTitle:
+                    font = UiFontBold;
+                    fontSize = 20;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    lineSpacing = 1.05f;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Truncate;
+                    break;
+                case UiTextRole.MetaText:
+                    font = UiFont;
+                    fontSize = 14;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    verticalOverflow = VerticalWrapMode.Truncate;
+                    break;
+                case UiTextRole.MetaTextBold:
+                    font = UiFontBold;
+                    fontSize = 14;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    verticalOverflow = VerticalWrapMode.Truncate;
+                    break;
+                case UiTextRole.TagText:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Truncate;
+                    break;
+                case UiTextRole.CardActionButton:
+                    font = UiFontBold;
+                    fontSize = 14;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.GalleryCardActionButton:
+                    font = UiFontBold;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.DetailTitle:
+                    font = UiFontBold;
+                    fontSize = 22;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.DetailHeaderTitle:
+                    font = UiFontBold;
+                    fontSize = 21;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Overflow;
+                    break;
+                case UiTextRole.DetailSectionTitle:
+                    font = UiFontBold;
+                    fontSize = 17;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    break;
+                case UiTextRole.DetailBody:
+                    font = UiFont;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    lineSpacing = 1.3f;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Overflow;
+                    break;
+                case UiTextRole.DetailMetaText:
+                    font = UiFont;
+                    fontSize = 14;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Overflow;
+                    break;
+                case UiTextRole.InfoCardTitle:
+                    font = UiFontBold;
+                    fontSize = 18;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    break;
+                case UiTextRole.InfoCardBody:
+                    font = UiFont;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    lineSpacing = 1.3f;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Overflow;
+                    break;
+                case UiTextRole.InfoCaption:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.PageSubtitle:
+                    font = UiFont;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
                     break;
             }
 

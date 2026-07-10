@@ -322,10 +322,8 @@ namespace ElectricalSim.UI
             label.rectTransform.anchorMax = Vector2.one;
             label.rectTransform.offsetMin = Vector2.zero;
             label.rectTransform.offsetMax = Vector2.zero;
-            label.text = "加载图纸";
-            label.font = MainUiTheme.UiFont;
-            label.fontSize = 15;
-            label.fontStyle = FontStyle.Bold;
+            label.text = "加载模板";
+            MainUiTheme.ApplyTextRole(label, MainUiTheme.UiTextRole.ToolbarFileButton);
             label.color = MainUiTheme.Hex("1F2937");
             label.alignment = TextAnchor.MiddleCenter;
             label.verticalOverflow = VerticalWrapMode.Overflow;

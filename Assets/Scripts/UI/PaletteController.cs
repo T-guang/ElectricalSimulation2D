@@ -735,7 +735,7 @@ namespace ElectricalSim.UI
                     if (text != null)
                     {
                         MainUiTheme.ApplyTextRole(text, MainUiTheme.UiTextRole.LogBody);
-                        text.color = MainUiTheme.Hex("334155");
+                        text.color = MainUiTheme.Hex("475569");
                         text.supportRichText = true;
                     }
                 }
@@ -1082,7 +1082,7 @@ namespace ElectricalSim.UI
             var text = child.GetComponent<Text>() ?? child.gameObject.AddComponent<Text>();
             if (text.font == null)
             {
-                text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                text.font = MainUiTheme.UiFont;
             }
 
             return text;

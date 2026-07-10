@@ -117,10 +117,12 @@ namespace ElectricalSim.UI
         private void CreateHeader()
         {
             var title = CreateText("EncyclopediaTitle", transform, "元器件百科", 30, FontStyle.Bold, MainUiTheme.Hex("111827"), true);
+            MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.PageTitle);
             title.alignment = TextAnchor.MiddleLeft;
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -30f), new Vector2(320f, 54f));
 
-            var subtitle = CreateText("EncyclopediaSubtitle", transform, "按元件类型整理用途、端子、接线方式和仿真规则，点击卡片查看详情。", 16, FontStyle.Normal, MainUiTheme.Hex("64748B"));
+            var subtitle = CreateText("EncyclopediaSubtitle", transform, "按元件类型整理用途、端子、接线方式和仿真规则，点击卡片查看详情。", 15, FontStyle.Normal, MainUiTheme.Hex("64748B"));
+            MainUiTheme.ApplyTextRole(subtitle, MainUiTheme.UiTextRole.PageSubtitle);
             subtitle.alignment = TextAnchor.MiddleLeft;
             SetRect(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(360f, -34f), new Vector2(-560f, 48f));
 

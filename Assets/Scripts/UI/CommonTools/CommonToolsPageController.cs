@@ -172,11 +172,12 @@ namespace ElectricalSim.UI.CommonTools
             var rect = CreateRect(name, parent);
             var textComp = rect.gameObject.AddComponent<Text>();
             textComp.text = text;
-            textComp.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            textComp.font = style == FontStyle.Bold ? MainUiTheme.UiFontBold : MainUiTheme.DenseUiFont;
             textComp.fontSize = fontSize;
-            textComp.fontStyle = style;
+            textComp.fontStyle = FontStyle.Normal;
             textComp.color = color;
             textComp.supportRichText = true;
+            textComp.resizeTextForBestFit = false;
             return textComp;
         }
 
@@ -210,25 +211,22 @@ namespace ElectricalSim.UI.CommonTools
 
         private void AddSoftOutline(RectTransform target)
         {
-            var shadow = target.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(15f / 255f, 23f / 255f, 42f / 255f, 0.025f);
-            shadow.effectDistance = new Vector2(0, -2f);
-            
-            var outline = target.gameObject.AddComponent<Outline>();
+            var outline = target.gameObject.GetComponent<Outline>() ?? target.gameObject.AddComponent<Outline>();
             outline.effectColor = BorderColor;
             outline.effectDistance = new Vector2(1, -1);
         }
 
         private void BuildHeader()
         {
-            var title = CreateText("ToolsTitle", transform, "常用工具", 32, FontStyle.Bold, MainUiTheme.Hex("111827"));
-            title.font = MainUiTheme.TitleFont;
+            var title = CreateText("ToolsTitle", transform, "常用工具", 30, FontStyle.Bold, MainUiTheme.Hex("111827"));
+            MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.PageTitle);
             title.alignment = TextAnchor.MiddleLeft;
             title.horizontalOverflow = HorizontalWrapMode.Overflow;
             title.verticalOverflow = VerticalWrapMode.Overflow;
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, -30f), new Vector2(260f, 40f));
 
-            var desc = CreateText("ToolsDescription", transform, "系统内置的辅助计算与基础教学工具库，方便您在接线练习时进行参数推演和规范查询。", 16, FontStyle.Normal, TextMuted);
+            var desc = CreateText("ToolsDescription", transform, "系统内置的辅助计算与基础教学工具库，方便您在接线练习时进行参数推演和规范查询。", 15, FontStyle.Normal, MainUiTheme.Hex("64748B"));
+            MainUiTheme.ApplyTextRole(desc, MainUiTheme.UiTextRole.PageSubtitle);
             desc.alignment = TextAnchor.MiddleLeft;
             SetRect(desc.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 1f), new Vector2(160f, -30f), new Vector2(-200f, 40f));
         }
@@ -278,7 +276,7 @@ namespace ElectricalSim.UI.CommonTools
             line.gameObject.SetActive(false);
 
             var button = buttonRect.gameObject.AddComponent<Button>();
-            var text = CreateText("Text", buttonRect, label, 14, FontStyle.Normal, TextDark);
+            var text = CreateText("Text", buttonRect, label, 15, FontStyle.Normal, MainUiTheme.SecondaryText);
             text.alignment = TextAnchor.MiddleLeft;
             SetRect(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(18f, 0f), new Vector2(-14f, 0f));
             
@@ -299,8 +297,10 @@ namespace ElectricalSim.UI.CommonTools
                 var active = (int)tab == i;
                 tabHighlights[i].gameObject.SetActive(active);
                 tabHighlights[i].parent.Find("Line").gameObject.SetActive(active);
-                tabLabels[i].fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
-                tabLabels[i].color = active ? PrimaryBlueHover : TextDark;
+                tabLabels[i].font = active ? MainUiTheme.UiFontBold : MainUiTheme.DenseUiFont;
+                tabLabels[i].fontSize = 15;
+                tabLabels[i].fontStyle = FontStyle.Normal;
+                tabLabels[i].color = active ? PrimaryBlueHover : MainUiTheme.SecondaryText;
             }
         }
 
@@ -715,12 +715,7 @@ namespace ElectricalSim.UI.CommonTools
                 btns.Add(button);
                 button.onClick.AddListener(() => {
                     ShowFormula(captured);
-                    foreach(var b in btns) {
-                        b.GetComponent<Image>().sprite = GetRoundedSprite(Color.clear, 8);
-                        b.transform.Find("Title").GetComponent<Text>().color = TextDark;
-                    }
-                    button.GetComponent<Image>().sprite = GetRoundedSprite(PrimaryBlueLight, 8);
-                    button.transform.Find("Title").GetComponent<Text>().color = PrimaryBlue;
+                    RefreshToolListSelection(btns, button);
                 });
             }
 
@@ -752,12 +747,7 @@ namespace ElectricalSim.UI.CommonTools
                 btns.Add(button);
                 button.onClick.AddListener(() => {
                     ShowArticle(captured);
-                    foreach(var b in btns) {
-                        b.GetComponent<Image>().sprite = GetRoundedSprite(Color.clear, 8);
-                        b.transform.Find("Title").GetComponent<Text>().color = TextDark;
-                    }
-                    button.GetComponent<Image>().sprite = GetRoundedSprite(PrimaryBlueLight, 8);
-                    button.transform.Find("Title").GetComponent<Text>().color = PrimaryBlue;
+                    RefreshToolListSelection(btns, button);
                 });
             }
 
@@ -812,11 +802,11 @@ namespace ElectricalSim.UI.CommonTools
             layoutElement.minHeight = 44f;
             layoutElement.preferredHeight = 44f;
 
-            var titleText = CreateText("Title", buttonRect, title, 14, FontStyle.Bold, TextDark);
+            var titleText = CreateText("Title", buttonRect, title, 15, FontStyle.Normal, TextDark);
             titleText.alignment = TextAnchor.MiddleLeft;
             SetRect(titleText.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(10, 8), new Vector2(-20, -16));
 
-            var catText = CreateText("Category", buttonRect, category, 12, FontStyle.Normal, TextMuted);
+            var catText = CreateText("Category", buttonRect, category, 13, FontStyle.Normal, TextMuted);
             catText.alignment = TextAnchor.MiddleLeft;
             SetRect(catText.rectTransform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0.5f, 0.5f), new Vector2(10, -14), new Vector2(-20, -28));
 
@@ -865,7 +855,7 @@ namespace ElectricalSim.UI.CommonTools
             if (entry == null) return;
             ClearChildren(formulaDetailContent);
 
-            CreateRichCard(formulaDetailContent, entry.Title, $"<color=#64748B>分类：{entry.Category}</color>\n\n{entry.ShortDescription}", 20, false);
+            CreateRichCard(formulaDetailContent, entry.Title, $"<color=#64748B>分类：{entry.Category}</color>\n\n{entry.ShortDescription}", 18, false);
             CreateRichCard(formulaDetailContent, "核心公式", JoinLines(entry.Expressions), 16, true);
             if(entry.Variants != null && entry.Variants.Count > 0) CreateRichCard(formulaDetailContent, "常见变形", JoinLines(entry.Variants), 16, true);
             CreateRichCard(formulaDetailContent, "变量说明", entry.Variables, 16, false);
@@ -881,7 +871,7 @@ namespace ElectricalSim.UI.CommonTools
             if (entry == null) return;
             ClearChildren(articleDetailContent);
 
-            CreateRichCard(articleDetailContent, entry.Title, $"<color=#64748B>分类：{entry.Category}</color>\n\n<b>学习目标：</b>\n{entry.LearningGoal}", 20, false);
+            CreateRichCard(articleDetailContent, entry.Title, $"<color=#64748B>分类：{entry.Category}</color>\n\n<b>学习目标：</b>\n{entry.LearningGoal}", 18, false);
             for (var i = 0; i < entry.Sections.Count; i++)
             {
                 CreateRichCard(articleDetailContent, entry.Sections[i].Heading, entry.Sections[i].Body, 16, false);
@@ -896,7 +886,7 @@ namespace ElectricalSim.UI.CommonTools
         {
             if (string.IsNullOrWhiteSpace(body)) return null;
 
-            var card = CreatePanel("InfoCard_" + title, parent, CardBackground, 12);
+            var card = CreatePanel("InfoCard_" + title, parent, CardBackground, 10);
             AddSoftOutline(card);
 
             var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -919,7 +909,7 @@ namespace ElectricalSim.UI.CommonTools
             
             int bodySize = isFormula ? 18 : 15;
             FontStyle bodyStyle = isFormula ? FontStyle.Bold : FontStyle.Normal;
-            Color bodyColor = isFormula ? PrimaryBlue : TextDark;
+            Color bodyColor = isFormula ? PrimaryBlue : MainUiTheme.SecondaryText;
 
             var bodyText = CreateText("Body", card, body, bodySize, bodyStyle, bodyColor);
             bodyText.alignment = TextAnchor.UpperLeft;
@@ -929,6 +919,20 @@ namespace ElectricalSim.UI.CommonTools
             bodyText.lineSpacing = isFormula ? 1.5f : 1.3f;
 
             return card;
+        }
+
+        private void RefreshToolListSelection(List<Button> buttons, Button selected)
+        {
+            foreach (var button in buttons)
+            {
+                var active = button == selected;
+                button.GetComponent<Image>().sprite = GetRoundedSprite(active ? PrimaryBlueLight : Color.clear, 8);
+                var title = button.transform.Find("Title").GetComponent<Text>();
+                title.font = active ? MainUiTheme.UiFontBold : MainUiTheme.DenseUiFont;
+                title.fontSize = 15;
+                title.fontStyle = FontStyle.Normal;
+                title.color = active ? PrimaryBlue : TextDark;
+            }
         }
 
         private static string JoinLines(List<string> values)

@@ -2856,8 +2856,8 @@ namespace ElectricalSim.AI
             if (name == "SubmitPracticeButton")
             {
                 text.resizeTextForBestFit = true;
-                text.resizeTextMinSize = 12;
-                text.resizeTextMaxSize = 13;
+                text.resizeTextMinSize = 14;
+                text.resizeTextMaxSize = 15;
             }
             else
             {

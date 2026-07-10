@@ -65,7 +65,7 @@ namespace ElectricalSim.UI
             var navRect = GetComponent<RectTransform>();
             if (navRect != null)
             {
-                navRect.sizeDelta = new Vector2(navRect.sizeDelta.x, 60f);
+                navRect.sizeDelta = new Vector2(navRect.sizeDelta.x, MainUiTheme.NavBarHeight);
                 var bg = navRect.GetComponent<Image>();
                 if (bg != null) bg.color = Color.white;
                 
@@ -90,7 +90,7 @@ namespace ElectricalSim.UI
                 var btnRect = tabButtons[i].GetComponent<RectTransform>();
                 if (btnRect != null)
                 {
-                    btnRect.sizeDelta = new Vector2(btnRect.sizeDelta.x, 36f);
+                    btnRect.sizeDelta = new Vector2(btnRect.sizeDelta.x, 40f);
                     var img = tabButtons[i].GetComponent<Image>();
                     if (img != null)
                     {
@@ -100,10 +100,11 @@ namespace ElectricalSim.UI
                 }
                 if (i < tabLabels.Count && tabLabels[i] != null)
                 {
-                    tabLabels[i].font = MainUiTheme.UiFont;
-                    tabLabels[i].fontSize = 16;
-                    tabLabels[i].fontStyle = FontStyle.Bold;
-                    tabLabels[i].resizeTextForBestFit = false;
+                    if (i == 5)
+                    {
+                        tabLabels[i].text = "系统信息";
+                    }
+                    MainUiTheme.ApplyTextRole(tabLabels[i], MainUiTheme.UiTextRole.NavText);
                 }
             }
         }
@@ -120,8 +121,8 @@ namespace ElectricalSim.UI
             brandRect.anchorMin = new Vector2(0f, 0.5f);
             brandRect.anchorMax = new Vector2(0f, 0.5f);
             brandRect.pivot = new Vector2(0f, 0.5f);
-            brandRect.anchoredPosition = new Vector2(24f, 11f);
-            brandRect.sizeDelta = new Vector2(390f, 44f);
+            brandRect.anchoredPosition = new Vector2(24f, 0f);
+            brandRect.sizeDelta = new Vector2(404f, 48f);
 
             var layout = titleTransform.GetComponent<HorizontalLayoutGroup>() ?? titleTransform.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 10f;
@@ -141,10 +142,10 @@ namespace ElectricalSim.UI
                 iconWrapper = wrapperObj.GetComponent<RectTransform>();
             }
 
-            iconWrapper.sizeDelta = new Vector2(36f, 36f);
+            iconWrapper.sizeDelta = new Vector2(40f, 40f);
             var wrapperLayout = iconWrapper.GetComponent<LayoutElement>() ?? iconWrapper.gameObject.AddComponent<LayoutElement>();
-            wrapperLayout.preferredWidth = 36f;
-            wrapperLayout.preferredHeight = 36f;
+            wrapperLayout.preferredWidth = 40f;
+            wrapperLayout.preferredHeight = 40f;
             wrapperLayout.flexibleWidth = 0f;
             wrapperLayout.flexibleHeight = 0f;
 
@@ -160,7 +161,7 @@ namespace ElectricalSim.UI
             icon.anchorMax = new Vector2(0.5f, 0.5f);
             icon.pivot = new Vector2(0.5f, 0.5f);
             icon.anchoredPosition = Vector2.zero;
-            icon.sizeDelta = new Vector2(36f, 36f);
+            icon.sizeDelta = new Vector2(40f, 40f);
 
             var iconImage = icon.GetComponent<Image>() ?? icon.gameObject.AddComponent<Image>();
             iconImage.sprite = UiIconLibrary.Load("Logo/ui_logo_main_320");
@@ -178,16 +179,11 @@ namespace ElectricalSim.UI
             {
                 titleText.transform.SetAsLastSibling();
                 titleText.color = MainUiTheme.Hex("111827");
-                titleText.font = MainUiTheme.UiFont;
-                titleText.fontSize = 18;
-                titleText.fontStyle = FontStyle.Bold;
-                titleText.alignment = TextAnchor.MiddleLeft;
-                titleText.resizeTextForBestFit = false;
-                titleText.verticalOverflow = VerticalWrapMode.Overflow;
+                MainUiTheme.ApplyTextRole(titleText, MainUiTheme.UiTextRole.BrandTitle);
 
                 var textLayout = titleText.GetComponent<LayoutElement>() ?? titleText.gameObject.AddComponent<LayoutElement>();
                 textLayout.preferredWidth = 300f;
-                textLayout.preferredHeight = 38f;
+                textLayout.preferredHeight = 40f;
             }
         }
 
@@ -215,10 +211,10 @@ namespace ElectricalSim.UI
 
                 if (i < tabLabels.Count && tabLabels[i] != null)
                 {
-                    tabLabels[i].font = MainUiTheme.UiFont;
-                    tabLabels[i].fontSize = 16;
                     tabLabels[i].color = active ? MainUiTheme.Hex("2563EB") : MainUiTheme.Hex("334155");
-                    tabLabels[i].fontStyle = FontStyle.Bold;
+                    MainUiTheme.ApplyTextRole(
+                        tabLabels[i],
+                        active ? MainUiTheme.UiTextRole.NavTextSelected : MainUiTheme.UiTextRole.NavText);
                 }
             }
         }

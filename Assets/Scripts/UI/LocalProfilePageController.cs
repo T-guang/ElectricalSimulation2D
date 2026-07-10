@@ -9,9 +9,12 @@ namespace ElectricalSim.UI
     {
         private const string VersionText = "V1.0 本地版";
         private RectTransform contentRoot;
+        private RectTransform contentViewport;
+        private GridLayoutGroup cardGrid;
         private Text userInfoText;
         private Text drawingInfoText;
         private Text dataInfoText;
+        private float lastContentWidth = -1f;
 
         private string SavedBlueprintDirectory => Path.Combine(Application.persistentDataPath, "SavedBlueprints");
 
@@ -19,11 +22,18 @@ namespace ElectricalSim.UI
         {
             BuildLayout();
             RefreshInfo();
+            RefreshCardGrid();
         }
 
         private void OnEnable()
         {
             RefreshInfo();
+            RefreshCardGrid();
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            RefreshCardGrid();
         }
 
         private void BuildLayout()
@@ -42,11 +52,12 @@ namespace ElectricalSim.UI
 
             bg.color = UiThemeTokens.Background;
 
-            var title = CreateText("ProfileTitle", root, "系统信息", 36, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft);
-            title.font = MainUiTheme.TitleFont;
+            var title = CreateText("ProfileTitle", root, "系统信息", 24, FontStyle.Normal, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft);
+            MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.PageTitle);
             SetRect(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(44f, -34f), new Vector2(-88f, 52f));
 
-            var subtitle = CreateText("ProfileSubtitle", root, "当前为单机本地模式，数据保存在本机。", 18, FontStyle.Normal, UiThemeTokens.TextMuted, TextAnchor.MiddleLeft);
+            var subtitle = CreateText("ProfileSubtitle", root, "当前为单机本地模式，数据保存在本机。", 15, FontStyle.Normal, MainUiTheme.Hex("64748B"), TextAnchor.MiddleLeft);
+            MainUiTheme.ApplyTextRole(subtitle, MainUiTheme.UiTextRole.PageSubtitle);
             SetRect(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(44f, -82f), new Vector2(-88f, 36f));
 
             var scrollGo = new GameObject("ProfileScrollView", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
@@ -58,27 +69,28 @@ namespace ElectricalSim.UI
             var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
             viewport.transform.SetParent(scrollGo.transform, false);
             var viewportRect = viewport.GetComponent<RectTransform>();
+            contentViewport = viewportRect;
             SetRect(viewportRect, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.01f);
 
             var content = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter));
             content.transform.SetParent(viewport.transform, false);
             contentRoot = content.GetComponent<RectTransform>();
-            contentRoot.anchorMin = new Vector2(0f, 1f);
-            contentRoot.anchorMax = new Vector2(1f, 1f);
+            contentRoot.anchorMin = new Vector2(0.5f, 1f);
+            contentRoot.anchorMax = new Vector2(0.5f, 1f);
             contentRoot.pivot = new Vector2(0.5f, 1f);
             contentRoot.anchoredPosition = Vector2.zero;
-            contentRoot.offsetMin = new Vector2(0f, 0f);
-            contentRoot.offsetMax = new Vector2(0f, 0f);
+            contentRoot.sizeDelta = new Vector2(1140f, 0f);
 
-            var layout = content.GetComponent<GridLayoutGroup>();
-            layout.padding = new RectOffset(44, 44, 24, 24);
-            layout.spacing = new Vector2(24f, 24f);
-            layout.cellSize = new Vector2(460f, 240f);
-            layout.startCorner = GridLayoutGroup.Corner.UpperLeft;
-            layout.startAxis = GridLayoutGroup.Axis.Horizontal;
-            layout.childAlignment = TextAnchor.UpperCenter;
-            layout.constraint = GridLayoutGroup.Constraint.Flexible;
+            cardGrid = content.GetComponent<GridLayoutGroup>();
+            cardGrid.padding = new RectOffset(22, 22, 24, 24);
+            cardGrid.spacing = new Vector2(22f, 22f);
+            cardGrid.cellSize = new Vector2(537f, 196f);
+            cardGrid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            cardGrid.startAxis = GridLayoutGroup.Axis.Horizontal;
+            cardGrid.childAlignment = TextAnchor.UpperCenter;
+            cardGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            cardGrid.constraintCount = 2;
 
             var fitter = content.GetComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -98,15 +110,15 @@ namespace ElectricalSim.UI
 
         private Text AddCard(string title, string body, Action<RectTransform> extraBuilder = null)
         {
-            var card = new GameObject(title + "Card", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(UnityEngine.UI.Shadow));
+            var card = new GameObject(title + "Card", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup), typeof(Outline));
             card.transform.SetParent(contentRoot, false);
             var image = card.GetComponent<Image>();
             image.sprite = UiThemeTokens.GetRoundedSprite(12);
             image.type = Image.Type.Sliced;
-            image.color = UiThemeTokens.CardBackground;
-            var shadow = card.GetComponent<UnityEngine.UI.Shadow>();
-            shadow.effectColor = new Color(0, 0, 0, 0.04f);
-            shadow.effectDistance = new Vector2(0, -4);
+            image.color = Color.white;
+            var outline = card.GetComponent<Outline>();
+            outline.effectColor = MainUiTheme.Hex("E2E8F0");
+            outline.effectDistance = new Vector2(1f, -1f);
 
             var layout = card.GetComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(24, 24, 24, 24);
@@ -116,12 +128,12 @@ namespace ElectricalSim.UI
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            var titleText = CreateText("Title", card.transform, title, 18, FontStyle.Bold, UiThemeTokens.TextDark, TextAnchor.MiddleLeft);
+            var titleText = CreateText("Title", card.transform, title, 18, FontStyle.Normal, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft);
+            MainUiTheme.ApplyTextRole(titleText, MainUiTheme.UiTextRole.InfoCardTitle);
             titleText.rectTransform.sizeDelta = new Vector2(0f, 28f);
 
-            var bodyText = CreateText("Body", card.transform, body, 14, FontStyle.Normal, UiThemeTokens.TextMuted, TextAnchor.UpperLeft);
-            bodyText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            bodyText.verticalOverflow = VerticalWrapMode.Overflow;
+            var bodyText = CreateText("Body", card.transform, body, 15, FontStyle.Normal, MainUiTheme.Hex("475569"), TextAnchor.UpperLeft);
+            MainUiTheme.ApplyTextRole(bodyText, MainUiTheme.UiTextRole.InfoCardBody);
 
             var spacer = new GameObject("Spacer", typeof(RectTransform), typeof(LayoutElement));
             spacer.transform.SetParent(card.transform, false);
@@ -129,6 +141,34 @@ namespace ElectricalSim.UI
 
             extraBuilder?.Invoke(card.GetComponent<RectTransform>());
             return bodyText;
+        }
+
+        private void RefreshCardGrid()
+        {
+            if (contentRoot == null || contentViewport == null || cardGrid == null)
+            {
+                return;
+            }
+
+            var viewportWidth = contentViewport.rect.width;
+            if (viewportWidth <= 0f)
+            {
+                return;
+            }
+
+            var contentWidth = Mathf.Min(1140f, Mathf.Max(0f, viewportWidth - 32f));
+            if (contentWidth <= 0f || Mathf.Abs(contentWidth - lastContentWidth) < 0.5f)
+            {
+                return;
+            }
+
+            lastContentWidth = contentWidth;
+            contentRoot.sizeDelta = new Vector2(contentWidth, contentRoot.sizeDelta.y);
+            var horizontalPadding = cardGrid.padding.left + cardGrid.padding.right;
+            var cellWidth = (contentWidth - horizontalPadding - cardGrid.spacing.x) * 0.5f;
+            cardGrid.cellSize = new Vector2(Mathf.Max(0f, cellWidth), 196f);
+            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRoot);
         }
 
         private void CreateDrawingButtons(RectTransform parent)
@@ -142,7 +182,6 @@ namespace ElectricalSim.UI
         {
             var row = CreateButtonRow(parent);
             CreateButton(row, "打开数据目录", OpenPersistentDataFolder, true);
-            CreateButton(row, "清理缓存(暂未开放)", () => { Debug.Log("当前版本暂不开放清理缓存功能。该操作不会删除本地图纸。"); }, false);
         }
 
         private RectTransform CreateButtonRow(RectTransform parent)
@@ -174,7 +213,8 @@ namespace ElectricalSim.UI
             element.preferredWidth = 140f;
             element.preferredHeight = 36f;
             var textColor = primary ? Color.white : UiThemeTokens.TextDark;
-            CreateText("Text", go.transform, label, 14, FontStyle.Normal, textColor, TextAnchor.MiddleCenter);
+            var text = CreateText("Text", go.transform, label, 14, FontStyle.Normal, textColor, TextAnchor.MiddleCenter);
+            MainUiTheme.ApplyTextRole(text, MainUiTheme.UiTextRole.CardActionButton);
         }
 
         private void RefreshInfo()
@@ -260,9 +300,9 @@ namespace ElectricalSim.UI
             go.transform.SetParent(parent, false);
             var text = go.GetComponent<Text>();
             text.text = value;
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = style == FontStyle.Bold ? MainUiTheme.UiFontBold : MainUiTheme.UiFont;
             text.fontSize = size;
-            text.fontStyle = style;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = alignment;
             text.color = color;
             text.raycastTarget = false;
