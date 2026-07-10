@@ -5,11 +5,36 @@ namespace ElectricalSim.UI
 {
     public static class MainUiTheme
     {
-        public const float NavBarHeight = 60f;
-        public const float ToolbarHeight = 60f;
+        public enum UiTextRole
+        {
+            BrandTitle,
+            NavText,
+            NavTextSelected,
+            ToolbarPrimaryButton,
+            ToolbarButton,
+            ToolbarDangerButton,
+            ToolbarLabel,
+            ToolbarFileButton,
+            DeveloperToolButton,
+            SectionTitle,
+            SubsectionTitle,
+            FilterText,
+            FilterTextSelected,
+            PaletteCardTitle,
+            LogTitle,
+            LogBody,
+            InspectorTitle,
+            InspectorButton,
+            InspectorCardTitle,
+            InspectorBody
+        }
+
+        public const float NavBarHeight = 72f;
+        public const float ToolbarHeight = 64f;
+        public const float MainContentTop = NavBarHeight + ToolbarHeight;
         public const float LeftPanelWidth = 380f;
         public const float RightPanelWidth = 320f;
-        public const float ToolbarButtonHeight = 36f;
+        public const float ToolbarButtonHeight = 40f;
 
         public static readonly Color PageBackground = Hex("F8FBFF");
         public static readonly Color PanelBackground = Color.white;
@@ -61,21 +86,42 @@ namespace ElectricalSim.UI
             {
                 if (uiFont == null)
                 {
-                    var names = new[]
+                    uiFont = Resources.Load<Font>("Fonts/OppoSans-Regular");
+                    if (uiFont == null)
                     {
-                        "Microsoft YaHei UI",
-                        "Microsoft YaHei",
-                        "Source Han Sans SC",
-                        "Noto Sans CJK SC",
-                        "Arial"
-                    };
-                    uiFont = Font.CreateDynamicFontFromOSFont(names, 16);
+                        var names = new[]
+                        {
+                            "Microsoft YaHei UI",
+                            "Microsoft YaHei",
+                            "Source Han Sans SC",
+                            "Noto Sans CJK SC",
+                            "Arial"
+                        };
+                        uiFont = Font.CreateDynamicFontFromOSFont(names, 16);
+                    }
                     if (uiFont == null)
                     {
                         uiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                     }
                 }
                 return uiFont;
+            }
+        }
+
+        private static Font uiFontBold;
+        public static Font UiFontBold
+        {
+            get
+            {
+                if (uiFontBold == null)
+                {
+                    uiFontBold = Resources.Load<Font>("Fonts/OppoSans-Bold");
+                    if (uiFontBold == null)
+                    {
+                        uiFontBold = UiFont;
+                    }
+                }
+                return uiFontBold;
             }
         }
 
@@ -105,6 +151,179 @@ namespace ElectricalSim.UI
             text.color = color;
             text.alignment = alignment;
             text.verticalOverflow = VerticalWrapMode.Overflow;
+        }
+
+        public static void ApplyTextRole(Text text, UiTextRole role)
+        {
+            ApplyTextRole(text, role, null);
+        }
+
+        public static void ApplyTextRole(Text text, UiTextRole role, Color? colorOverride)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            var font = UiFont;
+            var fontSize = 13;
+            var fontStyle = FontStyle.Normal;
+            var alignment = text.alignment;
+            var lineSpacing = 1f;
+            var horizontalOverflow = HorizontalWrapMode.Overflow;
+            var verticalOverflow = VerticalWrapMode.Overflow;
+            var resizeTextForBestFit = false;
+            var resizeTextMinSize = 0;
+            var resizeTextMaxSize = 0;
+
+            switch (role)
+            {
+                case UiTextRole.BrandTitle:
+                    font = TitleFont;
+                    fontSize = 19;
+                    fontStyle = FontStyle.Bold;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.NavText:
+                    font = UiFont;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.NavTextSelected:
+                    font = UiFontBold;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.ToolbarPrimaryButton:
+                    font = UiFontBold;
+                    fontSize = 14;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.ToolbarButton:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.ToolbarDangerButton:
+                    font = UiFontBold;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.ToolbarLabel:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.ToolbarFileButton:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.DeveloperToolButton:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.SectionTitle:
+                    font = UiFontBold;
+                    fontSize = 17;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.SubsectionTitle:
+                    font = UiFontBold;
+                    fontSize = 14;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.FilterText:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    break;
+                case UiTextRole.FilterTextSelected:
+                    font = UiFontBold;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    break;
+                case UiTextRole.PaletteCardTitle:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Truncate;
+                    resizeTextForBestFit = true;
+                    resizeTextMinSize = 12;
+                    resizeTextMaxSize = 13;
+                    break;
+                case UiTextRole.LogTitle:
+                    font = UiFontBold;
+                    fontSize = 16;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.LogBody:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    lineSpacing = 1.25f;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Overflow;
+                    break;
+                case UiTextRole.InspectorTitle:
+                    font = UiFontBold;
+                    fontSize = 16;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleLeft;
+                    break;
+                case UiTextRole.InspectorButton:
+                    font = UiFontBold;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.MiddleCenter;
+                    break;
+                case UiTextRole.InspectorCardTitle:
+                    font = UiFontBold;
+                    fontSize = 15;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    break;
+                case UiTextRole.InspectorBody:
+                    font = UiFont;
+                    fontSize = 13;
+                    fontStyle = FontStyle.Normal;
+                    alignment = TextAnchor.UpperLeft;
+                    lineSpacing = 1.3f;
+                    horizontalOverflow = HorizontalWrapMode.Wrap;
+                    verticalOverflow = VerticalWrapMode.Overflow;
+                    break;
+            }
+
+            text.font = font;
+            text.fontSize = fontSize;
+            text.fontStyle = fontStyle;
+            text.lineSpacing = lineSpacing;
+            text.alignment = alignment;
+            text.horizontalOverflow = horizontalOverflow;
+            text.verticalOverflow = verticalOverflow;
+            text.resizeTextForBestFit = resizeTextForBestFit;
+            text.resizeTextMinSize = resizeTextMinSize > 0 ? resizeTextMinSize : fontSize;
+            text.resizeTextMaxSize = resizeTextMaxSize > 0 ? resizeTextMaxSize : fontSize;
+
+            if (colorOverride.HasValue)
+            {
+                text.color = colorOverride.Value;
+            }
         }
 
         public static void StyleButton(Button button, Color background, Color textColor, Color borderColor, bool bold = false)

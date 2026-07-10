@@ -150,11 +150,8 @@ namespace ElectricalSim.UI
             if (titleText != null)
             {
                 titleText.text = "电工控件池";
-                titleText.font = MainUiTheme.TitleFont;
-                titleText.fontSize = 22;
-                titleText.fontStyle = FontStyle.Bold;
+                MainUiTheme.ApplyTextRole(titleText, MainUiTheme.UiTextRole.SectionTitle);
                 titleText.color = MainUiTheme.Hex("111827");
-                titleText.alignment = TextAnchor.MiddleLeft;
             }
 
             EnsureTitleAccent(title);
@@ -420,11 +417,8 @@ namespace ElectricalSim.UI
             if (labelText != null)
             {
                 labelText.text = label;
-                labelText.font = MainUiTheme.UiFont;
-                labelText.fontSize = 14;
-                labelText.fontStyle = FontStyle.Bold;
+                MainUiTheme.ApplyTextRole(labelText, MainUiTheme.UiTextRole.FilterText);
                 labelText.color = MainUiTheme.SecondaryText;
-                labelText.alignment = TextAnchor.MiddleCenter;
                 labelText.rectTransform.offsetMin = new Vector2(24f, 2f);
                 labelText.rectTransform.offsetMax = new Vector2(-8f, -2f);
             }
@@ -658,7 +652,8 @@ namespace ElectricalSim.UI
                 var titleText = title.GetComponent<Text>();
                 if (titleText != null)
                 {
-                    MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.Hex("111827"), TextAnchor.MiddleLeft, true);
+                    MainUiTheme.ApplyTextRole(titleText, MainUiTheme.UiTextRole.LogTitle);
+                    titleText.color = MainUiTheme.Hex("111827");
                     titleText.text = "操作记录";
                     titleText.rectTransform.offsetMin = new Vector2(20f, -37f);
                     titleText.rectTransform.offsetMax = new Vector2(-52f, -1f);
@@ -739,8 +734,8 @@ namespace ElectricalSim.UI
                     var text = actionLogText.GetComponent<Text>();
                     if (text != null)
                     {
-                        MainUiTheme.ApplyText(text, 13, FontStyle.Normal, MainUiTheme.Hex("334155"), TextAnchor.UpperLeft, false);
-                        text.lineSpacing = 1.3f;
+                        MainUiTheme.ApplyTextRole(text, MainUiTheme.UiTextRole.LogBody);
+                        text.color = MainUiTheme.Hex("334155");
                         text.supportRichText = true;
                     }
                 }
@@ -786,7 +781,8 @@ namespace ElectricalSim.UI
                 titleRect.sizeDelta = new Vector2(OperationLogWidth, 34f);
 
                 var title = titleRect.gameObject.AddComponent<Text>();
-                MainUiTheme.ApplyText(title, 15, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft, true);
+                MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.SubsectionTitle);
+                title.color = MainUiTheme.DeepText;
                 title.raycastTarget = false;
                 title.text = sectionDisplayNames.TryGetValue(category, out var displayName) ? displayName : category.ToString();
 
@@ -917,12 +913,8 @@ namespace ElectricalSim.UI
 
             var label = EnsureChildText(rect, "Label");
             label.text = definition.displayName;
-            MainUiTheme.ApplyText(label, 13, FontStyle.Normal, MainUiTheme.DeepText, TextAnchor.UpperCenter, false);
-            label.horizontalOverflow = HorizontalWrapMode.Wrap;
-            label.verticalOverflow = VerticalWrapMode.Truncate;
-            label.resizeTextForBestFit = true;
-            label.resizeTextMinSize = 12;
-            label.resizeTextMaxSize = 13;
+            MainUiTheme.ApplyTextRole(label, MainUiTheme.UiTextRole.PaletteCardTitle);
+            label.color = MainUiTheme.DeepText;
             label.raycastTarget = false;
 
             var labelRect = label.rectTransform;
@@ -1218,7 +1210,8 @@ namespace ElectricalSim.UI
                     if (titleText != null && sectionDisplayNames.TryGetValue(categoryEnum, out var sectionName))
                     {
                         titleText.text = sectionName;
-                        MainUiTheme.ApplyText(titleText, 16, FontStyle.Bold, MainUiTheme.DeepText, TextAnchor.MiddleLeft, true);
+                        MainUiTheme.ApplyTextRole(titleText, MainUiTheme.UiTextRole.SubsectionTitle);
+                        titleText.color = MainUiTheme.DeepText;
                     }
                 }
 
@@ -1337,12 +1330,8 @@ namespace ElectricalSim.UI
             var label = button.GetComponentInChildren<Text>();
             if (label != null)
             {
-                label.font = MainUiTheme.UiFont;
-                label.fontSize = 14;
-                label.fontStyle = FontStyle.Bold;
+                MainUiTheme.ApplyTextRole(label, selected ? MainUiTheme.UiTextRole.FilterTextSelected : MainUiTheme.UiTextRole.FilterText);
                 label.color = selected ? Color.white : MainUiTheme.SecondaryText;
-                label.alignment = TextAnchor.MiddleCenter;
-                label.resizeTextForBestFit = false;
             }
 
             var iconRect = button.transform.Find("Icon");

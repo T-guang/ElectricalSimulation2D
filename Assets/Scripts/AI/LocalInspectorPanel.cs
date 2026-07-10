@@ -120,9 +120,9 @@ namespace ElectricalSim.AI
             rootLayout.childForceExpandHeight = false;
 
             var header = CreatePanelSection("Header", root, 48f, 0f, MainUiTheme.Hex("EAF2FF"));
-            titleText = CreateText("Title", header, "检查助手", 16, TextAnchor.MiddleLeft, true, FontStyle.Bold);
-            titleText.fontStyle = FontStyle.Bold;
-            titleText.fontSize = 17;
+            titleText = CreateText("Title", header, "检查助手", 16, TextAnchor.MiddleLeft, false, FontStyle.Bold);
+            MainUiTheme.ApplyTextRole(titleText, MainUiTheme.UiTextRole.InspectorTitle);
+            titleText.color = MainUiTheme.DeepText;
             titleText.rectTransform.offsetMin = new Vector2(14f, 0f);
             titleText.rectTransform.offsetMax = new Vector2(-14f, 0f);
             var headerOutline = header.gameObject.AddComponent<Outline>();
@@ -2650,15 +2650,13 @@ namespace ElectricalSim.AI
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var title = CreateLayoutText("Title", go.transform, ResolveReportTitle(message), 16, TextAnchor.UpperLeft, 24f);
-            title.fontStyle = FontStyle.Bold;
+            var title = CreateLayoutText("Title", go.transform, ResolveReportTitle(message), 15, TextAnchor.UpperLeft, 24f);
+            MainUiTheme.ApplyTextRole(title, MainUiTheme.UiTextRole.InspectorCardTitle);
             title.color = ResolveReportTitleColor(message);
 
-            var body = CreateLayoutText("Body", go.transform, StripLeadingReportTitle(message), 14, TextAnchor.UpperLeft, 0f);
+            var body = CreateLayoutText("Body", go.transform, StripLeadingReportTitle(message), 13, TextAnchor.UpperLeft, 0f);
+            MainUiTheme.ApplyTextRole(body, MainUiTheme.UiTextRole.InspectorBody);
             body.color = MainUiTheme.SecondaryText;
-            body.horizontalOverflow = HorizontalWrapMode.Wrap;
-            body.verticalOverflow = VerticalWrapMode.Overflow;
-            body.resizeTextForBestFit = false;
 
             return go.GetComponent<RectTransform>();
         }
@@ -2852,13 +2850,19 @@ namespace ElectricalSim.AI
             layout.preferredHeight = preferredHeight;
             layout.flexibleWidth = 1f;
 
-            var text = CreateText("Text", go.transform, label, 14, TextAnchor.MiddleCenter);
+            var text = CreateText("Text", go.transform, label, 13, TextAnchor.MiddleCenter);
             text.color = textColor;
-            text.font = MainUiTheme.BodyFont;
-            text.fontStyle = FontStyle.Bold;
-            text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 10;
-            text.resizeTextMaxSize = 14;
+            MainUiTheme.ApplyTextRole(text, MainUiTheme.UiTextRole.InspectorButton);
+            if (name == "SubmitPracticeButton")
+            {
+                text.resizeTextForBestFit = true;
+                text.resizeTextMinSize = 12;
+                text.resizeTextMaxSize = 13;
+            }
+            else
+            {
+                text.resizeTextForBestFit = false;
+            }
             text.rectTransform.offsetMin = new Vector2(8f, 0f);
             text.rectTransform.offsetMax = new Vector2(-8f, 0f);
             return button;
